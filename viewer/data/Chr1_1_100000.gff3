@@ -1,0 +1,28 @@
+##gff-version 3
+##date Wed Jun 15 14:12:11 2011
+##source gbrowse gbgff gff3 dumper
+##sequence-region Chr1:1..100000
+Chr1	1001Genomes	SNP_Agu-1	110	110	4	.	.	Change=G:T;Strain=Agu-1;Project=MPICao2010;ID=609957
+Chr1	1001Genomes	SNP_Agu-1	115	115	3	.	.	Change=C:T;Strain=Agu-1;Project=MPICao2010;ID=609958
+Chr1	1001Genomes	SNP_Agu-1	138	138	3	.	.	Change=T:C;Strain=Agu-1;Project=MPICao2010;ID=609959
+Chr1	1001Genomes	SNP_Agu-1	346	346	7	.	.	Change=C:T;Strain=Agu-1;Project=MPICao2010;ID=609960
+Chr1	1001Genomes	SNP_Agu-1	502	502	9	.	.	Change=T:C;Strain=Agu-1;Project=MPICao2010;ID=609961
+Chr1	1001Genomes	SNP_Agu-1	508	508	7	.	.	Change=T:C;Strain=Agu-1;Project=MPICao2010;ID=609962
+Chr1	1001Genomes	SNP_Agu-1	657	657	12	.	.	Change=C:T;Strain=Agu-1;Project=MPICao2010;ID=609963
+Chr1	1001Genomes	SNP_Agu-1	698	698	10	.	.	Change=G:A;Strain=Agu-1;Project=MPICao2010;ID=609964
+Chr1	1001Genomes	SNP_Agu-1	711	711	10	.	.	Change=T:C;Strain=Agu-1;Project=MPICao2010;ID=609965
+Chr1	1001Genomes	SNP_Agu-1	730	730	6	.	.	Change=G:A;Strain=Agu-1;Project=MPICao2010;ID=609966
+Chr1	1001Genomes	SNP_Agu-1	755	755	5	.	.	Change=T:C;Strain=Agu-1;Project=MPICao2010;ID=609967
+Chr1	1001Genomes	SNP_Agu-1	864	864	4	.	.	Change=C:T;Strain=Agu-1;Project=MPICao2010;ID=609968
+Chr1	1001Genomes	SNP_Agu-1	892	892	4	.	.	Change=T:G;Strain=Agu-1;Project=MPICao2010;ID=609969
+Chr1	1001Genomes	SNP_Agu-1	953	953	3	.	.	Change=T:C;Strain=Agu-1;Project=MPICao2010;ID=609970
+Chr1	1001Genomes	SNP_Bak-2	711	711	6	.	.	Change=T:C;Strain=Bak-2;Project=MPICao2010;ID=756752
+Chr1	1001Genomes	SNP_Bak-2	892	892	5	.	.	Change=T:G;Strain=Bak-2;Project=MPICao2010;ID=756753
+Chr1	1001Genomes	SNP_Bak-7	317	317	11	.	.	Change=C:T;Strain=Bak-7;Project=MPICao2010;ID=903073
+Chr1	1001Genomes	SNP_Bak-7	383	383	9	.	.	Change=T:C;Strain=Bak-7;Project=MPICao2010;ID=903074
+Chr1	1001Genomes	SNP_Bak-7	409	409	11	.	.	Change=A:G;Strain=Bak-7;Project=MPICao2010;ID=903075
+Chr1	1001Genomes	SNP_Bak-7	413	413	13	.	.	Change=T:C;Strain=Bak-7;Project=MPICao2010;ID=903076
+Chr1	1001Genomes	SNP_Bak-7	434	434	14	.	.	Change=A:G;Strain=Bak-7;Project=MPICao2010;ID=903077
+Chr1	1001Genomes	SNP_Bak-7	711	711	10	.	.	Change=T:C;Strain=Bak-7;Project=MPICao2010;ID=903078
+Chr1	1001Genomes	SNP_Bak-7	892	892	4	.	.	Change=T:G;Strain=Bak-7;Project=MPICao2010;ID=903079
+

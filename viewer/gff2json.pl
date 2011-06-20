@@ -37,10 +37,13 @@ while (defined($line = <>)) {
 }
 
 # write to json
-my $json->{"sequence"} = \@featurelist;
-my $json_text = to_json($json);
+my $seq = \@featurelist;
+my $json = new JSON->allow_nonref;
+my $js = $json->pretty->encode($seq);
+
+#my $json_text = to_json($json);
 
 # open file for dumping json
 open JS, ">sequence.json";
-print JS $json_text;
+print JS $js;
 close JS;

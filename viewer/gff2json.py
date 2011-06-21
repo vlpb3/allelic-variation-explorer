@@ -4,7 +4,7 @@ import sys
 
 
 fin = open(sys.argv[1])
-features = {}
+#features = {}
 seq = []
 linecount = 0
 for line in fin:
@@ -13,6 +13,7 @@ for line in fin:
     continue
 
   featlist = line.strip().split("\t")
+  features = {}
   features['seqid'] = featlist[0]
   features['source'] = featlist[1]
   features['type'] = featlist[2]

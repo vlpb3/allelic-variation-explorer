@@ -7,18 +7,89 @@
   </head>
   <body>
     <h1>Interactive haplotype viewer.</h1> 
-    
+
     Region:
-    <form>
-      <input name="chromosome" placeholder="Chromosome e.g. Chr1">
+    <form name="region" action="javascript:ongo()" method="post">
+      <select name="chrom">
+        <option value="Chr1">Chr1</option>
+        <option value="Chr2">Chr2</option>
+      </select>
       <input name="start" type="number" placeholder="start">
       <input name="end" type="number" placeholder="end">
       <input name="go" type="submit" value="Go">
       
       
     </form>
+    
     <script type="text/javascript">
-      
+
+      // varibles definging the region
+      var start;
+      var end;
+      var chrom;
+
+      // put sequence data into sparse array where indexes are positions
+      var seq_features = [];
+
+      // iterate over seq object and extract date into sparse arrays
+      for (var i = 0; i < seq.length; i++) {
+        var feat = seq[i];
+        var feat_start = parseInt(feat.start)
+        // SNPs have differnet type for each strain
+        if (feat.type.match(/^SNP_.*/)) {
+          // check if there this position is empty,
+          // if it is, create there an empty list
+          if (!seq_features[feat_start]){
+            seq_features[(feat_start)] = ["SNPs"];
+            seq_features[feat_start].SNPs = [];
+          }
+          else if(!seq_features[feat_start].SNPs) {
+            seq_features[feat_start].SNPs = []  
+          }
+
+          // append SNP to the list
+          seq_features[feat_start].SNPs.push(feat)
+        }
+        // for the rest of features just use type for indexing
+        else {
+          // again first check if position is empty
+          // if it is, put empty lists
+          if (!seq_features[feat_start]) {
+            seq_features[feat_start] = [feat.type];
+            seq_features[feat_start][feat.type] = [];
+          }
+          else if (!seq_features[feat_start][feat.type]) {
+            seq_features[feat_start][feat.type] = [];
+          }
+          // now append features to the seq_features
+          seq_features[feat_start][feat.type].push(feat);
+        }  
+      }
+
+      // lists for snps, genes and mRNA in defined region
+      var snps = [];
+      var genes = [];
+      var mRNAs = [];
+
+      var ongo = function() {
+        
+        // get chrom, start and end values from the form
+        chrom = parseInt(document.forms.region.chrom.value);
+        start = parseInt(document.forms.region.start.value);
+        end = parseInt(document.forms.region.end.value);
+        
+        // loop over seq object loaded from json and extract snps, genes and mrna
+        // in this region
+        for (var i = 0; i < seq.length; i++) {
+          var feat = seq[i];
+          if (parseInt(feat.start >= start)) {
+            if (feat.type === "gene") {
+              
+            }
+          }
+        }
+        };
+
 
 
     </script>

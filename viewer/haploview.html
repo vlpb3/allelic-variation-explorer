@@ -34,7 +34,7 @@
       // iterate over seq object and extract date into sparse arrays
       for (var i = 0; i < seq.length; i++) {
         var feat = seq[i];
-        var feat_start = parseInt(feat.start)
+        var feat_start = parseInt(feat.start);
         // SNPs have differnet type for each strain
         if (feat.type.match(/^SNP_.*/)) {
           // check if there this position is empty,
@@ -44,11 +44,11 @@
             seq_features[feat_start].SNPs = [];
           }
           else if(!seq_features[feat_start].SNPs) {
-            seq_features[feat_start].SNPs = []  
+            seq_features[feat_start].SNPs = [];  
           }
 
           // append SNP to the list
-          seq_features[feat_start].SNPs.push(feat)
+          seq_features[feat_start].SNPs.push(feat);
         }
         // for the rest of features just use type for indexing
         else {
@@ -66,31 +66,36 @@
         }  
       }
 
-      // lists for snps, genes and mRNA in defined region
-      var snps = [];
-      var genes = [];
-      var mRNAs = [];
-
+      // lists for all features
+      var features = [];    
+  
       var ongo = function() {
         
         // get chrom, start and end values from the form
         chrom = parseInt(document.forms.region.chrom.value);
         start = parseInt(document.forms.region.start.value);
         end = parseInt(document.forms.region.end.value);
-        
-        // loop over seq object loaded from json and extract snps, genes and mrna
-        // in this region
-        for (var i = 0; i < seq.length; i++) {
-          var feat = seq[i];
-          if (parseInt(feat.start >= start)) {
-            if (feat.type === "gene") {
-              
+
+        // loop over seq_features and extract all features in the region
+        // use [type][position][featurelist] indexing
+        for (var i = start; i <= end; i++) {
+          // if the position is non-empty
+          if (seq_features[i]) {
+            // loop over all features for this position
+            for (var j = 0; j < seq_features[i].length; j++) {
+              // if there is no antry for this feature in features array,
+              // make one
+              var f = String(seq_features[i][j]);
+              if (!features[f]) {
+                features[f] = [];
+              }
+              features[f][i] = [];
+              // appnend all the features at this position
+              features[f][i].push(seq_features[i][f]);
             }
           }
         }
-        };
-
-
+      }
 
     </script>
   </body>

@@ -20,82 +20,85 @@
       
       
     </form>
-    
+
     <script type="text/javascript">
 
-      // varibles definging the region
-      var start;
-      var end;
-      var chrom;
+      // varibles definging the region;
+    var start;
+    var end;
+    var chrom;
 
-      // put sequence data into sparse array where indexes are positions
-      var seq_features = [];
+    // put sequence data into sparse array where indexes are positions
+    var seq_features = [];
 
-      // iterate over seq object and extract date into sparse arrays
-      for (var i = 0; i < seq.length; i++) {
-        var feat = seq[i];
-        var feat_start = parseInt(feat.start);
-        // SNPs have differnet type for each strain
-        if (feat.type.match(/^SNP_.*/)) {
-          // check if there this position is empty,
-          // if it is, create there an empty list
-          if (!seq_features[feat_start]){
-            seq_features[(feat_start)] = ["SNPs"];
-            seq_features[feat_start].SNPs = [];
-          }
-          else if(!seq_features[feat_start].SNPs) {
-            seq_features[feat_start].SNPs = [];  
-          }
-
-          // append SNP to the list
-          seq_features[feat_start].SNPs.push(feat);
+    // iterate over seq object and extract date into sparse arrays
+    for (var i = 0; i < seq.length; i++) {
+      var feat = seq[i];
+      var feat_start = parseInt(feat.start);
+      // SNPs have differnet type for each strain
+      if (feat.type.match(/^SNP_.*/)) {
+        // check if there this position is empty,
+        // if it is, create there an empty list
+        if (!seq_features[feat_start]){
+          seq_features[(feat_start)] = ["SNPs"];
+          seq_features[feat_start].SNPs = [];
+        } else if(!seq_features[feat_start].SNPs) {
+          seq_features[feat_start].SNPs = [];  
         }
-        // for the rest of features just use type for indexing
-        else {
-          // again first check if position is empty
-          // if it is, put empty lists
-          if (!seq_features[feat_start]) {
-            seq_features[feat_start] = [feat.type];
-            seq_features[feat_start][feat.type] = [];
-          }
-          else if (!seq_features[feat_start][feat.type]) {
-            seq_features[feat_start][feat.type] = [];
-          }
-          // now append features to the seq_features
-          seq_features[feat_start][feat.type].push(feat);
-        }  
-      }
 
-      // lists for all features
-      var features = [];    
-  
-      var ongo = function() {
+        // append SNP to the list
+        seq_features[feat_start].SNPs.push(feat);
+      }
+      // for the rest of features just use type for indexing
+      else {
+        // again first check if position is empty
+        // if it is, put empty lists
+        if (!seq_features[feat_start]) {
+          seq_features[feat_start] = [feat.type];
+          seq_features[feat_start][feat.type] = [];
+        } else if (!seq_features[feat_start][feat.type]) {
+          seq_features[feat_start][feat.type] = [];
+        }
+        // now append features to the seq_features
+        seq_features[feat_start][feat.type].push(feat);
+      }  
+    }
+
+// lists for all features
+var features = [];    
+
+var ongo = function() {
         
-        // get chrom, start and end values from the form
-        chrom = parseInt(document.forms.region.chrom.value);
-        start = parseInt(document.forms.region.start.value);
-        end = parseInt(document.forms.region.end.value);
+  // get chrom, start and end values from the form
+  chrom = parseInt(document.forms.region.chrom.value);
+  start = parseInt(document.forms.region.start.value);
+  end = parseInt(document.forms.region.end.value);
 
-        // loop over seq_features and extract all features in the region
-        // use [type][position][featurelist] indexing
-        for (var i = start; i <= end; i++) {
-          // if the position is non-empty
-          if (seq_features[i]) {
-            // loop over all features for this position
-            for (var j = 0; j < seq_features[i].length; j++) {
-              // if there is no antry for this feature in features array,
-              // make one
-              var f = String(seq_features[i][j]);
-              if (!features[f]) {
-                features[f] = [];
-              }
-              features[f][i] = [];
-              // appnend all the features at this position
-              features[f][i].push(seq_features[i][f]);
-            }
-          }
+  // loop over seq_features and extract all features in the region
+  // use [type][position][featurelist] indexing
+  for (var i = start; i <= end; i++) {
+    // if the position is non-empty
+    if (seq_features[i]) {
+      // loop over all features for this position
+      for (var j = 0; j < seq_features[i].length; j++) {
+        // if there is no antry for this feature in features array,
+        // make one
+        var f = String(seq_features[i][j]);
+        if (!features[f]) {
+          features[f] = [];
         }
+        features[f][i] = [];
+        // appnend all the features at this position
+        features[f][i] = seq_features[i][f];
       }
+    }
+  }
+}
 
-    </script>
+// calculate haplotypes
+// (1) generate a list of strains, for each strain a sparse array with snp version
+
+//    defined position
+</script>
   </body>
+</html>

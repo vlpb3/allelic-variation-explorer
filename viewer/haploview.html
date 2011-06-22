@@ -97,8 +97,24 @@ var ongo = function() {
 
 // calculate haplotypes
 // (1) generate a list of strains, for each strain a sparse array with snp version
+var strains;
+var snsp = features.SNPs;
+for (var i = 0; i < snps.length; i++) {
+  var pos = snps[i];
+  for (var j = 0; j < pos.length; j++) {
+    var strain = snps[j];
+    // match base change from strain.attributes.Change string (e.g. "Change=T:C")
+    var variant = strain.attributes.Change.match(/Change=[ACGT]:([ACGT])/)[1];
+    // if no entry for strain, make one
+    if (!strains[strain.type]) {
+      strains[strain.type] = [];
+    }
+    // put variant in proper index in an array
+    strains[strain.type][i]= variant;
+  }
+}
 
-//    defined position
+//
 </script>
   </body>
 </html>

@@ -21,7 +21,7 @@
       
     </form>
 
-    <script type="text/javascript">
+    <script type="text/javascript+protovis">
 
       // varibles definging the region;
     var start;
@@ -44,7 +44,7 @@
           seq_features[feat_start].SNPs = [];
         } else if(!seq_features[feat_start].SNPs) {
           seq_features[feat_start].SNPs = [];  
-        }
+        };
 
         // append SNP to the list
         seq_features[feat_start].SNPs.push(feat);
@@ -61,8 +61,8 @@
         }
         // now append features to the seq_features
         seq_features[feat_start][feat.type].push(feat);
-      }  
-    }
+      };  
+    };
 
 // lists for all features
 var features = [];    
@@ -127,6 +127,47 @@ var ongo = function() {
     }
     haplotypes[seq_string].push(s);
   }
+  visualize();
+}
+// function displaying protovis visualisation
+var visualize = function() {
+  // calculate the distance between sequence scale lines
+  var seq_len = end - start + 1;
+  var seq_scale_gap = (Math.pow(String(seq_len).lenfth))/200;
+  if (seq_scale_gap < 5 ) { seq_scale_gap = 5;};
+
+  // set size of the view
+  var view = {
+      left: 25,
+      right: 25,
+      top: 50,
+      bottom: 25,
+      width: 750,
+      height: 750
+  };
+  
+  // create a panel
+  var vis = new pv.Panel()
+    .width(view.width)
+    .height(view.height)
+    .top(view.top)
+    .bottom(view.bottom)
+    .left(view.left)
+    .right(view.right);
+
+  // make a Scale for sequence
+  var seqScale = pv.Scale.linear(start, end).range(view.left, view.width - view.right);
+
+  var seqRule = vis.add(pv.Rule)
+    .data(seqScale.ticks())
+    .left(seqScale)
+    .height(view.height - view.bottom)
+    .strokeStyle("lightgray")
+    .anchor("top").add(pv.Label)
+    .textAlign("center");
+  // render image
+  vis.render();
+
 }
 //
 </script>

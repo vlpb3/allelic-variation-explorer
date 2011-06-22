@@ -151,13 +151,14 @@ var visualize = function() {
     .width(view.width)
     .height(view.height)
     .top(view.top)
-    .bottom(view.bottom)
-    .left(view.left)
-    .right(view.right);
+    .bottom(view.bottom);
+   // .left(view.left)
+   // .right(view.right);
 
   // make a Scale for sequence
   var seqScale = pv.Scale.linear(start, end).range(view.left, view.width - view.right);
 
+  // make a ruller showing sequence scale
   var seqRule = vis.add(pv.Rule)
     .data(seqScale.ticks())
     .left(seqScale)
@@ -165,6 +166,8 @@ var visualize = function() {
     .strokeStyle("lightgray")
     .anchor("top").add(pv.Label)
     .textAlign("center");
+
+  //
   // render image
   vis.render();
 

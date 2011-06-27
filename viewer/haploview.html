@@ -2,11 +2,11 @@
 <html>
   <head>
     <title>Interactive Haplotype viewer.</title>
-    <script type="text/javascript" src="protovis-r3.2.js"></script> 
+    <script type="text/javascript" src="protovis-r3.2.js"></script>
     <script type="text/javascript" src="seq.json"></script>
   </head>
   <body>
-    <h1>Interactive haplotype viewer.</h1> 
+    <h1>Interactive haplotype viewer.</h1>
 
     Region:
     <form name="region" action="javascript:ongo()" method="post">
@@ -14,165 +14,161 @@
         <option value="Chr1">Chr1</option>
         <option value="Chr2">Chr2</option>
       </select>
-      <input name="start" type="number" placeholder="start">
-      <input name="end" type="number" placeholder="end">
+      <input name="start" type="number" placeholder="start" value="1">
+      <input name="end" type="number" placeholder="end" value="10000">
       <input name="go" type="submit" value="Go">
-      
-      
+
     </form>
 
     <script type="text/javascript+protovis">
 
-      // varibles definging the region;
-    var start;
-    var end;
-    var chrom;
+      
+      // varibles definging the region
+      var start;
+      var end;
+      var chrom;
+      
+      //function which extracts features for specified region
+      var seq2feature_seq = function(chrom, start, end, seq) {
+        // create object for storing features
+        var feature_seq = {};
+        for (var i in seq) {
+          var feature = seq[i];
+          var type;
+          if (feature.type.match(/^SNP_.*/)) {
+            type = "SNP";
+          } else {type = feature.type};
 
-    // put sequence data into sparse array where indexes are positions
-    var seq_features = [];
+          var pos = parseInt(feature.start);
+          if ( (feature.seqid === chrom) && (start<=pos) && (pos<=end) ){
+            if (!feature_seq[type]) {feature_seq[type] = [];}; 
+            if (!feature_seq[type][pos]) {feature_seq[type][pos] = [];};
+            feature_seq[type][pos].push(feature);
+          }; 
+        };
+        return feature_seq;
+      };
 
-    // iterate over seq object and extract date into sparse arrays
-    for (var i = 0; i < seq.length; i++) {
-      var feat = seq[i];
-      var feat_start = parseInt(feat.start);
-      // SNPs have differnet type for each strain
-      if (feat.type.match(/^SNP_.*/)) {
-        // check if there this position is empty,
-        // if it is, create there an empty list
-        if (!seq_features[feat_start]){
-          seq_features[(feat_start)] = ["SNPs"];
-          seq_features[feat_start].SNPs = [];
-        } else if(!seq_features[feat_start].SNPs) {
-          seq_features[feat_start].SNPs = [];  
+      // function for creating strains object
+      // takes a list of feature objects
+      var construct_strains = function(strain_list){
+        var strains = {};
+        for (var s in strain_list){
+          var strain = strain_list[s];
+          // extract name of the strain
+          var name = strain.attributes.Strain.split("=")[1];
+          if (!strains[name]) {strains[name] = {seq: [], snps: []};};
+          var base = strain.attributes.Change.split(":")[1];
+          strains[name].seq[strain.start] = base;
+          strains[name].snps[strain.start] = strain;
+        }
+        return strains;
+      }
+
+      // function for condtructing haplotypes
+      var construct_haplotypes = function(strains){
+        var haplo_hash = {};
+        // first construct hash for finding haplotypes
+        for (var s in strains){
+          var strain = strains[s];
+          var seq_id = strain.seq.toString();
+          if (!haplo_hash[seq_id]){
+            haplo_hash[seq_id] = [];
+          }
+          haplo_hash[seq_id].push(strain);
+        }
+        // put all haplotypes in an array
+        var haplotypes = [];
+        for (h in haplo_hash){
+          haplotypes.push(haplo_hash[h]);
+        }
+        return haplotypes;
+      };
+
+      // protovis visualisation
+      var visualize = function(feature_seq, strains, haplotypes){
+
+        // calculate number of tracks
+        var n_non_snps = Object.keys(feature_seq).length -1;
+        var n_haplotypes = haplotypes.length;
+        var n_tracks = n_non_snps + n_haplotypes;
+      
+        // view size
+        var view = {
+          htrack: 20,
+          left: 25,
+          right: 25,
+          top: 50,
+          bottom: 25,
+          width: 750
         };
 
-        // append SNP to the list
-        seq_features[feat_start].SNPs.push(feat);
-      }
-      // for the rest of features just use type for indexing
-      else {
-        // again first check if position is empty
-        // if it is, put empty lists
-        if (!seq_features[feat_start]) {
-          seq_features[feat_start] = [feat.type];
-          seq_features[feat_start][feat.type] = [];
-        } else if (!seq_features[feat_start][feat.type]) {
-          seq_features[feat_start][feat.type] = [];
+        view.height = view.htrack * n_tracks + view.top + view.bottom; 
+
+        // create a panel
+        var vis = new pv.Panel()
+        .width(view.width)
+        .height(view.height)
+        .top(view.top)
+        .bottom(view.bottom);
+
+        // make a Scale for sequence
+        var seqScale = pv.Scale.linear(start, end).range(view.left, view.width - view.right);
+
+        // make a ruller showing sequence scale
+        var seqRule = vis.add(pv.Rule)
+        .data(seqScale.ticks())
+        .left(seqScale)
+        .height(view.height - view.bottom)
+        .strokeStyle("lightgray")
+        .anchor("top").add(pv.Label)
+        .textAlign("center");
+
+        // make track for genes
+        // first get genes
+        var genes = [];
+        for (g in feature_seq.gene){
+          genes.push(feature_seq.gene[g][0])
         }
-        // now append features to the seq_features
-        seq_features[feat_start][feat.type].push(feat);
-      };  
-    };
+        // represent genes as bars
+        var geneBar = vis.add(pv.Bar)
+        .data(genes)
+        .height(10)
+        .top(view.top + 5)
+        .left(function(d) seqScale(d.start))
+        .width(function(d) seqScale(d.end) - seqScale(d.start)) 
+        .fillStyle(pv.colors("lightblue"))
+        .anchor("left").add(pv.Label)
+        .text(function(d) d.attributes.Name.split("=")[1]);
+        // render image
+        vis.render();
+      };
 
-// lists for all features
-var features = [];    
-// strains with sequence strings
-var strains = [];
-// haplotypes, key = sequence string, value = strain name
-var haplotypes = [];
+      // function which is run when user submits the form
+      var ongo = function() {
 
-var ongo = function() {
-        
-  // get chrom, start and end values from the form
-  chrom = parseInt(document.forms.region.chrom.value);
-  start = parseInt(document.forms.region.start.value);
-  end = parseInt(document.forms.region.end.value);
+        // get start, end and chromosome values from the form
+        chrom = document.forms.region.chrom.value;
+        start = parseInt(document.forms.region.start.value);
+        end = parseInt(document.forms.region.end.value);
 
-  // loop over seq_features and extract all features in the region
-  // use [type][position][featurelist] indexing
-  for (var i = start; i <= end; i++) {
-    // if the position is non-empty
-    if (seq_features[i]) {
-      // loop over all features for this position
-      for (var j = 0; j < seq_features[i].length; j++) {
-        // if there is no antry for this feature in features array,
-        // make one
-        var f = String(seq_features[i][j]);
-        if (!features[f]) {
-          features[f] = [];
+        // get feature sequence for the region
+        var feature_seq = seq2feature_seq(chrom, start, end, seq);
+        // flatten this array for strain constraction
+        var snps = feature_seq['SNP'];
+        var flat_snps = [];
+        for (var i in snps){
+          for (var j in snps[i]){
+            flat_snps.push(snps[i][j])
+          }
         }
-        features[f][i] = [];
-        // appnend all the features at this position
-        features[f][i] = seq_features[i][f];
-      }
-    }
-  }
-  // calculate haplotypes
-  // (1) generate a list of strains, for each strain a sparse array with snp version
-  var snps = features.SNPs;
-  for (var i = 0; i < snps.length; i++) {
-    if (snps[i]) {
-      var pos = snps[i];
-      for (var j = 0; j < pos.length; j++) {
-        var strain = pos[j];
-        // match base change from strain.attributes.Change string (e.g. "Change=T:C")
-        var variant = strain.attributes.Change.match(/Change=[ACGT]:([ACGT])/)[1];
-        // if no entry for strain, make one
-        if (!strains[strain.type]) {
-          strains[strain.type] = new Array(end - start + 2);
-        }
-        // put variant in proper index in an array
-        strains[strain.type][i]= variant;
-      }
-    }
-  }
-  // (2) get and array for each strain, join() it to get a string,
-  //      use this string as a key in haplotypes hash 
+        var strains = construct_strains(flat_snps);
+        var haplotypes = construct_haplotypes(strains);
+        // start visualization
+        visualize(feature_seq, strains, haplotypes);
+      };
 
-  for (s in strains) {
-    var seq_string = strains[s].join();
-    // first check if there is this sequence string among keys if not add one
-    if(!haplotypes[seq_string]) {
-      haplotypes[seq_string] = [];
-    }
-    haplotypes[seq_string].push(s);
-  }
-  visualize();
-}
-// function displaying protovis visualisation
-var visualize = function() {
-  // calculate the distance between sequence scale lines
-  var seq_len = end - start + 1;
-  var seq_scale_gap = (Math.pow(String(seq_len).lenfth))/200;
-  if (seq_scale_gap < 5 ) { seq_scale_gap = 5;};
-
-  // set size of the view
-  var view = {
-      left: 25,
-      right: 25,
-      top: 50,
-      bottom: 25,
-      width: 750,
-      height: 750
-  };
-  
-  // create a panel
-  var vis = new pv.Panel()
-    .width(view.width)
-    .height(view.height)
-    .top(view.top)
-    .bottom(view.bottom);
-   // .left(view.left)
-   // .right(view.right);
-
-  // make a Scale for sequence
-  var seqScale = pv.Scale.linear(start, end).range(view.left, view.width - view.right);
-
-  // make a ruller showing sequence scale
-  var seqRule = vis.add(pv.Rule)
-    .data(seqScale.ticks())
-    .left(seqScale)
-    .height(view.height - view.bottom)
-    .strokeStyle("lightgray")
-    .anchor("top").add(pv.Label)
-    .textAlign("center");
-
-  //
-  // render image
-  vis.render();
-
-}
-//
-</script>
+  </script>
   </body>
 </html>
+

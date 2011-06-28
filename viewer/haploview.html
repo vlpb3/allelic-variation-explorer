@@ -4,7 +4,7 @@
     <title>Interactive Haplotype viewer.</title>
     <script type="text/javascript" src="protovis-r3.2.js"></script>
     <script type="text/javascript" src="seq.json"></script>
-  </head>
+    </head>
   <body>
     <h1>Interactive haplotype viewer.</h1>
 
@@ -22,12 +22,12 @@
 
     <script type="text/javascript+protovis">
 
-      
+
       // varibles definging the region
       var start;
       var end;
       var chrom;
-      
+
       //function which extracts features for specified region
       var seq2feature_seq = function(chrom, start, end, seq) {
         // create object for storing features
@@ -38,13 +38,16 @@
           if (feature.type.match(/^SNP_.*/)) {
             type = "SNP";
           } else {type = feature.type};
+          var region = {'start': start, 'end': end};
+          var feat_pos = {'start': parseInt(feature.start), 'end': parseInt(feature.end)};
 
-          var pos = parseInt(feature.start);
-          if ( (feature.seqid === chrom) && (start<=pos) && (pos<=end) ){
-            if (!feature_seq[type]) {feature_seq[type] = [];}; 
-            if (!feature_seq[type][pos]) {feature_seq[type][pos] = [];};
-            feature_seq[type][pos].push(feature);
-          }; 
+          if ( (feature.seqid === chrom)
+            && (feat_pos.start <= region.end) && (feat_pos.end >= region.start) ){
+              if (!feature_seq[type]) {
+                feature_seq[type] = [];
+              };
+              feature_seq[type].push(feature);
+            };
         };
         return feature_seq;
       };
@@ -60,7 +63,7 @@
           if (!strains[name]) {strains[name] = {seq: [], snps: []};};
           var base = strain.attributes.Change.split(":")[1];
           strains[name].seq[strain.start] = base;
-          strains[name].snps[strain.start] = strain;
+          strains[name].snps.push(strain);
         }
         return strains;
       }
@@ -85,17 +88,19 @@
         return haplotypes;
       };
 
-      // protovis visualisation
+      // visualization function
       var visualize = function(feature_seq, strains, haplotypes){
 
         // calculate number of tracks
         var n_non_snps = Object.keys(feature_seq).length -1;
         var n_haplotypes = haplotypes.length;
         var n_tracks = n_non_snps + n_haplotypes;
-      
+
         // view size
         var view = {
-          htrack: 20,
+          htrack: 25,
+          hbar: 10,
+          track_margin: 5,
           left: 25,
           right: 25,
           top: 50,
@@ -103,8 +108,9 @@
           width: 750
         };
 
-        view.height = view.htrack * n_tracks + view.top + view.bottom; 
-
+        view.height = view.htrack * n_tracks + view.top + view.bottom;
+        // variable for storing where last added track ends
+        view.end = view.top;
         // create a panel
         var vis = new pv.Panel()
         .width(view.width)
@@ -113,7 +119,8 @@
         .bottom(view.bottom);
 
         // make a Scale for sequence
-        var seqScale = pv.Scale.linear(start, end).range(view.left, view.width - view.right);
+        var seqScale = pv.Scale.linear(start, end)
+        .range(view.left, view.width - view.right);
 
         // make a ruller showing sequence scale
         var seqRule = vis.add(pv.Rule)
@@ -124,22 +131,56 @@
         .anchor("top").add(pv.Label)
         .textAlign("center");
 
+        function addTrack(color, feat){
+          if (feat === undefined) {
+            return;
+          };
+          vis.add(pv.Bar)
+          .data(feat)
+          .height(view.hbar)
+          .top(view.end + view.track_margin)
+          .left(function(d) seqScale(d.start))
+          .width(function(d) seqScale(d.end) - seqScale(d.start))
+          .fillStyle(pv.colors(color))
+          .anchor("left").add(pv.Label)
+          .text(function(d) d.attributes.Name.split("=")[1]);
+          
+          view.end += view.htrack;
+        };
+
+        
         // make track for genes
-        // first get genes
-        var genes = [];
-        for (g in feature_seq.gene){
-          genes.push(feature_seq.gene[g][0])
-        }
-        // represent genes as bars
-        var geneBar = vis.add(pv.Bar)
-        .data(genes)
-        .height(10)
-        .top(view.top + 5)
-        .left(function(d) seqScale(d.start))
-        .width(function(d) seqScale(d.end) - seqScale(d.start)) 
-        .fillStyle(pv.colors("lightblue"))
-        .anchor("left").add(pv.Label)
-        .text(function(d) d.attributes.Name.split("=")[1]);
+        addTrack("lightgreen", feature_seq.gene)
+        //make track for mRNA
+        addTrack("lightblue", feature_seq.mRNA);
+
+        // determine color for snp
+        var snpColor = {
+          'A': pv.color('red'),
+          'C': pv.color('lightgreen'),
+          'G': pv.color('lightblue'),
+          'T': pv.color('orange'),
+        };
+
+        // make haplotype tracks
+        function addHaplotypeTracks() {
+          // make a baseline pvRuller
+          vis.add(pv.Rule)
+          .top(view.end + view.htrack/2)
+          .left(view.left)
+          .right(view.right)
+          .strokeStyle("grey");
+
+          vis.add(pv.Dot)
+          .data(haplotypes[0][0].snps)
+          .top(view.end + view.htrack/2 - view.track_margin)
+          .left(function(d) seqScale(d.start))
+          .shape("triangle")
+          .strokeStyle(function(d) snpColor[d.attributes.Change.split(":")[1]]);
+        }; 
+
+        addHaplotypeTracks();
+        
         // render image
         vis.render();
       };
@@ -154,16 +195,10 @@
 
         // get feature sequence for the region
         var feature_seq = seq2feature_seq(chrom, start, end, seq);
-        // flatten this array for strain constraction
-        var snps = feature_seq['SNP'];
-        var flat_snps = [];
-        for (var i in snps){
-          for (var j in snps[i]){
-            flat_snps.push(snps[i][j])
-          }
-        }
-        var strains = construct_strains(flat_snps);
+        var snps = feature_seq.SNP;
+        var strains = construct_strains(snps);
         var haplotypes = construct_haplotypes(strains);
+        console.log(haplotypes);
         // start visualization
         visualize(feature_seq, strains, haplotypes);
       };

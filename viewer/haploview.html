@@ -20,13 +20,11 @@
 
     </form>
 
+    <div id="pv_canvas">
+      <canvas></canvas>
+    </div>
+
     <script type="text/javascript+protovis">
-
-
-      // varibles definging the region
-      var start;
-      var end;
-      var chrom;
 
       //function which extracts features for specified region
       var seq2feature_seq = function(chrom, start, end, seq) {
@@ -89,7 +87,7 @@
       };
 
       // visualization function
-      var visualize = function(feature_seq, strains, haplotypes){
+      var visualize = function(feature_seq, strains, haplotypes, start, end){
 
         // calculate number of tracks
         var n_non_snps = Object.keys(feature_seq).length -1;
@@ -113,6 +111,7 @@
         view.end = view.top;
         // create a panel
         var vis = new pv.Panel()
+        .canvas('pv_canvas')
         .width(view.width)
         .height(view.height)
         .top(view.top)
@@ -195,9 +194,9 @@
       var ongo = function() {
 
         // get start, end and chromosome values from the form
-        chrom = document.forms.region.chrom.value;
-        start = parseInt(document.forms.region.start.value);
-        end = parseInt(document.forms.region.end.value);
+        var chrom = document.forms.region.chrom.value;
+        var start = parseInt(document.forms.region.start.value);
+        var end = parseInt(document.forms.region.end.value);
 
         // get feature sequence for the region
         var feature_seq = seq2feature_seq(chrom, start, end, seq);
@@ -206,7 +205,7 @@
         var haplotypes = construct_haplotypes(strains);
         console.log(haplotypes);
         // start visualization
-        visualize(feature_seq, strains, haplotypes);
+        visualize(feature_seq, strains, haplotypes, start, end);
       };
 
   </script>

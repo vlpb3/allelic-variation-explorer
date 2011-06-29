@@ -164,21 +164,27 @@
 
         // make haplotype tracks
         function addHaplotypeTracks() {
-          // make a baseline pvRuller
-          vis.add(pv.Rule)
-          .top(view.end + view.htrack/2)
-          .left(view.left)
-          .right(view.right)
-          .strokeStyle("grey");
+          //reapeate for each haplotype
+          for (h in haplotypes) {
+            var haplotype = haplotypes[h];
 
-          vis.add(pv.Dot)
-          .data(haplotypes[0][0].snps)
-          .top(view.end + view.htrack/2 - view.track_margin)
-          .left(function(d) seqScale(d.start))
-          .shape("triangle")
-          .strokeStyle(function(d) snpColor[d.attributes.Change.split(":")[1]]);
-        }; 
+            // make a baseline pvRuller
+            vis.add(pv.Rule)
+            .top(view.end + view.htrack/2)
+            .left(view.left)
+            .right(view.right)
+            .strokeStyle("grey");
 
+            vis.add(pv.Dot)
+            .data(haplotype[0].snps)
+            .top(view.end + view.htrack/2 - view.track_margin)
+            .left(function(d) seqScale(d.start))
+            .shape("triangle")
+            .strokeStyle(function(d) snpColor[d.attributes.Change.split(":")[1]]);
+
+            view.end += view.htrack;
+          }; 
+        };
         addHaplotypeTracks();
         
         // render image

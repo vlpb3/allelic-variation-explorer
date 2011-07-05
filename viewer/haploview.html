@@ -4,6 +4,7 @@
     <title>Interactive Haplotype viewer.</title>
     <script type="text/javascript" src="protovis-r3.2.js"></script>
     <script type="text/javascript" src="seq.json"></script>
+    <link type="text/css" rel="stylesheet" href="button.css"/>
     </head>
   <body>
     <h1>Interactive haplotype viewer.</h1>
@@ -94,6 +95,10 @@
         var n_haplotypes = haplotypes.length;
         var n_tracks = n_non_snps + n_haplotypes;
 
+        // features might overlap,
+        // then, it is needed to split them in separate tracks
+        
+        
         // view size
         var view = {
           htrack: 25,
@@ -126,7 +131,7 @@
         .data(seqScale.ticks())
         .left(seqScale)
         .height(view.height - view.bottom)
-        .strokeStyle("lightgray")
+        .strokeStyle("gray")
         .anchor("top").add(pv.Label)
         .textAlign("center");
 
@@ -156,8 +161,8 @@
         // determine color for snp
         var snpColor = {
           'A': pv.color('red'),
-          'C': pv.color('lightgreen'),
-          'G': pv.color('lightblue'),
+          'C': pv.color('green'),
+          'G': pv.color('blue'),
           'T': pv.color('orange'),
         };
 
@@ -168,18 +173,20 @@
             var haplotype = haplotypes[h];
 
             // make a baseline pvRuller
-            vis.add(pv.Rule)
-            .top(view.end + view.htrack/2)
+            vis.add(pv.Bar)
+            .top(view.end + view.track_margin)
+            .height(view.hbar)
             .left(view.left)
             .right(view.right)
-            .strokeStyle("grey");
+            .fillStyle("lightgrey");
 
             vis.add(pv.Dot)
             .data(haplotype[0].snps)
-            .top(view.end + view.htrack/2 - view.track_margin)
+            .top(view.end + view.hbar/2 + view.track_margin)
             .left(function(d) seqScale(d.start))
             .shape("triangle")
-            .strokeStyle(function(d) snpColor[d.attributes.Change.split(":")[1]]);
+            .strokeStyle(function(d) snpColor[d.attributes.Change.split(":")[1]])
+            .fillStyle(function(d) snpColor[d.attributes.Change.split(":")[1]]);;
 
             view.end += view.htrack;
           }; 
@@ -203,7 +210,7 @@
         var snps = feature_seq.SNP;
         var strains = construct_strains(snps);
         var haplotypes = construct_haplotypes(strains);
-        console.log(haplotypes);
+        console.log(feature_seq);
         // start visualization
         visualize(feature_seq, strains, haplotypes, start, end);
       };

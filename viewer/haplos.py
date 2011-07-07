@@ -9,7 +9,7 @@ for i in range(10):
   else :
     features.append((p2,p1))
 
-    
+
 def overlaps(a,b):
   if a[0] < b[1] and a[1] > b[0]:
     return True
@@ -36,4 +36,8 @@ for f in (features):
       else :
         tr.append(f)
         break
-      
+
+function overlaping(feat1, feat2) {return (feat1.start < feat2.end) && (feat1.end > feat2.start) ? true : false;}
+
+featList = [{start: 4, end: 10},{start: 5, end: 20},{start: 15, end: 30},{start: 23, end: 25}]
+

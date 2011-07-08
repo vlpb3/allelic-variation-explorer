@@ -91,7 +91,7 @@ function updateData() {
   geneTracks = splitFeatures(features.gene);
   mRNATracks = splitFeatures(features.mRNA);
   dim.nTracks = getnTracks();
-  dim.s =  d3.scale.linear().domain([pos.start, pos.end]  ).range([0, dim.w]);
+  dim.s =  d3.scale.linear().domain([pos.start, pos.end]  ).range([0, dim.w]).nice();
   dim.h = dim.nTracks * dim.trackh;
 }
 
@@ -164,47 +164,67 @@ var svg = d3.select('#chart')
   .append("svg:g")
     .attr("transform", "translate(" + dim.margin + "," + dim.top + ")");
 
-var rules = svg.selectAll("g.rule")
-      .data(dim.s.ticks(9))
-    .enter().append("svg:g")
-      .attr("class", "rule")
-      .attr("transform", function(d) { return "translate(" + dim.s(d) + ",0)";});
+var seqrules = svg.selectAll("g.seqrules")
+        .data(dim.s.ticks(8))
+      .enter().append("svg:line")
+        .attr("class", "seqrule")
+        .attr("y1", 0)
+        .attr("y2", dim.h)
+        .attr("x1", dim.s)
+        .attr("x2", dim.s)
+        .attr("stroke", "lightgrey");
 
-rules.append("svg:line")
+var seqtext = svg.selectAll("g.seqtext")
+        .data(dim.s.ticks(8))
+      .enter().append("svg:text")
+        .attr("y", -5)
+        .attr("dy", ".0.71em")
+        .attr("x", dim.s)
+        .attr("text-anchor", "middle")
+        .text(dim.s.tickFormat(8));
+
+
+function move() {
+
+  var seqtext = svg.selectAll('text')
+    .data(dim.s.ticks(8));
+    
+  seqtext
+    .attr("y", -5)
+    .attr("dy", ".0.71em")
+    .attr("x", dim.s)
+    .attr("text-anchor", "middle")
+    .text(dim.s.tickFormat(10));
+  
+  seqtext.enter()
+    .append("svg:text")
+      .attr("y", -5)
+      .attr("dy", ".0.71em")
+      .attr("x", dim.s)
+      .attr("text-anchor", "middle")
+      .text(dim.s.tickFormat(8));
+
+  seqtext.exit().remove();
+
+  var seqrule = svg.selectAll('line')
+    .data(dim.s.ticks(8));
+
+  seqrule
+    .attr("class", "seqrule")
     .attr("y1", 0)
     .attr("y2", dim.h)
+    .attr("x1", dim.s)
+    .attr("x2", dim.s)
     .attr("stroke", "lightgrey");
 
-rules.append("svg:text")
-    .attr("y", -2)
-    .attr("dy", ".0.71em")
-    .attr("text-anchor", "middle")
-    .text(dim.s.tickFormat(9));
-
-function redraw() {
-  
-  rules = svg.selectAll("g.rule")
-      .data(dim.s.ticks(9));
-
-  rules.exit().remove();
-  
-  rules.enter().append("svg:g")
-      .attr("class", "rule")
-      .attr("transform", function(d) {return "translate(" + dim.s(d) + ",0)";} );
-
-  svg.selectAll("line")
-    .data(dim.s.ticks(9))
-    .enter().append("svg:line")
+  seqrule.enter()
+    .append("svg:line")
+      .attr("class", "seqrule")
       .attr("y1", 0)
       .attr("y2", dim.h)
+      .attr("x1", dim.s)
+      .attr("x2", dim.s)
       .attr("stroke", "lightgrey");
-  
-  svg.selectAll("rule")
-    .data(dim.s.ticks(9))
-    .enter().append("svg:text")
-      .attr("y", -2)
-      .attr("dy", ".0.71em")
-      .attr("text-anchor", "middle")
-      .text(dim.s.tickFormat(9));
-}
 
+  seqrule.exit().remove();
+}

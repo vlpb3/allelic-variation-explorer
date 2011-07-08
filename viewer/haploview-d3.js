@@ -74,6 +74,15 @@ function getnTracks(){
   return  geneTracks.length + mRNATracks.length + haplotypes.length;
 }
 
+function getPosMax() {
+  var posMax = 0;
+  for (s in seq) {
+    posMax = seq[s].end > posMax ? seq[s].end : posMax;
+  }
+  return posMax;
+}
+
+pos.max = getPosMax();
 var dim = {
   w: 500,
   trackh: 25,
@@ -97,14 +106,7 @@ function updateData() {
 
 updateData();
 
-// function run on form submition
-function submit() {
-  pos.chrom = document.forms.region.chrom.value;
-  pos.start = parseInt(document.forms.region.start.value);
-  pos.end = parseInt(document.forms.region.end.value);
 
-  updateData();
-}
 
 // check if provided features overlap
 function overlapping(feat1, feat2) {
@@ -188,43 +190,110 @@ function move() {
 
   var seqtext = svg.selectAll('text')
     .data(dim.s.ticks(8));
-    
-  seqtext
-    .attr("y", -5)
-    .attr("dy", ".0.71em")
-    .attr("x", dim.s)
-    .attr("text-anchor", "middle")
-    .text(dim.s.tickFormat(10));
-  
-  seqtext.enter()
-    .append("svg:text")
-      .attr("y", -5)
-      .attr("dy", ".0.71em")
-      .attr("x", dim.s)
-      .attr("text-anchor", "middle")
-      .text(dim.s.tickFormat(8));
 
   seqtext.exit().remove();
+
+  seqtext
+      .attr("x", dim.s)
+      .text(dim.s.tickFormat(8));
+
+  seqtext.enter()
+    .append("svg:text")
+    .attr("y", -5)
+    .attr("dy", ".0.71em")
+    .attr("text-anchor", "middle")
+    .attr("x", dim.s)
+    .text(dim.s.tickFormat(8));
 
   var seqrule = svg.selectAll('line')
     .data(dim.s.ticks(8));
 
+  seqrule.exit().remove();
+
   seqrule
-    .attr("class", "seqrule")
-    .attr("y1", 0)
-    .attr("y2", dim.h)
-    .attr("x1", dim.s)
-    .attr("x2", dim.s)
-    .attr("stroke", "lightgrey");
+      .attr("x1", dim.s)
+      .attr("x2", dim.s);
 
   seqrule.enter()
     .append("svg:line")
       .attr("class", "seqrule")
       .attr("y1", 0)
       .attr("y2", dim.h)
+      .attr("stroke", "lightgrey")
       .attr("x1", dim.s)
-      .attr("x2", dim.s)
-      .attr("stroke", "lightgrey");
+      .attr("x2", dim.s);
+}
 
-  seqrule.exit().remove();
+// function run on form submition
+function submit() {
+  pos.chrom = document.forms.region.chrom.value;
+  pos.start = parseInt(document.forms.region.start.value);
+  pos.end = parseInt(document.forms.region.end.value);
+
+  updateData();
+  move();
+}
+
+function moveLeft() {
+  var stepInFrac = 5;
+  var stretch = pos.end - pos.start;
+  var step = d3.round(stretch / stepInFrac);
+  var start = pos.start - step;
+  if (start < 1) {
+    pos.start = 1;
+    pos.end = stretch;
+    } else {
+      pos.start = start; 
+      pos.end = pos.end - step;
+    }
+
+  updateData();
+  move()  
+}
+
+
+function moveRight() {
+  var stepInFrac = 5;
+  var stretch = pos.end - pos.start;
+  var step = d3.round(stretch /stepInFrac);
+  if (pos.end + step > pos.max) {
+    pos.end = pos.max
+  } else {
+    pos.end = pos.end + step;
+  }
+  pos.start = pos.start + step;
+  
+  updateData();
+  move();
+}
+
+function zoomIn() {
+  var zoomInFrac = 5;
+  var stretch = pos.end - pos.start;
+  var step = d3.round(stretch/(zoomInFrac*2));
+  if (stretch > 20) {
+    pos.start = pos.start + 4*step;
+    pos.end = pos.end - 4*step;
+  }
+
+  updateData();
+  move()
+}
+
+function zoomOut() {
+  var zoomInFrac = 5;
+  var stretch = pos.end - pos.start;
+  if ((pos.start - stretch*4) < 1 ) {
+    pos.start = 1;  
+  } else {
+    pos.start = pos.start - stretch*4;
+  }
+  if ( (pos.end + stretch*4) > pos.max) {
+    pos.end = pos.max;
+  } else {
+    pos.end = pos.end + stretch*4;
+  }
+  
+  updateData();
+  move();
 }

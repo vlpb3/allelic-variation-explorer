@@ -1,0 +1,12 @@
+h1 {
+  size: 36px;
+  font-weight: 300;
+  margin-bottom: .3em;
+
+}
+
+svg {
+  font: 10px sans-serif;
+  shape-rendering: optimize-speed;
+}
+

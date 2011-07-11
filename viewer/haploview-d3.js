@@ -2,7 +2,9 @@
 var pos = {
   'chrom': document.forms.region.chrom.value,
   'start': parseInt(document.forms.region.start.value),
-  'end': parseInt(document.forms.region.end.value)
+  'end': parseInt(document.forms.region.end.value),
+  'min': 0,
+  'max': 0
 }
 
 var features = {};
@@ -36,7 +38,6 @@ function getFeatures(){
   }
   return features;
 }
-
 
 function getStrains() {
   var strains = {};
@@ -77,12 +78,23 @@ function getnTracks(){
 function getPosMax() {
   var posMax = 0;
   for (s in seq) {
-    posMax = seq[s].end > posMax ? seq[s].end : posMax;
+    var end = parseInt(seq[s].end);
+    posMax = end > posMax ? end : posMax;
   }
   return posMax;
 }
 
+function getPosMin() {
+  var posMin = pos.max;
+  for (s in seq) {
+    var start = parseInt(seq[s].start);
+    posMin = start < posMin ? start : posMin;
+  }
+  return posMin;
+}
+
 pos.max = getPosMax();
+
 var dim = {
   w: 500,
   trackh: 25,
@@ -243,12 +255,12 @@ function moveLeft() {
     pos.start = 1;
     pos.end = stretch;
     } else {
-      pos.start = start; 
+      pos.start = start;
       pos.end = pos.end - step;
     }
 
   updateData();
-  move()  
+  move()
 }
 
 
@@ -257,12 +269,13 @@ function moveRight() {
   var stretch = pos.end - pos.start;
   var step = d3.round(stretch /stepInFrac);
   if (pos.end + step > pos.max) {
-    pos.end = pos.max
+    pos.end = pos.max;
+    pos.start = pos.max - stretch;
   } else {
     pos.end = pos.end + step;
+    pos.start = pos.start + step;
   }
-  pos.start = pos.start + step;
-  
+
   updateData();
   move();
 }
@@ -284,7 +297,7 @@ function zoomOut() {
   var zoomInFrac = 5;
   var stretch = pos.end - pos.start;
   if ((pos.start - stretch*4) < 1 ) {
-    pos.start = 1;  
+    pos.start = 1;
   } else {
     pos.start = pos.start - stretch*4;
   }
@@ -293,7 +306,8 @@ function zoomOut() {
   } else {
     pos.end = pos.end + stretch*4;
   }
-  
+
   updateData();
   move();
 }
+

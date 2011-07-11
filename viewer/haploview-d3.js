@@ -77,7 +77,7 @@ function getnTracks(){
 
 function getPosMax() {
   var posMax = 0;
-  for (s in seq) {
+  for (var s in seq) {
     var end = parseInt(seq[s].end);
     posMax = end > posMax ? end : posMax;
   }
@@ -86,7 +86,7 @@ function getPosMax() {
 
 function getPosMin() {
   var posMin = pos.max;
-  for (s in seq) {
+  for (var s in seq) {
     var start = parseInt(seq[s].start);
     posMin = start < posMin ? start : posMin;
   }

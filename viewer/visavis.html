@@ -5,6 +5,7 @@
      <link type="text/css" rel="stylesheet" href="css/visavis.css">
     <script type="text/javascript" src="./lib/d3.js"></script>
     <script type="text/javascript" src="./lib/d3.behavior.js"></script>
+    <script type="text/javascript" src="seq.json"></script>
     <style type="text/css">
     </style>
   </head>
@@ -17,13 +18,14 @@
     </header>
 
     <div>
-      <form id="region" action="javascript:submit()">
+      <form id="region" action="javascript:jumpToRegion()">
         Go to region: </br>
         <select name="chrom">
           <option value="Chr1">Chr1</option>
         </select>
-        <input name="start" type="number" placeholder="start" value="1">
-        <input name="end" type="number" placeholder="end" value="10000">
+        <input name="start" type="number" placeholder="start" value="73">
+
+        <input name="end" type="number" placeholder="end" value="1000">
         <input type="submit" name="go" value="Go">
         </br>
         or search for feature:

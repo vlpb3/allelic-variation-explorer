@@ -42,9 +42,11 @@ var mRNATrackMap = {};
 // view settings
 var dim = {w: 710, h: 0, // width and higth
   nTracks: 0,
+  nFeatTracks: 0,
   trackh: 20, // height of tracks
   trackMargin: 5, // distance from one track to bar of next track
   barh: 10, // height og the bar
+
 };
 
 var padding = [20,30,20,40]; // top right bottom left
@@ -75,9 +77,6 @@ svg.append("svg:rect")
     .attr("height", dim.h)
     .attr("stroke", stroke)
     .attr("fill", "none");
-
-
-
 
 redraw();
 
@@ -152,12 +151,12 @@ function zoomOut() {
 }
 
 function redraw() {
-// stripes for haplotypes
- // svg.selectAll(".hstripe").remove();
+  // stripes for haplotypes
+
   if (features.SNP) {
   var hs = svg.selectAll(".hstripe")
-      .data(d3.range(geneTracks.length + mRNATracks.length,
-                       haplotypes.length), String)
+      .data(d3.range(dim.nFeatTracks, dim.nTracks), String);
+
   hs.enter().append("svg:rect")
       .attr("class", "hstripe")
       .attr("fill", "lightgrey")
@@ -187,8 +186,8 @@ function redraw() {
   }
 
 
-// mRNA bars -------------------------------
- svg.selectAll(".mRNABar").remove();
+  // mRNA bars -------------------------------
+  svg.selectAll(".mRNABar").remove();
   if (features.mRNA) {
     svg.selectAll(".mRNABar")
         .data(features.mRNA)
@@ -204,7 +203,7 @@ function redraw() {
               } );
   }
 
-// snp tracks --------------------------------
+  // snp tracks --------------------------------
   svg.selectAll("circle").remove();
   if (features.SNP) {
     svg.selectAll("circle")
@@ -214,7 +213,7 @@ function redraw() {
         .attr("r", 3)
         .attr("cx", function(d) {return x(d.start)} )
         .attr("cy", function (d) {return dim.trackh/2
-              + dim.trackh*(d.iHaplotype + geneTracks.length + mRNATracks.length); });
+              + dim.trackh*(d.iHaplotype + dim.nFeatTracks); });
   }
 
 
@@ -303,6 +302,7 @@ function updateData() {
   geneTrackMap = trackMapping(geneTracks);
   mRNATrackMap = trackMapping(mRNATracks);
   dim.nTracks = getnTracks();
+  dim.nFeatTracks = geneTracks.length + mRNATracks.length;
   dim.h = dim.nTracks * dim.trackh;
 }
 
@@ -334,7 +334,7 @@ function getFeatures(){
 
 function getStrains() {
   var strains = {};
-  for (var s in features.SNP){
+  for (var s = 0; s < features.SNP.length ; s++){
     var strain = features.SNP[s];
     var name = strain.attributes.Strain.split("=")[1];
     if (!strains[name]) {
@@ -366,8 +366,8 @@ function getHaplotypes() {
 
 function getFlatHaplotypes(){
   var flatHaplotypes = []
-  for (var h in haplotypes) {
-    for (var s in haplotypes[h][0].snps){
+  for (var h = 0; h < haplotypes.length; h++) {
+    for (var s = 0; s < haplotypes[h][0].snps.length; s++){
         var snp = haplotypes[h][0].snps[s];
         snp['iHaplotype'] = parseInt(h);
         flatHaplotypes.push(snp);
@@ -412,7 +412,7 @@ function splitFeatures(featList) {
   }
   for (var f in featList) {
     for (var tr in featTracks) {
-      if (featTracks[tr].lenght == 0) {
+      if (featTracks[tr].length == 0) {
         featTracks[tr].push(featList[f]);
         break;
       } else {

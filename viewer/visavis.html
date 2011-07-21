@@ -1,55 +1,57 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>vis-a-vis</title>
-     <link type="text/css" rel="stylesheet" href="css/visavis.css">
-    <script type="text/javascript" src="./lib/d3.js"></script>
-    <script type="text/javascript" src="./lib/d3.behavior.js"></script>
-    <script type="text/javascript" src="seq.json"></script>
-    <style type="text/css">
-    </style>
-  </head>
-  <body>
+    <head>
+        <title>vis-a-vis</title>
+        <link type="text/css" rel="stylesheet" href="css/visavis.css">
+        <script type="text/javascript"
+            src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+        <script type="text/javascript" src="./lib/d3.js"></script>
+        <script type="text/javascript" src="./lib/d3.behavior.js"></script>
+        <script type="text/javascript" src="seq.json"></script>
+        <style type="text/css">
+        </style>
+    </head>
+    <body>
 
-   <header>
-    <center>
-    <h1>Visualize Allelic Variations</h1>
-    </center>
-    </header>
+        <header>
+        <center>
+            <h1>Visualize Allelic Variations</h1>
+        </center>
+        </header>
 
-    <div>
-      <form id="region" action="javascript:jumpToRegion()">
-        Go to region: </br>
-        <select name="chrom">
-          <option value="Chr1">Chr1</option>
-        </select>
-        <input name="start" type="number" placeholder="start" value="73">
+        <div>
+            <form id="region" action="javascript:jumpToRegion()">
+                Go to region: </br>
+                <select name="chrom">
+                    <option value="Chr1">Chr1</option>
+                </select>
+                <input name="start" type="number" placeholder="start" value="73">
 
-        <input name="end" type="number" placeholder="end" value="1000">
-        <input type="submit" name="go" value="Go">
+                <input name="end" type="number" placeholder="end" value="1000">
+                <input type="submit" name="go" value="Go">
+                </br>
+                or search for feature:
+                <input id="feature" type="search">
+                with flanks
+                <input name"flank" type"number" value="100">
+                <input name="get" type="submit" value="Get">
+            </form>
+        </div>
         </br>
-        or search for feature:
-        <input id="feature" type="search">
-        with flanks
-        <input name"flank" type"number" value="100">
-        <input name="get" type="submit" value="Get">
-      </form>
-    </div>
-  </br>
-  </br>
+        </br>
 
-    <center>
-      <div id="controls">
-        <button id="left" class="first" onclick="moveLeft()">&#8636</button>
-        <button id="zoomin" onclick="zoomIn()">+</button>
-        <button id="zoomout" onclick="zoomOut()">-</button>
-        <button id="right" class="last" onclick="moveRight()">&#8640</button>
-      </div>
-    </center>
+        <center>
+            <div id="controls">
+                <button id="left" class="first" onclick="moveLeft()">&#8636</button>
+                <button id="zoomin" onclick="zoomIn()">+</button>
+                <button id="zoomout" onclick="zoomOut()">-</button>
+                <button id="right" class="last" onclick="moveRight()">&#8640</button>
+            </div>
+        </center>
 
-    <div id="chart"></div>
-    <script type="text/javascript" src="visavis.js"></script>
+        <div id="chart"></div>
+        <script type="text/javascript" src="visavis.js"></script>
 
-  </body>
+    </body>
 </html>
 

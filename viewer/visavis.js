@@ -1,4 +1,4 @@
-
+    
 // translation for vertical bars
 var tx = function(d) { return "translate(" + x(d) + ", 0)";};
 
@@ -185,7 +185,6 @@ function redraw() {
               } );
   }
 
-
   // mRNA bars -------------------------------
   svg.selectAll(".mRNABar").remove();
   if (features.mRNA) {
@@ -297,8 +296,12 @@ function updateData() {
   strains = getStrains();
   haplotypes = getHaplotypes();
   flatHaplotypes = getFlatHaplotypes();
-  geneTracks = splitFeatures(features.gene);
-  mRNATracks = splitFeatures(features.mRNA);
+  if ( !(features.gene === undefined) ) {
+   geneTracks = splitFeatures(features.gene);
+  }
+  if ( !(features.mRNA === undefined) ) {
+    mRNATracks = splitFeatures(features.mRNA);
+  }
   geneTrackMap = trackMapping(geneTracks);
   mRNATrackMap = trackMapping(mRNATracks);
   dim.nTracks = getnTracks();
@@ -333,18 +336,20 @@ function getFeatures(){
 }
 
 function getStrains() {
-  var strains = {};
-  for (var s = 0; s < features.SNP.length ; s++){
-    var strain = features.SNP[s];
-    var name = strain.attributes.Strain.split("=")[1];
-    if (!strains[name]) {
-      strains[name] = {'seq': [], 'snps': []};
+    var strains = {};
+    if (features.SNP !== undefined) {
+        for (var s = 0; s < features.SNP.length ; s++){
+            var strain = features.SNP[s];
+            var name = strain.attributes.Strain.split("=")[1];
+            if (!strains[name]) {
+                strains[name] = {'seq': [], 'snps': []};
+            }
+            var base = strain.attributes.Change.split(":")[1];
+            strains[name].seq[strain.start] = base;
+            strains[name].snps.push(strain);
+        }
     }
-    var base = strain.attributes.Change.split(":")[1];
-    strains[name].seq[strain.start] = base;
-    strains[name].snps.push(strain);
-  }
-  return strains;
+    return strains;
 }
 
 function getHaplotypes() {
@@ -407,17 +412,17 @@ function overlapping(feat1, feat2) {
 function splitFeatures(featList) {
   // first make an array of arrays (one array per feature in the list)
   var featTracks = [];
-  for (var f in featList) {
-  featTracks.push([]);
+  for (var f = 0; f < featList.length; f++) {
+    featTracks.push([]);
   }
-  for (var f in featList) {
-    for (var tr in featTracks) {
+  for (var f = 0; f < featList.length; f++) {
+    for (var tr = 0; tr < featTracks.length; tr++) {
       if (featTracks[tr].length == 0) {
         featTracks[tr].push(featList[f]);
         break;
       } else {
         var overlap = false;
-        for (var trel in featTracks[tr]) {
+        for (var trel = 0; trel < featTracks[tr].length; trel++) {
           if ( overlapping(featList[f], featTracks[tr][trel]) ) {
             overlap = true;
             break;
@@ -432,15 +437,15 @@ function splitFeatures(featList) {
       }
     }
   }
-  // now copy nonempty elements to new array
-  var newTracks = [];
-  for (var tr in featTracks) {
-    if ( featTracks[tr].length > 0 ) {
-      newTracks.push(featTracks[tr]);
+  // delete empty elements in the array
+  for (var tr = 0; tr < featTracks.length; tr++ ) {
+    if ( featTracks[tr].length === 0 ) {
+      featTracks.splice(tr,1);
+      tr--;
     }
   }
 
-  return newTracks;
+  return featTracks;
 }
 
 function trackMapping(featureTracks){

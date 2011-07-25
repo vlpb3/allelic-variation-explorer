@@ -1,4 +1,4 @@
-    
+
 // translation for vertical bars
 var tx = function(d) { return "translate(" + x(d) + ", 0)";};
 
@@ -203,18 +203,74 @@ function redraw() {
   }
 
   // snp tracks --------------------------------
-  svg.selectAll("circle").remove();
+  //svg.selectAll("circle").remove();
   if (features.SNP) {
-    svg.selectAll("circle")
-        .data(flatHaplotypes)
-      .enter().append("svg:circle")
+    var snp = svg.selectAll(".snp")
+        .data(flatHaplotypes);
+    snp.attr("cx", function(d) {return x(d.start)})
+        .attr("fill", sc)
+        .attr("cy", function (d) {return dim.trackh/2
+        + dim.trackh*(d.iHaplotype + dim.nFeatTracks);
+        });
+
+      snp.enter().append("svg:circle")
+        .attr("class", "snp")
         .attr("fill", sc)
         .attr("r", 3)
         .attr("cx", function(d) {return x(d.start)} )
         .attr("cy", function (d) {return dim.trackh/2
               + dim.trackh*(d.iHaplotype + dim.nFeatTracks); });
+        snp.exit().remove();
   }
 
+ 
+  // dialogs for snps
+    $('.snp_tip').remove();
+    $('.snp').hover(
+        function(e) {
+            var snp_id = "x" + d3.round($(this).attr('cx')) + "y" + d3.round($(this).attr('cy'));
+            if ($('#' + snp_id).length ===0) {
+                 var $dialog = $('<div></div>')
+                    .attr('id', snp_id)
+                    .attr('class', 'snp_tip')
+                    .html('my pos is' + snp_id)
+                    .dialog({
+                         autoOpen: false,
+                        tiltle: 'Basic Dialog',
+                        draggable: true,
+                        resizable: true,
+                        
+                    });
+            }
+            $('#' + snp_id).dialog({position: [e.pageX + 20, e.pageY - 10]});
+            $('#'+ snp_id).dialog('open');   
+            
+            return false;
+        },
+        function(e) {
+            var snp_id = "x" + d3.round($(this).attr('cx')) + "y" + d3.round($(this).attr('cy'));
+              $('#' + snp_id).dialog('close');
+              return false;
+      }
+  );
+
+  $('.snp').click(
+      function(e) {
+          var $dialog = $('<div></div>')
+          .html('this was clicked one')
+          .dialog({
+              autoOpen: false,
+              tiltle: 'Basic Dialog',
+              draggable: true,
+              resizable: true,
+              close: $(this).dialog('close')
+          });
+            $dialog.dialog({position: [e.pageX + 20, e.pageY - 10]});
+            $dialog.dialog('open')
+            e.preventDeafault();
+          return false;
+      }
+  )
 
 // veritcal bars -----------------------------
   var fx = x.tickFormat(10);
@@ -458,4 +514,9 @@ function trackMapping(featureTracks){
   }
   return trackMap;
 }
+
+$(document).ready(function(){
+
+
+       });
 

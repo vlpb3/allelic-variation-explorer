@@ -22,3 +22,8 @@ rect {
   opacity: 0.2;
 }
 
+.ui-dialog {
+    opacity: 0.74;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+}

@@ -244,7 +244,6 @@ function redraw() {
             }
             $('#' + snp_id).dialog({position: [e.pageX + 20, e.pageY - 10]});
             $('#'+ snp_id).dialog('open');   
-            
             return false;
         },
         function(e) {
@@ -254,7 +253,8 @@ function redraw() {
       }
   );
 
-  $('.snp').click(
+  $('.snp').unbind('click').bind('click',   // fix thiss by putting averything
+                                            //to $(document).ready(function(){}) 
       function(e) {
           var $dialog = $('<div></div>')
           .html('this was clicked one')
@@ -263,11 +263,11 @@ function redraw() {
               tiltle: 'Basic Dialog',
               draggable: true,
               resizable: true,
-              close: $(this).dialog('close')
+              close: $(this).dialog('remove')
           });
             $dialog.dialog({position: [e.pageX + 20, e.pageY - 10]});
-            $dialog.dialog('open')
-            e.preventDeafault();
+            $dialog.dialog('open');
+            console.log('dialog');
           return false;
       }
   )

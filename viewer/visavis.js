@@ -263,11 +263,10 @@ function redraw() {
               tiltle: 'Basic Dialog',
               draggable: true,
               resizable: true,
-              close: $(this).dialog('remove')
+              close: $(this).find('ui-dialog').remove()
           });
             $dialog.dialog({position: [e.pageX + 20, e.pageY - 10]});
             $dialog.dialog('open');
-            console.log('dialog');
           return false;
       }
   )

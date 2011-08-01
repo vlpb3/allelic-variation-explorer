@@ -2,6 +2,35 @@
 
 import sys
 
+# this script lads data from gff to json
+# loads data from file specified via commandline
+# writes data in separate json objects:
+
+# position to ID mapping
+loc2ID = {'pos': 'ID'}
+
+# ID to position mapping (used in got to feature)
+ID2loc = {'ID': 'pos'}
+
+# structure storing loci data (gene, mRNA, protein, UTR, exon, cds)
+loci = {'loci-ID': 
+        'five_prime_UTR': {f},
+        'mRNA':{ 
+            'mRNA-ID': {
+                'five_prime_UTR' : {f},
+                'CDS': [{f}, {f}, {f}, {f}],
+                'exon': [{f}, {f}, {f}, {f}],
+                'intron': [{'start': 1, 'end': 10}],
+                'three_prime_UTR': [{f}, {f}]
+            } 
+        }
+        
+       }
+
+# SNP data
+SNPs = {}
+
+
 
 fin = open(sys.argv[1])
 #features = {}

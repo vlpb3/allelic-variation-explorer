@@ -1,4 +1,5 @@
 syntax: glob
 # vim temp files
 *.swp
-
+*.DS_Store
+data/**

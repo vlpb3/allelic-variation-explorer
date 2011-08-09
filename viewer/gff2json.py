@@ -49,10 +49,10 @@ f = {
 
 # initialize variables
 data = {}
-data['loc2ID'] = []
-data['ID2f'] = {}
+data['loc2ID'] = {'genes': {}, 'SNPs': {'a': 2}}
+#data['ID2f'] = {}
 data['genes'] = {}
-data['SNPs'] = {}
+#data['SNPs'] = {}
    
 # iterate over provided files and get data:
 for fname in sys.argv[1:]:
@@ -86,7 +86,18 @@ for fname in sys.argv[1:]:
         if ftype in  ['gene', 'transposable_element_gene']:
             gene = f['attributes']['ID']
             data['genes'][gene] = {}
-    
+
+            # add loc2ID entry
+            chrom = f['seqid']
+            start = int(f['start'])
+            end = int(f['end'])
+            for i in range(start, end + 1):
+                pos = str(i)
+                try: data['loc2ID']['genes'][chrom][pos].append(gene)
+                except:
+                    try:  data['loc2ID']['genes'][chrom][pos] = [gene]
+                    except: data['loc2ID']['genes'][chrom] = {pos: [gene]}
+                    
         # unfortunately features vary a lot, so each must be parsed separatelly
         if ftype == 'mRNA':
             transcript = f['attributes']['ID']
@@ -121,6 +132,8 @@ for fname in sys.argv[1:]:
             except:
                 try: data['genes'][gene][transcript]['exon'] = [f]
                 except: data['genes'][gene][transcript] = {'exon': [f]}
+        
+        
 
     fin.close() 
 
@@ -129,17 +142,17 @@ for fname in sys.argv[1:]:
 # but usefull for rendering introns joining exons).
 
 for gene in data['genes']:
-    for transcript in gene:
-        transcript['intron'] = []
-        exon = transcript['exon']
-        for idx in range(len(exon) - 1):
+    for transcript in data['genes'][gene]:
+        data['genes'][gene][transcript]['intron'] = []
+        exon = data['genes'][gene][transcript]['exon']
+        for idx in range(len(exon) - 1):    
             intron = {}
-            intron['start'] = exon[idx][end]
-            intron['end'] = exon[idx + 1][start]
-            transcript['intron'].append(intron)
+            intron['start'] = exon[idx]['end']
+            intron['end'] = exon[idx + 1]['start']
+            data['genes'][gene][transcript]['intron'].append(intron)
             
 jsonstring = json.dumps(data, sort_keys=True, indent=4)
 fout = open('annot.json', 'w')
-fout.write(jsonstring)
+fout.write("data = " + jsonstring)
 fout.close()
 

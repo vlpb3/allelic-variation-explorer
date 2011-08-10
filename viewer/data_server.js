@@ -1,32 +1,25 @@
 var mongoose = require('mongoose');
-var db = mongoose.createConnection('mongodb://localhost/db');
 
-var Schema = mongoose.Schema;
-var ObjectId = Schema.ObjectId;
+Schema = mongoose.Schema;
 
-var Feature = new Schema(
-	{
-		seqid: String,
-		source: String,
-		type: {type: String},
-		start: Number,
-		end: Number,
-		score: Number,
-		strand: String,
-		phase: String,
-		attributes: {
-			ID: String,
-			Name: String,
-			Alias: String,
-			Parent: String,
-			Target: String,
-			Gap: String,
-			Dervies_from: String,
-			Note: String,
-			Dbxref: String,
-			Ontology_term: String,
-		},
-		loc: Array,
-	})
+var FeatureSchema = new Schema({
+	name: String,
+	start: {},
+	end: {},
+}).index({start: '2d'}).index({end: '2d'});
 
-var Feature = mongoose.model("Feature");
+mongoose.connect('mongodb://localhost/mydb');
+
+mongoose.model('Feature', FeatureSchema);
+
+var Feature = mongoose.model('Feature');
+
+var feature = new Feature();
+feature.name = "snp6";
+feature.start = [1, 100];
+feature.end = [1, 150];
+feature.save(function(err){
+	if (err){throw err;}
+	console.log('saved');
+	// mongoose.disconnect()
+});

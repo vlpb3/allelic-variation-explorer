@@ -1,3 +1,7 @@
+var gff2mongo = function(){
+	
+};
+
 var mongoose = require('mongoose');
 
 Schema = mongoose.Schema;

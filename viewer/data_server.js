@@ -4,12 +4,12 @@ var gff2mongo = function(){
 
 var mongoose = require('mongoose');
 
-Schema = mongoose.Schema;
+var Schema = mongoose.Schema;
 
 var FeatureSchema = new Schema({
 	name: String,
 	start: {},
-	end: {},
+	end: {}
 }).index({start: '2d'}).index({end: '2d'});
 
 mongoose.connect('mongodb://localhost/mydb');
@@ -25,5 +25,5 @@ feature.end = [1, 150];
 feature.save(function(err){
 	if (err){throw err;}
 	console.log('saved');
-	// mongoose.disconnect()
+	//mongoose.disconnect();
 });

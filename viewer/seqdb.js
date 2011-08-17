@@ -1,10 +1,10 @@
 var fs = require('fs');
 
-var models = require('./model');
+var models = require('./models');
 
 var Feature = models.Feature;
 var MRNA = models.MRNA;
-var Loci = models.Loci;
+var Locus = models.Locus;
 
 var home = process.cwd() + '/data/';
 var MAX_LEN = 0;
@@ -46,19 +46,40 @@ function addFeatures(data, callback) {
 			if (farr[2] !== 'chromosome') {
 				var len = end - start;
 				MAX_LEN = len > MAX_LEN ? len : MAX_LEN;
-				console.log('maximum length: ' + MAX_LEN);
 			}
 		}
 
 		if (--left === 0) {
-			console.log('added data');
 			callback(null);
 			};
 	}); 
 }
 
-function constructLoci(){
-	
+function getAllGenes(){
+	Feature.find({type: 'gene'}, addGenesToLoci);
+}
+
+function addGenesToLoci(err, genes){
+	if (err) {throw err;};
+	console.log('found genes: ' + genes);
+	var genesLeft = genes.length;
+	genes.forEach(function(iGene){
+		var locus = new Locus;
+		locus.start = iGene.start;
+		locus.end = iGene.end;
+		locus.gene = iGene;
+		locus.mRNAs = [];
+		locus.save(function(err){
+			if (err) {
+				console.log('there was an error while putting genes into the database');
+				}
+		});
+		if (--genesLeft === 0) {console.log('all genes added to loci');}
+	});
+}
+
+function createLoci(){
+	getAllGenes();
 }
 
 function getGffFiles(files, callback){
@@ -127,8 +148,7 @@ function getFromRegion(model, type, loc) {
 		type: type
 		},
 		function(err, doc) {
-			if (err) {console.log(err);};
-			console.log(doc);
+			if (err) { throw err;};
 		});
 }
 
@@ -144,18 +164,24 @@ function testdb1() {
 
 function testdb2() {
 	reloaddb(function(err) {
-		console.log('run callbackdb');
 	});
 } 
 
 function testdb3() {
 	drop(Feature);
+	drop(Locus);
+	drop(MRNA);
 }
 
 function testdb4() {
 	getFromRegion(Feature, 'protein', {chrom: 1, start: 100, end: 3800});
 }
 
+function testdb5() {
+	createLoci();
+}
+
 testdb3();
 testdb2();
 testdb4();
+testdb5();

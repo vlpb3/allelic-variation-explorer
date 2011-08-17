@@ -1,30 +1,14 @@
 var fs = require('fs');
 
+var models = require('./model');
+
+var Feature = models.Feature;
+var MRNA = models.MRNA;
+var Loci = models.Loci;
+
 var home = process.cwd() + '/data/';
 var MAX_LEN = 0;
 var SCALE = 1000000;
-
-var mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/seqdb');
-
-var Schema = mongoose.Schema;
-
-var FeatureSchema = new Schema({
-	seqid: String,
-	source: String,
-	type: {type: String},
-	start: {},
-	end: {},
-	score: String,
-	strand: {type: String},
-	phase: {type: String},
-	attributes: {}
-}).index({start: '2d'})
-	.index({end: '2d'});
-
-mongoose.model('Feature', FeatureSchema);
-
-var Feature = mongoose.model('Feature');
 
 function addFeatures(data, callback) {
 	var flines = data.split('\n');
@@ -44,7 +28,6 @@ function addFeatures(data, callback) {
 			feature.score = farr[5];
 			feature.strand = farr[6];
 			feature.phase = farr[7];
-			console.log(farr);
 			var attrarr = farr[8].split(';');
 			feature.attributes = {};
 			var i;
@@ -72,6 +55,10 @@ function addFeatures(data, callback) {
 			callback(null);
 			};
 	}); 
+}
+
+function constructLoci(){
+	
 }
 
 function getGffFiles(files, callback){
@@ -123,12 +110,12 @@ function reloaddb(callback){
 }
 
 function drop(model) {
-	var model = mongoose.model(model);
+	//var model = mongoose.model(model);
 	model.collection.drop();
 }
 // loc should be {chrom: ,start: ,stop: }
 function getFromRegion(model, type, loc) {
-	var model = mongoose.model(model);
+	// var model = mongoose.model(model);
 	var start =  loc.start / SCALE - MAX_LEN;
 	var end = loc.end / SCALE + MAX_LEN;
 	var box = [[loc.chrom - 0.1, start],
@@ -162,11 +149,13 @@ function testdb2() {
 } 
 
 function testdb3() {
-	drop('Feature');
+	drop(Feature);
 }
 
 function testdb4() {
-	getFromRegion('Feature', 'CDS', {chrom: 1, start: 100, end: 3800});
+	getFromRegion(Feature, 'protein', {chrom: 1, start: 100, end: 3800});
 }
 
+testdb3();
+testdb2();
 testdb4();

@@ -56,47 +56,47 @@ function addFeatures(data, callback) {
 	}); 
 }
 
-function getGenesToLoci(){
-	Feature.find({type: 'gene'}, function(err, genes) {
-		if (err) {throw err;};
-		var genesLeft = genes.length;
-		genes.forEach(function(iGene){
-			var locus = new Locus;
-			locus.start = iGene.start;
-			locus.end = iGene.end;
-			locus.gene = iGene;
-			locus.mRNAs = [];
-			locus.save(function(err){
-				if (err) { throw err;};
-			});
-			if (--genesLeft === 0) {};
-		});
-	});
-}
-
 function getLoci(){
-
+ Feature.find({type: 'gene'}, processGenes(err, genes));
 }
 
-function getGenes(){
-		Feature.find({type: 'gene'}, function(err, genes){
-		if (err) {throw err;};
-		genes.forEach(function(iGene){
-			var locus = new Locus;
-			locus.gene = iGene;
-			locus.start = iGene.start;
-			locus.end = iGene.end;
-			locus.save(function(err) {
-				if (err) {
-					throw err;
-				};
-			});
-		});
+function processGenes(err, genes) {
+	genes.forEach(function(gene){
+		var locus = new Locus;
+		locus.gene = gene;
+		locus.start = gene.start;
+		locus.end = gene.end;
+		var name = gene.Name;
+		Feature.find({type: mRNA, "attributes.Parent": name}, processRNAs(err, mRNAs, locus));
+	});
+	
+}
+
+function processRNAs(err, mRNAs, locus){
+	locus.geneModels = [];
+	mRNAs.forEach(function(mRNA){
+		geneModel = new GeneModel;
+		locus.geneModels.push(fillModel(geneModel));
 	});
 }
 
-function getGeneModels(geneName) {
+function fillInModel(geneModel, callback){
+	geneModel.mRNA  = mRNA;
+	var name = mRNA.Name;
 	
+	Feature.find({type: "protein", "attributes.Derives_from": name},
+		function(err, protein){
+			if (err) {throw err;};
+			geneModel.protein = protein;
+		});
+		
+	Feature.find({type: "five_prime_UTR", "attributes.Parent": {$regex: name}},
+		function(err, fivePrimeUTRs) {
+			if (err) {throw err;};
+			geneModel.fivePrimeUTRs = fivePrimeUTRs;
+		});
+		
+	return(geneModel);
 }
 
 function getGffFiles(files, callback){

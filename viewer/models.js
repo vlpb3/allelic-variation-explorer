@@ -20,11 +20,11 @@ mongoose.model('Feature', FeatureSchema);
 
 
 var mRNASchema = new Schema({
-	protein: {},
-	fivePrimeUTR: {},
+	protein: [FeatureSchema],
+	fivePrimeUTR: [FeatureSchema],
 	CDSs: [FeatureSchema],
 	exons: [FeatureSchema],
-	threePrimeUTR: {}
+	threePrimeUTR: [FeatureSchema]
 });
 
 mongoose.model('MRNA', mRNASchema);
@@ -34,7 +34,7 @@ var LocusSchema = new Schema({
 	start: {},
 	end: {},
 	gene: {},
-	mRNAs: [FeatureSchema]
+	mRNAs: [mRNASchema]
 }).index({start: '2d'})
 	.index({end: '2d'});
 

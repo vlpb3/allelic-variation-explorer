@@ -1,4 +1,5 @@
 var fs = require('fs');
+var Step = require('step');
 
 var models = require('./models');
 
@@ -55,31 +56,36 @@ function addFeatures(data, callback) {
 	}); 
 }
 
-function getAllGenes(){
-	Feature.find({type: 'gene'}, addGenesToLoci);
+function getGenesToLoci(){
+	Feature.find({type: 'gene'}, function(err, genes) {
+		if (err) {throw err;};
+		var genesLeft = genes.length;
+		genes.forEach(function(iGene){
+			var locus = new Locus;
+			locus.start = iGene.start;
+			locus.end = iGene.end;
+			locus.gene = iGene;
+			locus.mRNAs = [];
+			locus.save(function(err){
+				if (err) { throw err;};
+			});
+			if (--genesLeft === 0) {};
+		});
+	});
 }
 
-function addGenesToLoci(err, genes){
-	if (err) {throw err;};
-	console.log('found genes: ' + genes);
-	var genesLeft = genes.length;
-	genes.forEach(function(iGene){
-		var locus = new Locus;
-		locus.start = iGene.start;
-		locus.end = iGene.end;
-		locus.gene = iGene;
-		locus.mRNAs = [];
-		locus.save(function(err){
-			if (err) {
-				console.log('there was an error while putting genes into the database');
-				}
+function getmRNAToLoci(){
+	Feature.find({type: 'mRNA'}, function(err, mRNAs){
+		if (err) {throw err;};
+		mRNAs.forEach(function(imRNA) {
+			var parent = imRNA.attributes.Parent;
+			Features.update({name: parent}, {$set: {mRNA: imRNA}});
 		});
-		if (--genesLeft === 0) {console.log('all genes added to loci');}
 	});
 }
 
 function createLoci(){
-	getAllGenes();
+	getGenesToLoci();
 }
 
 function getGffFiles(files, callback){

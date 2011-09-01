@@ -4,7 +4,7 @@ var Step = require('step');
 var models = require('./models');
 
 var Feature = models.Feature;
-var MRNA = models.MRNA;
+var GeneModel = models.GeneModel;
 var Locus = models.Locus;
 
 var home = process.cwd() + '/data/';
@@ -74,18 +74,29 @@ function getGenesToLoci(){
 	});
 }
 
-function getmRNAToLoci(){
-	Feature.find({type: 'mRNA'}, function(err, mRNAs){
+function getLoci(){
+
+}
+
+function getGenes(){
+		Feature.find({type: 'gene'}, function(err, genes){
 		if (err) {throw err;};
-		mRNAs.forEach(function(imRNA) {
-			var parent = imRNA.attributes.Parent;
-			Features.update({name: parent}, {$set: {mRNA: imRNA}});
+		genes.forEach(function(iGene){
+			var locus = new Locus;
+			locus.gene = iGene;
+			locus.start = iGene.start;
+			locus.end = iGene.end;
+			locus.save(function(err) {
+				if (err) {
+					throw err;
+				};
+			});
 		});
 	});
 }
 
-function createLoci(){
-	getGenesToLoci();
+function getGeneModels(geneName) {
+	
 }
 
 function getGffFiles(files, callback){
@@ -176,15 +187,15 @@ function testdb2() {
 function testdb3() {
 	drop(Feature);
 	drop(Locus);
-	drop(MRNA);
+	drop(GeneModel);
 }
 
 function testdb4() {
 	getFromRegion(Feature, 'protein', {chrom: 1, start: 100, end: 3800});
 }
 
-function testdb5() {
-	createLoci();
+function testdb5() {	
+	getLoci();
 }
 
 testdb3();

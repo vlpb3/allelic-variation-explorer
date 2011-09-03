@@ -20,7 +20,7 @@ mongoose.model('Feature', FeatureSchema);
 
 
 var GeneModelSchema = new Schema({
-	mRNA: [FeatureSchema],
+	mRNA: {},
 	protein: [FeatureSchema],
 	fivePrimeUTRs: [FeatureSchema],
 	CDSs: [FeatureSchema],

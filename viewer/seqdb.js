@@ -1,5 +1,6 @@
 var fs = require('fs');
 var Step = require('step');
+var async = require('async');
 
 var models = require('./models');
 
@@ -56,47 +57,137 @@ function addFeatures(data, callback) {
 	}); 
 }
 
+function makeLocusDd(){
+	async.series([
+		function(callback) {
+			Feature.find({type: 'gene'}, function(err, genes) {
+				if (err) callback(err);
+				var left = genes.length;
+				genes.forEach(function(gene, left) {
+					locus = new Locus;
+					locus.gene = gene;
+					locus.save(function(err) {
+						if (err) callback(err);
+						if(--left === 0) {
+						callback(null, 'all loci created and saved');
+						}
+					});
+				});				
+			});
+		},
+		function(callback) {
+			Feature.find({type: 'mRNA'}, function(err, mRNAs) {
+				if (err) callback(err);
+				var left = mRNAs.length;
+				mRNAs.forEach(function(mRNA) {
+					var parent = mRNA.attributes.Parent;
+					var geneModel = new GeneModel;
+					geneModel.mRNA = mRNA;
+					Locus.update({'gene.attributes.Name': parent}, {$push: {geneModels: geneModel}},
+					function(err) {
+						if (err) callback(err);
+						if(--left === 0) {
+							callback(null, "all modells created and saved");
+						};
+					});
+				});
+			});
+		}
+		],
+		function(err, results){
+			if (err) throw err;
+			console.log(results);
+		}
+	);
+}
+
 function getLoci(){
- Feature.find({type: 'gene'}, processGenes(err, genes));
 }
 
 function processGenes(err, genes) {
+	if (err) {throw err;};
 	genes.forEach(function(gene){
 		var locus = new Locus;
 		locus.gene = gene;
 		locus.start = gene.start;
 		locus.end = gene.end;
-		var name = gene.Name;
-		Feature.find({type: mRNA, "attributes.Parent": name}, processRNAs(err, mRNAs, locus));
+		console.log(gene.attributes.Name);
+		var name = gene.attributes.Name;
+	
+		Feature.find({type: "mRNA", "attributes.Parent": name},
+									function(err, mRNAs) {
+										if (err) {throw err;};
+										console.log('my RNAs with name : '+ name + ' are: ' + mRNAs);
+										processRNAs(mRNAs, locus, function(){
+											locus.save(function(err) {
+												if(err) {throw err;};
+											});
+										});
+									});
 	});
 	
 }
 
-function processRNAs(err, mRNAs, locus){
+function processRNAs(mRNAs, locus, callback){
 	locus.geneModels = [];
+
+	var left = mRNAs.length;
+	console.log('there are: ' + left + ' mRNAs');
 	mRNAs.forEach(function(mRNA){
 		geneModel = new GeneModel;
-		locus.geneModels.push(fillModel(geneModel));
+		fillInModel(mRNA, geneModel, function (gm){
+			console.log("protein in callback: " + geneModel.protein);
+			locus.geneModels.push(gm);
+		});
+		if (--left === 0) {
+			callback();
+		}
 	});
+
 }
 
-function fillInModel(geneModel, callback){
-	geneModel.mRNA  = mRNA;
-	var name = mRNA.Name;
+function fillInModel(mRNA, geneModel, pushModel){
 	
-	Feature.find({type: "protein", "attributes.Derives_from": name},
-		function(err, protein){
+	// geneModel.mRNA = mRNA;
+	var name = mRNA.attributes.Name;
+	
+	async.parallel({
+		protein: function(callback){
+			Feature.find({type: "protein", "attributes.Derives_from": name}, callback);
+		},
+		fivePrimeUTRs: function(callback) {
+			Feature.find({type: "five_prime_UTR", "attributes.Parent": name}, callback);			
+		}
+	},
+	function(err, results) {
+		console.log("in clbkfunc: " + geneModel);
+		console.log("protein: " + results.protein);
+		console.log("utr: " + results.fivePrimeUTRs);
+		geneModel.protein.push(results.protein);
+		geneModel.mRNA = mRNA;
+		pm();
+	});
+	function pm (){
+		pushModel(geneModel);
+	}
+}
+
+function putProtein(geneModel, parentName) {
+	Feature.find({type: "protein", "attributes.Derives_from": parentName},
+		function(err, proteins) {
 			if (err) {throw err;};
-			geneModel.protein = protein;
+			geneModel.protein = proteins[0];
 		});
-		
-	Feature.find({type: "five_prime_UTR", "attributes.Parent": {$regex: name}},
-		function(err, fivePrimeUTRs) {
-			if (err) {throw err;};
-			geneModel.fivePrimeUTRs = fivePrimeUTRs;
+}
+
+function putFivePrimeUTRs(geneModel, parentName) {
+	Feature.find({type: "five_prime_UTR", "attributes.Parent": parentName},
+		function(err, utrs) {
+			if(err){throw err;};
+			utrs.forEach(function(utr){
+				geneModel.fivePrimeUTRs.push(utr);
+			});
 		});
-		
-	return(geneModel);
 }
 
 function getGffFiles(files, callback){
@@ -132,14 +223,8 @@ function reloaddb(callback){
 						if (err) {
 							console.log('Could not load data into database:');						
 							console.log(err);
-						} else {
-							console.log('data loaded into database');
 						};
 					});
-					console.log('data in ' + iFile + ' :\n' + data);
-					if (--left === 0) {
-						console.log('finished reading data');
-					};
 				});
 			});
 		});
@@ -195,7 +280,8 @@ function testdb4() {
 }
 
 function testdb5() {	
-	getLoci();
+	makeLocusDd();
+	console.log('in testdb5');
 }
 
 testdb3();

@@ -8,7 +8,7 @@ var Feature = models.Feature;
 var GeneModel = models.GeneModel;
 var Locus = models.Locus;
 
-var home = process.cwd() + '/data/';
+var DATA_DIR = process.cwd() + '/data/';
 var MAX_LEN = 0;
 var SCALE = 1000000;
 
@@ -39,7 +39,6 @@ function addFeatures(data, callback) {
 				var val = attr[1];
 				feature.attributes[key] = val;
 			}
-			// console.log(feature);
             if (farr[2] !== 'chromosome') {
 				var len = end - start;
 				MAX_LEN = len > MAX_LEN ? len : MAX_LEN;
@@ -47,258 +46,208 @@ function addFeatures(data, callback) {
 
 			feature.save(function(err){
 				if (err) callback(err);
-                if (--left === 0) callback(null);
-            });
+				if (--left === 0) callback(null, 'Features deployed in db.');
+			});
 			
-		} else --left;
-
+		} else {
+			if (--left === 0) callback(null, 'Features deployed in db.');
+		};
 	}); 
 }
 
-function makeLocusDb(){
+function makeLocusDb(callback){
 	async.series([
-		function(callback) {
-			console.log('getting genes')
-            Feature.find({type: 'gene'}, function(err, genes) {
-				if (err) callback(err);
-                console.log('got genes');
+		function(seriesCallback) {
+      Feature.find({type: 'gene'}, function(err, genes) {
+				if (err) return seriesCallback(err);
 				var left = genes.length;
-				genes.forEach(function(gene, left) {
+				genes.forEach(function(gene) {
 					locus = new Locus;
 					locus.gene = gene;
-                    locus.start = gene.start;
-                    locus.end = gene.end;
+          locus.start = gene.start;
+          locus.end = gene.end;
 					locus.save(function(err) {
-						if (err) callback(err);
+						if (err) return seriesCallback(err);
 						if(--left === 0) {
-						callback(null, 'all loci created and saved');
-						}
+							return seriesCallback(null, 'all loci created and saved');
+						};
 					});
 				});				
 			});
 		},
-        function(callback) {
-                console.log('getting mRNAs');
-                Feature.find({
-                type: 'mRNA'
-                }, function(err, mRNAs){
-                    console.log('got mRNAs');
-                    if (err) return callback(err);
-                    var left = mRNAs.length;
-                    mRNAs.forEach(function(mRNA){
-                        var mRNAparent = mRNA.attributes.Parent;
-                        var mRNAname = mRNA.attributes.Name;
-                        async.parallel({
-                            proteins: function(parallelCallback) {
-                                Feature.find({
-                                type: 'protein',
-                                "attributes.Derives_from": mRNAname 
-                                }, function(err, proteins){
-                                    if(err) return parallelCallback(err);
-                                    return parallelCallback(null, proteins);
-                                });    
-                            },
-                            fivePrimeUTRs: function(parallelCallback) {
-                                Feature.find({
-                                    type: 'five_prime_UTR',
-                                    'attributes.Parent': mRNAname
-                                }, function(err, fivePrimeUTRs) {
-                                   if(err) return parallelCallback(err);
-                                   return parallelCallback(null, fivePrimeUTRs);
-                                });
-                            },
-                            CDSs: function(parallelCallback) {
-                                Feature.find({
-                                    type: 'CDS',
-                                    'attributes.Parent': {$regex: mRNAname}
-                                }, function(err, CDSs) {
-                                    if(err) return parallelCallback(err);
-                                    return parallelCallback(null, CDSs);
-                                });
-                            },
-                            exons: function(parallelCallback) {
-                                Feature.find({
-                                    type: 'exon',
-                                    'attributes.Parent': mRNAname
-                                }, function(err, exons) {
-                                    if(err) return parallelCallback(err);
-                                    return parallelCallback(null, exons);
+		function(seriesCallback) {
+		    Feature.find({
+		        type: 'mRNA'
+		    },
+		    function(err, mRNAs) {
+		        if (err) return callback(err);
+		        var left = mRNAs.length;
+		        mRNAs.forEach(function(mRNA) {
+		            var mRNAparent = mRNA.attributes.Parent;
+		            var mRNAname = mRNA.attributes.Name;
+		            async.parallel({
+		                proteins: function(parallelCallback) {
+		                    Feature.find({
+		                        type: 'protein',
+		                        "attributes.Derives_from": mRNAname
+		                    },
+		                    function(err, proteins) {
+		                        if (err) return parallelCallback(err);
+		                        return parallelCallback(null, proteins);
+		                    });
+		                },
+		                fivePrimeUTRs: function(parallelCallback) {
+		                    Feature.find({
+		                        type: 'five_prime_UTR',
+		                        'attributes.Parent': mRNAname
+		                    },
+		                    function(err, fivePrimeUTRs) {
+		                        if (err) return parallelCallback(err);
+		                        return parallelCallback(null, fivePrimeUTRs);
+		                    });
+		                },
+		                CDSs: function(parallelCallback) {
+		                    Feature.find({
+		                        type: 'CDS',
+		                        'attributes.Parent': {
+		                            $regex: mRNAname
+		                        }
+		                    },
+		                    function(err, CDSs) {
+		                        if (err) return parallelCallback(err);
+		                        return parallelCallback(null, CDSs);
+		                    });
+		                },
+		                exons: function(parallelCallback) {
+		                    Feature.find({
+		                        type: 'exon',
+		                        'attributes.Parent': mRNAname
+		                    },
+		                    function(err, exons) {
+		                        if (err) return parallelCallback(err);
+		                        return parallelCallback(null, exons);
 
-                                });
-                            },
-                            threePrimeUTRs: function(parallelCallback) {
-                                Feature.find({
-                                    type: 'three_prime_UTR',
-                                    'attributes.Parent': mRNAname
-                                }, function(err, threePrimeUTRs) {
-                                    if(err) return parallelCallback(err);
-                                    return parallelCallback(null, threePrimeUTRs);
+		                    });
+		                },
+		                threePrimeUTRs: function(parallelCallback) {
+		                    Feature.find({
+		                        type: 'three_prime_UTR',
+		                        'attributes.Parent': mRNAname
+		                    },
+		                    function(err, threePrimeUTRs) {
+		                        if (err) return parallelCallback(err);
+		                        return parallelCallback(null, threePrimeUTRs);
 
-                                });
-                            }
-                        }, function(err, results){
-                            if(err) return parallelCallback(err);
-                            var geneModel = new GeneModel;
-                            geneModel.mRNA = mRNA;
-                            geneModel.protein = results.proteins;
-                            geneModel.fivePrimeUTRs = results.fivePrimeUTRs;
-                            geneModel.CDSs = results.CDSs;
-                            geneModel.exons = results.exons;
-                            geneModel.threePrimeUTRs = results.threePrimeUTRs;
+		                    });
+		                }
+		            },
+		            function(err, results) {
+		                if (err) return parallelCallback(err);
+		                var geneModel = new GeneModel;
+		                geneModel.mRNA = mRNA;
+		                geneModel.protein = results.proteins;
+		                geneModel.fivePrimeUTRs = results.fivePrimeUTRs;
+		                geneModel.CDSs = results.CDSs;
+		                geneModel.exons = results.exons;
+		                geneModel.threePrimeUTRs = results.threePrimeUTRs;
 
-                            Locus.update({
-                                "gene.attributes.Name": mRNAparent
-                            }, {$push: {geneModels: geneModel}}, function(err) {
-                                if(err) return callback(err);
-                                console.log("saved model: " + mRNA.attributes.Name);
-                                if (--left === 0) return (callback(null, 'all mRNAs processed'))
-                            });
-                        });
-                    })
-                });   
-            }   
-	    ],
-		function(err, results){
-			if (err) throw err;
-			console.log(results);
-		}
+		                Locus.update({
+		                    "gene.attributes.Name": mRNAparent
+		                },
+		                {$push: {geneModels: geneModel}
+		                },
+		                function(err) {
+		                    if (err) return seriesCallback(err);
+		                    if (--left === 0) {
+													return seriesCallback(null, 'all mRNAs processed');
+												};
+		                });
+		            });
+		        });
+		    });
+		}   
+	 ],
+	function(err, results){
+		if (err) return callback(err);
+		return callback(null, "Creating loci db finished.");
+	}
 	);
 }
 
-function getLoci(){
-}
-
-function processGenes(err, genes) {
-	if (err) {throw err;};
-	genes.forEach(function(gene){
-		var locus = new Locus;
-		locus.gene = gene;
-		locus.start = gene.start;
-		locus.end = gene.end;
-		console.log(gene.attributes.Name);
-		var name = gene.attributes.Name;
-	
-		Feature.find({type: "mRNA", "attributes.Parent": name},
-									function(err, mRNAs) {
-										if (err) {throw err;};
-										console.log('my RNAs with name : '+ name + ' are: ' + mRNAs);
-										processRNAs(mRNAs, locus, function(){
-											locus.save(function(err) {
-												if(err) {throw err;};
-											});
-										});
-									});
-	});
-	
-}
-
-function processRNAs(mRNAs, locus, callback){
-	locus.geneModels = [];
-
-	var left = mRNAs.length;
-	console.log('there are: ' + left + ' mRNAs');
-	mRNAs.forEach(function(mRNA){
-		geneModel = new GeneModel;
-		fillInModel(mRNA, geneModel, function (gm){
-			console.log("protein in callback: " + geneModel.protein);
-			locus.geneModels.push(gm);
-		});
-		if (--left === 0) {
-			callback();
-		}
-	});
-
-}
-
-function fillInModel(mRNA, geneModel, pushModel){
-	
-	// geneModel.mRNA = mRNA;
-	var name = mRNA.attributes.Name;
-	
-	async.parallel({
-		protein: function(callback){
-			Feature.find({type: "protein", "attributes.Derives_from": name}, callback);
-		},
-		fivePrimeUTRs: function(callback) {
-			Feature.find({type: "five_prime_UTR", "attributes.Parent": name}, callback);			
-		}
-	},
-	function(err, results) {
-		console.log("in clbkfunc: " + geneModel);
-		console.log("protein: " + results.protein);
-		console.log("utr: " + results.fivePrimeUTRs);
-		geneModel.protein.push(results.protein);
-		geneModel.mRNA = mRNA;
-		pm();
-	});
-	function pm (){
-		pushModel(geneModel);
-	}
-}
-
-function putProtein(geneModel, parentName) {
-	Feature.find({type: "protein", "attributes.Derives_from": parentName},
-		function(err, proteins) {
-			if (err) {throw err;};
-			geneModel.protein = proteins[0];
-		});
-}
-
-function putFivePrimeUTRs(geneModel, parentName) {
-	Feature.find({type: "five_prime_UTR", "attributes.Parent": parentName},
-		function(err, utrs) {
-			if(err){throw err;};
-			utrs.forEach(function(utr){
-				geneModel.fivePrimeUTRs.push(utr);
-			});
-		});
-}
-
-function getGffFiles(files, callback){
-	// loop over files and get .gff ones
-	var gffFiles = [];
-	var left = files.length;
-	
-	files.forEach(function(iFile) {
-		
-		if (iFile.slice(-4) === '.gff') {
-			gffFiles.push(iFile);
-		}
-		
-		if (--left === 0 ) {
-			callback(null, gffFiles);
+function getGffFiles(callback){
+	fs.readdir(DATA_DIR, function(err, files) {
+		if (err) return callback(err);
+		var gffFiles = [];
+		var left = files.length;
+		files.forEach(function(iFile) {
+			if (iFile.slice(-4) === '.gff') {
+				gffFiles.push(DATA_DIR + iFile);
 			}
+			if (--left === 0 ) {
+				return callback(null, gffFiles);
+			}
+		});
 	});
 }
 
-function reloaddb(callback){
-	// get a list of all files in data dir
-	fs.readdir(home, function (err, files) {
-			getGffFiles(files, function(err, gffFiles){
-			
+function importGff(callback) {
+	async.waterfall([
+		function(waterfallCallback) {
+			getGffFiles(waterfallCallback);
+		},
+		function(gffFiles, waterfallCallback){
 			var left = gffFiles.length;
-			gffFiles.forEach(function (iFile) {
-				var fpath = home + iFile;
-				fs.readFile(fpath, 'utf-8', function(err, data) {
-					if (err) throw err;
-	                addFeatures(data, function(err) {
-						if (err) {
-							console.log('Could not load data into database:');						
-							throw err;
-						};
-                        console.log('import completed');
-					});
+			var gffData = '';
+			gffFiles.forEach(function(iFile) {
+				fs.readFile(iFile, 'utf8', function (err, data){
+					if (err) return waterfallCallback(err);
+					gffData += data;
+					if (--left === 0) return waterfallCallback(null, gffData);
 				});
 			});
-		});
-	});
-	return callback(null);
+		},
+		function(data, waterfallCallback) {
+			addFeatures(data, waterfallCallback);
+		},
+		function(data, waterfallCallback){
+			makeLocusDb(waterfallCallback);
+		},
+		function(data, waterfallCallback){
+			return callback(null, data);
+		}
+	]);
+}
+
+function reloadDb (callback){
+	async.series([
+		// first delete old data from databse
+		function(seriesCallback){
+			var models = [Feature, Locus, GeneModel];
+			var left = models.length;
+			models.forEach(function(model) {
+				drop(model);
+				if(--left === 0) {
+					return seriesCallback(null, "Old data deleted from db.");
+				};
+			});
+		},
+		// read in gff files and put all the features into db
+		function(seriesCallback) {
+			importGff(seriesCallback);
+		}
+		],
+		function(err, results){
+			if (err) callback(err);
+			return callback(null, results);
+		}
+	);
 }
 
 function drop(model) {
 	//var model = mongoose.model(model);
 	model.collection.drop();
 }
+
 // loc should be {chrom: ,start: ,stop: }
 function getFromRegion(model, type, loc) {
 	// var model = mongoose.model(model);
@@ -327,25 +276,14 @@ function testdb1() {
 	addFeatures(sf);
 }
 
-function testdb2() {
-	reloaddb(function(err) {
-        if(err) throw err;
-	});
-} 
-
-function testdb3() {
-	drop(Feature);
-	drop(Locus);
-	drop(GeneModel);
-}
-
 function testdb4() {
 	getFromRegion(Feature, 'protein', {chrom: 1, start: 100, end: 3800});
 }
 
-function testdb5() {	
-	makeLocusDb();
-	console.log('in testdb5');
-}
 
-testdb5();
+///////////////////////////////////
+
+reloadDb(function(err, results){
+	if (err) throw err;
+	console.log(results);
+});

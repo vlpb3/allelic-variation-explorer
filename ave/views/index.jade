@@ -1,2 +1,25 @@
+!!! html
+
 h1= title
-p Welcome to #{title}
+
+span#settings
+	img(src="/images/Black_Settings_small.png", alt="settings icon")
+
+p Choose 
+	select Chrom
+		option
+			value Chrom1
+		option
+			value Chrom2
+	span \t from: 
+	input(name="start", type="number", placeholder="start", value="73")
+	span \t to: 
+	input(name="end", type="number", placeholder="end", value="1000")
+	
+
+p or go directly to the feature of interest: \n
+	input (id="feature", type="search")
+	span with flanks: \n
+	input(name="flank", type="number", value="100")
+
+div#chart

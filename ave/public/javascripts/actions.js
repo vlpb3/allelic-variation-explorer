@@ -1,29 +1,33 @@
 $(document).ready(function(){
-	var SCALE = 1000000;
-	var loc = {
-		chrom: 1,
-		buff_start: 0,
-		buff_end: 3000,
-		start: 73,
-		end: 1000,
-		old_start: 0,
-		old_end: 0,
-		span: 927,
-		update: function(new_loc) {
-			this.old_start = this.buff_start;
-			this.old_end = this.buff_end;
-			var that = this;
-			var params = Object.keys(new_loc);
-			params.forEach(function(param) {
-				that[param] = new_loc[param];
-			});
-			this.span = this.end - this.start;
-			this.buff_start = (this.start - 2*this.span) >= 0 ? (this.start - 2*this.span) : 0;
-			this.buff_end = this.end + 2*this.span;
-			data.update();
-		}	
-	};
+	
 	var socket = io.connect('http://localhost');
+	
+	var ave = {};
+	ave.bufferSize = 5;
+	ave.start = parseInt($('#start').val(), 10);
+	ave.end = parseInt($('#end').val(), 10);
+	ave.chrom = parseInt($('#chrom').val().split('Chrom')[1], 10);
+	ave.span = ave.end - ave.start;
+	ave.bufferFlankSize = ave.span * (ave.bufferSize-1)/2;
+	
+	ave.bufferDb = {
+		start: ( (ave.start - ave.bufferFlankSize) >= 0 ) ?
+			(ave.start - ave.bufferFlankSize) : 0,
+		end: ave.end + ave.bufferFlankSize,
+		chrom: ave.chrom
+	};
+	ave.updateBufferDb = function() {
+			var region = {};
+			region.start = ave.bufferDb.start;
+			region.end = ave.bufferDb.end;
+			region.chrom = ave.bufferDb.chrom;
+			socket.emit("getData", region);
+	};
+	ave.viewDb = {};
+		
+
+
+	
 	var data =  {
 		buff_loci: [],
 		buff_SNPs: [],
@@ -37,6 +41,9 @@ $(document).ready(function(){
 			else {
 				
 			}
+		},
+		getFirst: function() {
+			//get data at application start
 		},
 		updateData: function(){
 			this.features = [];
@@ -88,17 +95,22 @@ $(document).ready(function(){
 		return Strains;
 	};
 	
+	var getData = function(region, callback){
+		var req_region = region;
+		socket.emit('getData', req_region);
+		socket.on('data', function(region, data){
+		
+		});
+	};
 	
 	// reloading db on settings click
 	$("#settings").click(function() {
 		console.log("settings clicked");
 		socket.emit('reloadDb');
 	});
-	$("#start").change(function() {
-		var start = parseInt($('#start').val(), 10);
-		console.log("start is : " + start);
-		loc.update({start: start});
-		console.log(loc);
+	$("#start").change(function() {	
+		ave.updateBufferDb();
+
 	});
 
 });

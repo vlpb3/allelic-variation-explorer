@@ -50,6 +50,9 @@ io.sockets.on('connection', function(socket) {
 				} );
 		});
 	});
+	socket.on('getData', function(region) {
+		seqdb.getRegion();
+	})
 });
 
 app.listen(3000);

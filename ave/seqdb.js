@@ -11,6 +11,12 @@ var Locus = models.Locus;
 var DATA_DIR = process.cwd() + '/data/';
 var MAX_LEN = 0;
 var SCALE = 1000000;
+var CHROM_LEN = {
+	1: 34.964571,
+	2: 22.037565,
+	3: 25.499034,
+	4: 20.862711,
+	5: 31.270811};
 
 function addFeatures(data, callback) {
 	var flines = data.split('\n');
@@ -265,6 +271,40 @@ function getFromRegion(model, type, loc, callback) {
 			if (err) callback(err);
 			callback(null, doc);
 		});
+}
+
+function getRegion(region, callback){
+	var start = region.start/SCALE;
+	var end = region.end/SCALE;
+	var chrom = region.chrom;
+	var veryEnd = CHROM_LEN[chrom];
+	var box = [[chrom - 0.1, start], [chrom + 0.1, end]];
+	var leftBox = [[chrom - 0.1, 0], [chrom + 0.1, end]];
+	var rightBox = [[chrom - 0.1, start], [chrom + 0.1, veryEnd]];
+	async.parallel({
+		loci: function(paralellCallback){
+			Locus.find({
+				start: {$within: {$box: leftBox}},
+				end: {$within: {$box: rightBox}}
+			}, function(err, data){
+				if (err) return parallelCallback(err);
+				parallelCallback(null, data);
+			});
+		},
+		SNPs: function(parallelCallback){
+			Feature.find({
+				type: {$regex: 'SNP'},
+				start: {$within: {$box: box}}
+			}, function(err, data) {
+				if (err) return callback(err);
+				return callback(null, data);
+			});
+		}		
+	},
+	function(err, data) {
+		if (err) return callback(err);
+		callback(data);
+	});
 }
 
 exports.addFeatures = addFeatures;

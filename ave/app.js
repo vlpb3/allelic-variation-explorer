@@ -4,8 +4,10 @@
  */
 
 var express = require('express');
+var seqdb = require('./seqdb');
 
 var app = module.exports = express.createServer();
+var io = require('socket.io').listen(app);
 
 // Configuration
 
@@ -33,6 +35,21 @@ app.get('/', function(req, res){
   res.render('index', {
     title: 'Allelic Variation Explorer'
   });
+});
+
+// io
+io.sockets.on('connection', function(socket) {
+	socket.on('reloadDb', function(){
+		seqdb.reloadDb(function(err, results) {
+			if(err) console.log(err);
+			else console.log(results);
+			seqdb.getFromRegion(seqdb.Feature, 'mRNA', {chrom: 1, start: 3000, end: 1000000},
+				function(err, doc) {
+					if (err) console.log(err);
+					console.dir("mrnas: " + doc[0])
+				} );
+		});
+	});
 });
 
 app.listen(3000);

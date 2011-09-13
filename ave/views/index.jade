@@ -1,9 +1,13 @@
 !!! html
 
-h1= title
+script(
+	type="text/javascript",
+	src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.3/jquery.min.js")
+script(type="text/javascript", src="javascripts/actions.js")
+script(src="/socket.io/socket.io.js")
 
-span#settings
-	img(src="/images/Black_Settings_small.png", alt="settings icon")
+h1= title
+	img#settings(src="/images/Black_Settings_small.png", alt="settings icon")
 
 p Choose 
 	select Chrom
@@ -12,7 +16,7 @@ p Choose
 		option
 			value Chrom2
 	span \t from: 
-	input(name="start", type="number", placeholder="start", value="73")
+	input#start(name="start", type="number", placeholder="start", value="73")
 	span \t to: 
 	input(name="end", type="number", placeholder="end", value="1000")
 	

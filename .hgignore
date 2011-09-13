@@ -3,4 +3,5 @@ syntax: glob
 *.swp
 *.DS_Store
 viewer/data/**
+ave/data/**
 *.gff

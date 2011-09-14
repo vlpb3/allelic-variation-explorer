@@ -7,14 +7,16 @@ var FeatureSchema = new Schema({
 	seqid: String,
 	source: String,
 	type: {type: String},
-	start: {},
-	end: {},
+	start: Number,
+	end: Number,
+	startIdx: {},
+	endIdx: {},
 	score: String,
 	strand: {type: String},
 	phase: {type: String},
 	attributes: {}
-}).index({start: '2d'})
-	.index({end: '2d'});
+}).index({startIdx: '2d'})
+	.index({endIdx: '2d'});
 
 mongoose.model('Feature', FeatureSchema);
 
@@ -32,12 +34,12 @@ var GeneModelSchema = new Schema({
 mongoose.model('GeneModel', GeneModelSchema);
 
 var LocusSchema = new Schema({
-	start: {},
-	end: {},
+	startIdx: {},
+	endIdx: {},
 	gene: {},
 	geneModels: [GeneModelSchema]
-}).index({start: '2d'})
-	.index({end: '2d'});
+}).index({startIdx: '2d'})
+	.index({endIdx: '2d'});
 
 mongoose.model('Locus', LocusSchema);
 

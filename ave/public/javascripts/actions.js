@@ -6,102 +6,94 @@ $(document).ready(function(){
 	ave.bufferSize = 5;
 	ave.start = parseInt($('#start').val(), 10);
 	ave.end = parseInt($('#end').val(), 10);
-	ave.chrom = parseInt($('#chrom').val().split('Chrom')[1], 10);
+	ave.chrom = parseInt($('#chrom').val().split('Chr')[1], 10);
 	ave.span = ave.end - ave.start;
 	ave.bufferFlankSize = ave.span * (ave.bufferSize-1)/2;
 	
-	ave.bufferDb = {
-		start: ( (ave.start - ave.bufferFlankSize) >= 0 ) ?
-			(ave.start - ave.bufferFlankSize) : 0,
-		end: ave.end + ave.bufferFlankSize,
-		chrom: ave.chrom
+	ave.updateDb = function() {
+		if ( (ave.end >= ave.bufferDb.start) && (eve.end <= ave.bufferDb.end) )
+			ave.updateViewDb();
+		else ave.viewDb.waiting = true;
+		updateBufferDb();		
 	};
+	
 	ave.updateBufferDb = function() {
 			var region = {};
-			region.start = ave.bufferDb.start;
-			region.end = ave.bufferDb.end;
-			region.chrom = ave.bufferDb.chrom;
+			region.start = ( (ave.start - ave.bufferFlankSize) >= 0 ) ?
+				(ave.start - ave.bufferFlankSize) : 0;
+			region.end = ave.end + ave.bufferFlankSize;
+			region.chrom = ave.chrom;
 			socket.emit("getData", region);
 	};
-	ave.viewDb = {};
-		
-
-
 	
-	var data =  {
-		buff_loci: [],
-		buff_SNPs: [],
-		loci: [],
-		SNPs: [],
-		haplotypes: {},
-		update: function(){
-			if (viewIsInBuffer()) {
-				
-			}
-			else {
-				
-			}
-		},
-		getFirst: function() {
-			//get data at application start
-		},
-		updateData: function(){
-			this.features = [];
-			this.SNPs = [];
-			for (var i=0; i<buff_loci.length; i++) {
-				var feature = buff_loci[i];
-				if (isInView(feature, loc)) this.features.push(feature);
+	ave.bufferDb = {};
+	ave.updateBufferDb();
+	
+	ave.viewDb = {
+		waiting: true
+	};
+	
+	ave.updateViewDb = function() {
+		ave.viewDb.waiting = false;
+		ave.viewDb.loci = [];
+		ave.viewDb.SNPs = [];
+		ave.bufferDb.loci.forEach(function(locus) {
+			if ( (locus.gene.end >= ave.start) && (locus.gene.start <= ave.end) ) {
+				ave.viewDb.loci.push(locus);
 			};
-			for (var i=0; i<buff_SNPs.length; i++) {
-				var SNP = buff_SNPs[i];
-				if (isInView(SNP, loc)) this.SNPs.push(feature);
+		});
+		ave.bufferDb.SNPs.forEach(function(SNP) {
+			if ( (SNP.end >= ave.start) && (SNP.start <= ave.end) ) {
+				ave.viewDb.SNPs.push(SNP);
+			}
+		});
+		ave.viewDb.haplotypes = ave.getHaplotypes(ave.viewDb.SNPs);
+	};
+	
+	ave.importToBufferDb = function(data) {
+			ave.bufferDb.start = data.region.start;
+			ave.bufferDb.end = data.region.end;
+			ave.chrom = data.region.chrom;
+			ave.bufferDb.SNPs = data.SNPs;
+			ave.bufferDb.loci = data.loci;
+			if (ave.viewDb.waiting) {
+				ave.updateViewDb();
+				
 			};
-		}
-	};
-	
-	var viewIsInBuffer = function() {
-		if ( ( (loc.start - loc.old_start) > 0 ) &&
-			( (loc.end - loc.old_end) < 0 ) ) return true;
-		else return false;
-	};
-	
-	var isInView = function(feature, loc) {
-		f_start = feature.start[1] * SCALE;
-		f_end = feture.end[1] * SCALE;
-		if ( (f_end >= loc.start) && (f_start <= loc.end) ) return true;
-		else return false;
 	};
 
-	var getHaplotypes = function(SNPs) {
-		var strains = getStrains(SNPs);
-		
+	ave.getHaplotypes = function(SNPs) {
+		var strains = ave.getStrains(SNPs);
+		console.log(strains);
 	};
-	
-	var getStrains = function(SNPs) {
+
+	ave.getStrains = function(SNPs) {
 		var refStrain = [];
 		var strains = {};
 		SNPs.forEach(function(SNP) {
-			var pos = SNP.start[1]*SCALE;
-			var base = SNP.attributes.Change.split(':')[0];
-			var variant = SNP.attributes.Change.split(':')[1];
-			var strain = SNP.attributes.strain;
-			refStrain[pos] = base;
-			if (stains[strain]) srtrains[strain][pos] = variant;
-			else {
-				strains[strain] = [];
-				strains[strain][pos] = variant;
-			}
+			var pos = SNP.start;
+			var refBase = SNP.attributes.Change.split(':')[0];
+			refStrain[pos] = refBase;
+			var strain = SNP.attributes.Strain;
+			strains[strain] = [];
 		});
-		return Strains;
+		var strainsList = Object.keys(strains);
+		strainsList.forEach(function(strain) {
+			strains[strain] = refStrain;
+		});
+		SNPs.forEach(function(SNP) {
+			var pos = SNP.start;
+			var variant = SNP.attributes.Change.split(':')[1];
+			var strain = SNP.attributes.Strain;
+			strains[strain][pos] = variant;
+		});
+		return strains;
 	};
 	
-	var getData = function(region, callback){
-		var req_region = region;
-		socket.emit('getData', req_region);
-		socket.on('data', function(region, data){
-		
-		});
-	};
+
+	socket.on('data', function(data) {
+		ave.importToBufferDb(data);
+	});
 	
 	// reloading db on settings click
 	$("#settings").click(function() {
@@ -109,8 +101,16 @@ $(document).ready(function(){
 		socket.emit('reloadDb');
 	});
 	$("#start").change(function() {	
+		ave.start = parseInt($('#start').val(), 10);
 		ave.updateBufferDb();
-
+	});
+	$("#end").change(function() {	
+		ave.end = parseInt($('#end').val(), 10);
+		ave.updateBufferDb();
+	});
+	$("#chrom").change(function() {	
+		ave.chrom = $('#chrom').val().split("Chr")[1];
+		ave.updateBufferDb();
 	});
 
 });

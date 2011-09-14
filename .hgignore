@@ -6,3 +6,4 @@ viewer/data/**
 ave/data/**
 *.gff
 npm-debug.log
+.monitor

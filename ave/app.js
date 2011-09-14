@@ -51,7 +51,13 @@ io.sockets.on('connection', function(socket) {
 		});
 	});
 	socket.on('getData', function(region) {
-		seqdb.getRegion();
+		seqdb.getRegion(region, function(err, data){
+			if (err) throw err;
+			else {
+				data.region = region;
+				socket.emit('data', data);
+			}
+		});
 	})
 });
 

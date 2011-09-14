@@ -9,7 +9,7 @@ var GeneModel = models.GeneModel;
 var Locus = models.Locus;
 
 var DATA_DIR = process.cwd() + '/data/';
-var MAX_LEN = 0;
+var MAX_LEN = 5000;
 var SCALE = 1000000;
 var CHROM_LEN = {
 	1: 34.964571,
@@ -29,10 +29,12 @@ function addFeatures(data, callback) {
 			feature.source = farr[1];
 			feature.type = farr[2];
 			var ichrom = parseInt(farr[0].split('Chr')[1], 10);
-			var start = parseInt(farr[3], 10) / SCALE;
-			var end = parseInt(farr[4], 10) / SCALE;
-			feature.start = [ichrom, start];
-			feature.end = [ichrom, end];
+			var start = parseInt(farr[3], 10);
+			var end = parseInt(farr[4], 10);
+			feature.start = start;
+			feature.end = end;
+			feature.startIdx = [ichrom, start/SCALE];
+			feature.endIdx = [ichrom, end/SCALE];
 			feature.score = farr[5];
 			feature.strand = farr[6];
 			feature.phase = farr[7];
@@ -70,8 +72,8 @@ function makeLocusDb(callback){
 				genes.forEach(function(gene) {
 					locus = new Locus;
 					locus.gene = gene;
-          locus.start = gene.start;
-          locus.end = gene.end;
+          locus.startIdx = gene.startIdx;
+          locus.endIdx = gene.endIdx;
 					locus.save(function(err) {
 						if (err) return seriesCallback(err);
 						if(--left === 0) {
@@ -262,9 +264,9 @@ function getFromRegion(model, type, loc, callback) {
 	var box = [[loc.chrom - 0.1, start],
 		[loc.chrom + 0.1, end]];
 	model.find({
-		start: {$within: {$box: box}},
-		start: {'$lt': loc.end / SCALE },
-		end: {'$gt': loc.start / SCALE },
+		startIdx: {$within: {$box: box}},
+		startIdx: {'$lt': loc.end / SCALE },
+		endIdx: {'$gt': loc.start / SCALE },
 		type: type
 		},
 		function(err, doc) {
@@ -277,33 +279,32 @@ function getRegion(region, callback){
 	var start = region.start/SCALE;
 	var end = region.end/SCALE;
 	var chrom = region.chrom;
-	var veryEnd = CHROM_LEN[chrom];
+	var leftEnd = start - MAX_LEN/SCALE;
+	leftEnd = leftEnd > 0 ? leftEnd : 0; 
 	var box = [[chrom - 0.1, start], [chrom + 0.1, end]];
-	var leftBox = [[chrom - 0.1, 0], [chrom + 0.1, end]];
-	var rightBox = [[chrom - 0.1, start], [chrom + 0.1, veryEnd]];
+	var leftBox = [[chrom - 0.1, leftEnd], [chrom + 0.1, end]];
 	async.parallel({
-		loci: function(paralellCallback){
+		loci: function(callback) {
 			Locus.find({
-				start: {$within: {$box: leftBox}},
-				end: {$within: {$box: rightBox}}
-			}, function(err, data){
-				if (err) return parallelCallback(err);
-				parallelCallback(null, data);
+				startIdx: {$within: {$box: leftBox}}
+			}, function(err, doc) {
+				if (err) callback(err);
+				else callback(null, doc);
 			});
 		},
-		SNPs: function(parallelCallback){
+		SNPs: function(callback){
 			Feature.find({
-				type: {$regex: 'SNP'},
-				start: {$within: {$box: box}}
-			}, function(err, data) {
-				if (err) return callback(err);
-				return callback(null, data);
+				type: /SNP/,
+				startIdx: {$within: {$box: box}}
+			}, function(err, doc) {
+				if (err) callback(err);
+				else callback(null, doc);
 			});
 		}		
 	},
 	function(err, data) {
-		if (err) return callback(err);
-		callback(data);
+		if (err) console.log(err);
+		callback(null, data);
 	});
 }
 
@@ -326,3 +327,4 @@ function testdb4() {
 exports.getFromRegion = getFromRegion;
 exports.Feature = Feature;
 exports.reloadDb = reloadDb;
+exports.getRegion = getRegion;

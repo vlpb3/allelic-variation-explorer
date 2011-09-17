@@ -1,8 +1,9 @@
+var ave = {};
+
 $(document).ready(function(){
 	
 	var socket = io.connect('http://localhost');
 	
-	var ave = {};
 	ave.bufferSize = 5;
 	ave.start = parseInt($('#start').val(), 10);
 	ave.end = parseInt($('#end').val(), 10);
@@ -11,10 +12,10 @@ $(document).ready(function(){
 	ave.bufferFlankSize = ave.span * (ave.bufferSize-1)/2;
 	
 	ave.updateDb = function() {
-		if ( (ave.end >= ave.bufferDb.start) && (eve.end <= ave.bufferDb.end) )
+		if ( (ave.end >= ave.bufferDb.start) && (ave.end <= ave.bufferDb.end) )
 			ave.updateViewDb();
 		else ave.viewDb.waiting = true;
-		updateBufferDb();		
+		ave.updateBufferDb();		
 	};
 	
 	ave.updateBufferDb = function() {
@@ -48,6 +49,7 @@ $(document).ready(function(){
 			}
 		});
 		ave.viewDb.haplotypes = ave.getHaplotypes(ave.viewDb.SNPs);
+		draw();
 	};
 	
 	ave.importToBufferDb = function(data) {
@@ -64,7 +66,6 @@ $(document).ready(function(){
 
 	ave.getHaplotypes = function(SNPs) {
 		var strains = ave.getStrains(SNPs);
-		console.log(strains);
 	};
 
 	ave.getStrains = function(SNPs) {
@@ -102,15 +103,16 @@ $(document).ready(function(){
 	});
 	$("#start").change(function() {	
 		ave.start = parseInt($('#start').val(), 10);
-		ave.updateBufferDb();
+		ave.updateDb();
 	});
 	$("#end").change(function() {	
 		ave.end = parseInt($('#end').val(), 10);
-		ave.updateBufferDb();
+		ave.updateDb();
 	});
 	$("#chrom").change(function() {	
 		ave.chrom = $('#chrom').val().split("Chr")[1];
-		ave.updateBufferDb();
+		ave.updateDb();
 	});
+	
 
 });

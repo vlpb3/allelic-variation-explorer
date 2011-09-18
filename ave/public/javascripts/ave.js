@@ -15,16 +15,21 @@ $(document).ready(function(){
 		if ( (ave.end >= ave.bufferDb.start) && (ave.end <= ave.bufferDb.end) )
 			ave.updateViewDb();
 		else ave.viewDb.waiting = true;
-		ave.updateBufferDb();		
+		if ( (ave.start <= ave.bufferDb.start + ave.span)
+			|| (ave.end >= ave.bufferDb.end - ave.span)
+			|| (ave.chrom !== ave.bufferDb.chrom)) {
+			ave.updateBufferDb();
+		} 
+				
 	};
 	
 	ave.updateBufferDb = function() {
-			var region = {};
-			region.start = ( (ave.start - ave.bufferFlankSize) >= 0 ) ?
-				(ave.start - ave.bufferFlankSize) : 0;
-			region.end = ave.end + ave.bufferFlankSize;
-			region.chrom = ave.chrom;
-			socket.emit("getData", region);
+		var region = {};
+		region.start = ( (ave.start - ave.bufferFlankSize) >= 0 ) ?
+			(ave.start - ave.bufferFlankSize) : 0;
+		region.end = ave.end + ave.bufferFlankSize;
+		region.chrom = ave.chrom;
+		socket.emit("getData", region);
 	};
 	
 	ave.bufferDb = {};
@@ -60,7 +65,6 @@ $(document).ready(function(){
 			ave.bufferDb.loci = data.loci;
 			if (ave.viewDb.waiting) {
 				ave.updateViewDb();
-				
 			};
 	};
 

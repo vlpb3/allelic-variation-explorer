@@ -22,7 +22,7 @@
     var svg = d3.select("body")
         .append("svg:svg")
             .attr("width", dim.w + padding[1] + padding[3])
-            .attr("heeight", dim.h + padding[0] + padding[2])
+            .attr("height", dim.h + padding[0] + padding[2])
             .attr("pointer-events", "all")
             .call(d3.behavior.zoom()
             .on("zoom", redraw))

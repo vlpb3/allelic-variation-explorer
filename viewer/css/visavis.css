@@ -11,7 +11,7 @@ svg {
 }
 
 circle {
-  opacity: 0.6;
+  opacity: 1;
 }
 
 rect {
@@ -19,11 +19,15 @@ rect {
 }
 
 .hstripe {
-  opacity: 0.2;
+  opacity: 0.5;
 }
 
 .ui-dialog {
     opacity: 0.74;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
+}
+
+.x {
+	opacity: 0.0;
 }

@@ -10,6 +10,12 @@ $(document).ready(function(){
 	ave.chrom = parseInt($('#chrom').val().split('Chr')[1], 10);
 	ave.span = ave.end - ave.start;
 	ave.bufferFlankSize = ave.span * (ave.bufferSize-1)/2;
+	ave.baseColors = {
+		'A': 'red',
+    'C': 'green',
+    'G': 'blue',
+    'T': 'orange'
+	};
 	
 	ave.updateDb = function() {
 		if ( (ave.end >= ave.bufferDb.start) && (ave.end <= ave.bufferDb.end) )
@@ -53,7 +59,8 @@ $(document).ready(function(){
 				ave.viewDb.SNPs.push(SNP);
 			}
 		});
-		ave.viewDb.haplotypes = ave.getHaplotypes(ave.viewDb.SNPs);
+		ave.getHaplotypes();
+		
 		draw();
 	};
 	
@@ -68,31 +75,54 @@ $(document).ready(function(){
 			};
 	};
 
-	ave.getHaplotypes = function(SNPs) {
-		var strains = ave.getStrains(SNPs);
-	};
-
-	ave.getStrains = function(SNPs) {
+	ave.getHaplotypes = function() {
+		SNPs = ave.viewDb.SNPs;
 		var refStrain = [];
 		var strains = {};
+		var haplotypes = {};
+		var hapSnps = [];
 		SNPs.forEach(function(SNP) {
 			var pos = SNP.start;
-			var refBase = SNP.attributes.Change.split(':')[0];
-			refStrain[pos] = refBase;
+			refStrain[pos] = ".";
 			var strain = SNP.attributes.Strain;
-			strains[strain] = [];
+			strains[strain] = {tag: [], SNPs: []};
 		});
 		var strainsList = Object.keys(strains);
 		strainsList.forEach(function(strain) {
-			strains[strain] = refStrain;
+			strains[strain].tag = refStrain.slice();
 		});
 		SNPs.forEach(function(SNP) {
 			var pos = SNP.start;
 			var variant = SNP.attributes.Change.split(':')[1];
 			var strain = SNP.attributes.Strain;
-			strains[strain][pos] = variant;
+			strains[strain].tag[pos] = variant;
+			strains[strain].SNPs.push(SNP);
 		});
-		return strains;
+		var idx = 0;
+		strainsList.forEach(function(strain) {
+			tag = strains[strain].tag.join().replace(/,/g, "");
+			strains[strain].tag = tag;
+			if (haplotypes[tag]) {
+				haplotypes[tag].strains.push(strain);
+			}
+			else {
+				haplotypes[tag] = {strains: [strain]};
+				var SNPs = strains[strain].SNPs;
+				SNPs.forEach(function(SNP) {
+					// array [tag, idx, position, base]
+					hapSnps.push({
+						tag: tag,
+						idx: idx,
+						pos: SNP.start,
+						base: SNP.attributes.Change.split(':')[1]
+					});
+				});
+				idx++;
+			}
+		});
+		ave.viewDb.nHaps = idx;
+		ave.viewDb.hapSnps = hapSnps;
+		ave.viewDb.haplotypes = haplotypes;
 	};
 	
 

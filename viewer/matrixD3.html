@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Dot Plot</title>
+    <script type="text/javascript" src="./lib/d3.js"></script>
+    <script type="text/javascript" src="./lib/d3.behavior.js"></script>
+    <style type="text/css">
+    </style>
+  </head>
+  <body>
+		<div id="chart"> </div>
+    <script type="text/javascript">
+
+		var dim = {
+			trackH: 20,
+			glyphH: 12,
+			glyphT: 4,
+			w: 720,
+			h: 740,
+			l: 40,
+			r: 40,
+			t: 20,
+			b: 40
+		};
+
+		svg = d3.select("#chart").append("svg:svg")
+							.attr("width", dim.l + dim.w + dim.r)
+							.attr("height", dim.t + dim.h + dim.b)
+							.attr("pointer-events", "all")
+							// .call(d3.behavior.zoom().on("zoom", redraw))
+						.append("svg:g")
+							.attr("transform", "translate(" + dim.l +  ", " + dim.t + ")");
+		var points = [
+			{x: 1, y: 0},
+			{x: 3, y: 2},
+			{x: 5, y: 8},
+			{x: 6, y: 3},
+			{x: 2, y: 7},
+			{x: 8, y: 7},
+			{x: 7, y: 8}
+		]
+			
+		
+		function getDistance(p1, p2) {
+			return Math.sqrt( (p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y))
+		}
+		
+		var proxMatrix = [];
+		nPoints = points.length;
+		for (var i=0; i<nPoints; i++){
+			var dists = [];
+			for (var j=i+1; j<nPoints; j++){
+				var d = getDistance(points[i], points[j]);
+				dists.push(d);
+			}
+			if (dists.length > 0) {
+				proxMatrix.push(dists);
+			}
+		}
+	
+							
+    </script>
+  </body>
+</html>

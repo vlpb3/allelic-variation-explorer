@@ -9,7 +9,7 @@ $(document).ready(function() {
 		glyphH: 12,
 		glyphT: 4,
 		w: 720,
-		h: 740,
+		h: 1000,
 		l: 40,
 		r: 40,
 		t: 20,
@@ -124,6 +124,8 @@ $(document).ready(function() {
 				};
 			};
 		};
+		// update hieght according to amount of features
+		dim.h = (nModelTracks + 1 + ave.viewDb.nHaps)*dim.trackH;
 
 		//----DISPLAY--------------
 		// rules 
@@ -192,6 +194,7 @@ $(document).ready(function() {
 		// draw UTRs
 		var threePrimeRect = svg.selectAll('.threePrime').data(threePrimeUTRs);	
 		threePrimeRect.attr('x', function(d) { return d.x; })
+									.attr('y', function(d) { return d.y; })
 									.attr('width', function(d) { return d.w; });
 		threePrimeRect.enter().append('svg:rect')
 					.attr('class', 'threePrime')
@@ -205,6 +208,7 @@ $(document).ready(function() {
 
 		var fivePrimeRect = svg.selectAll('.fivePrime').data(fivePrimeUTRs);
 		fivePrimeRect.attr('x', function(d) { return d.x; })
+								.attr('y', function(d) { return d.y; })
 								.attr('width', function(d) { return d.w; });
 		fivePrimeRect.enter().append('svg:rect')
 					.attr('class', 'fivePrime')
@@ -214,6 +218,39 @@ $(document).ready(function() {
 					.attr('y', function(d) { return d.y; })
 					.attr('fill', 'slateblue');
 		fivePrimeRect.exit().remove();
+		
+		// draw haplotype bars
+		var haps = [];
+		for (var i = 0; i<ave.viewDb.nHaps; i++) {
+			haps.push( (nModelTracks + i + 1) *dim.trackH + dim.glyphT);
+		}
+		var hapBars = svg.selectAll('.hap').data(haps, String);
+		hapBars.attr('y', function(d) {return d;});
+		hapBars.enter().append('svg:rect')
+					.attr('class', 'hap')
+					.attr('height', dim.glyphH)
+					.attr('width', dim.w)
+					.attr('x', x(ave.start))
+					.attr('y', function(d) {return d;})
+					.attr('fill', 'lavender');
+		hapBars.exit().remove();
+					
+		// draw SNPs
+		var snpCircles = svg.selectAll('.snp').data(ave.viewDb.hapSnps);
+		snpCircles.attr('cx', function(d) {return x(d.pos);})
+							.attr('cy', function(d) {
+								return (d.idx + nModelTracks + 1)*dim.trackH + dim.trackH/2;
+								})
+							.attr('fill', function(d) {return ave.baseColors[d.base];});
+		snpCircles.enter().append('svg:circle')
+					.attr('class', 'snp')
+					.attr('r', dim.glyphH/4)
+					.attr('cx', function(d) {return x(d.pos);})
+					.attr('cy', function(d) {
+						return (d.idx + nModelTracks + 1)*dim.trackH + dim.trackH/2;
+						})
+					.attr('fill', function(d) {return ave.baseColors[d.base];});
+		snpCircles.exit().remove();
 	};
 });
 

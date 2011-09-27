@@ -4,7 +4,6 @@ syntax: glob
 *.DS_Store
 viewer/data/**
 ave/data/**
-ave/data/mongod.lock
 *.gff
 npm-debug.log
 .monitor

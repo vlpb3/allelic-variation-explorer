@@ -1,39 +1,46 @@
-var w = 960,
-    h = 2000;
+var root = {
+	canonical: "Ala",
+	left: {
+		canonical: "ma"
+	},
+	right: {
+		canonical: "kota",
+		left: {
+			canonical: "or",
+			left: {
+				canonical: "it does"
+			},
+			right: {
+				canonical: "not"
+			}
+		}
+	}
+};
 
-var tree = d3.layout.tree()
-    .size([h, w - 160]);
+var reformatTree = function(node) {
+	if (node.hasOwnProperty('canonical')) {
+		node['name'] = node['canonical'];
+		delete node['canonical'];
+	}
+	
+	if (node.hasOwnProperty('left')) {
+		node['children'] = node['children'] || []; 
+		node['children'].push( node['left']);
+		delete node['left'];
+	}
+	
+	if (node.hasOwnProperty('right')) {
+		node['children'] = node['children'] || []; 
+		node['children'].push( node['right']);
+		delete node['right'];
+	}
+	
+	if (node.hasOwnProperty('children')) {
+		var nChildren = node
+		node['children'].forEach(reformaTree(child));
+	}
+};
 
-var diagonal = d3.svg.diagonal()
-    .projection(function(d) { return [d.y, d.x]; });
-
-var vis = d3.select("#chart").append("svg:svg")
-    .attr("width", w)
-    .attr("height", h)
-  .append("svg:g")
-    .attr("transform", "translate(40, 0)");
-
-d3.json("./data/flare.json", function(json) {
-  var nodes = tree.nodes(json);
-
-  var link = vis.selectAll("path.link")
-      .data(tree.links(nodes))
-    .enter().append("svg:path")
-      .attr("class", "link")
-      .attr("d", diagonal);
-
-  var node = vis.selectAll("g.node")
-      .data(nodes)
-    .enter().append("svg:g")
-      .attr("class", "node")
-      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
-
-  node.append("svg:circle")
-      .attr("r", 4.5);
-
-  node.append("svg:text")
-      .attr("dx", function(d) { return d.children ? -8 : 8; })
-      .attr("dy", 3)
-      .attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
-      .text(function(d) { return d.name; });
-});
+console.log(root);
+reformatTree(root);
+console.log(root);

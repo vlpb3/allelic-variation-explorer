@@ -5,9 +5,31 @@
     <title>Node-Link Tree</title>
     <script type="text/javascript" src="./lib/d3.js"></script>
     <script type="text/javascript" src="./lib/d3.layout.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.3/jquery.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.1.7/underscore-min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.5.3/backbone-min.js"></script>
+    
   </head>
   <body>
     <div id="chart"></div>
     <script type="text/javascript" src="tree.js"></script>
+		<script>
+    (function ($) {
+      var AppRouter = Backbone.Router.extend({
+
+        routes: {
+          "goto/chrom:ch/start:s/end:e": "go"
+        },
+
+        go: function(ch, s, e) {
+          console.log("Going to: " + ch + " from: " + s + " to: " + e );
+        }
+      });
+
+      var appRouter = new AppRouter();
+      Backbone.history.start();
+    }
+    )(jQuery);
+		</script>
   </body>
 </html>

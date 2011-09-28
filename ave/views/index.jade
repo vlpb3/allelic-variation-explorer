@@ -1,33 +1,22 @@
-!!! html
+!!! 5
+html(lang='en')
 
-script(
-	type="text/javascript",
-	src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.3/jquery.min.js")
+script(src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.3/jquery.min.js")
+script(src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.1.7/underscore-min.js")
+script(src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.5.3/backbone-min.js")
+
 script(type="text/javascript", src="javascripts/d3.js")
 script(type="text/javascript", src="javascripts/d3.behavior.js")
-script(type="text/javascript", src="javascripts/ave.js")
-
 script(src="/socket.io/socket.io.js")
+script(type="text/javascript", src="javascripts/client.js")
+
 
 h1= title
-	img#settings(src="/images/Black_Settings_small.png", alt="settings icon")
-
-p Choose 
-	select#chrom Chrom
-		option
-			value Chr1
-		option
-			value Chr2
-	span \t from: 
-	input#start(name="start", type="number", placeholder="start", value="100")
-	span \t to: 
-	input#end(name="end", type="number", placeholder="end", value="9000")
-
-p or go directly to the feature of interest: \n
-	input (id="feature", type="search")
-	span with flanks: \n
-	input(name="flank", type="number", value="100")
+  img#settings(src="/images/Black_Settings_small.png", alt="settings icon")
 
 p
-	div#chart
-	script(type="text/javascript", src="javascripts/vis.js")
+  div#regionGo
+  
+  
+p
+  div#chart

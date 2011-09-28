@@ -36,8 +36,8 @@ var reformatTree = function(node) {
 	}
 	
 	if (node.hasOwnProperty('children')) {
-		var nChildren = node
-		node['children'].forEach(reformaTree(child));
+		var nChildren = node;
+    // node['children'].forEach(reformaTree(child));
 	}
 };
 

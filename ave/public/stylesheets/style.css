@@ -19,6 +19,9 @@ h1 {
   position: relative;
   left: 200px;
 }
+#locationChoice {
+  text-align: center;
+}
 svg {
   font: 10px sans-serif;
 }

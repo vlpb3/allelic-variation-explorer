@@ -12,21 +12,40 @@
     }
   });
   
-  var GoRegionView = Backbone.View.extend({
+  var choiceView = Backbone.View.extend({
     
     initialize: function() {
 
-      _.bindAll(this, 'render');
+      _.bindAll(this, "render");
       
       this.render();
     },
     
     render: function() {
-      console.log($(this.el));
-      $(this.el).append("<p>lakfjlak fjalk f</p>");
+
+      // get radio buttons displayed properly
+      $("#radio").buttonset();
+      
+      // hide both searchbox sets at the beginning
+      $("#regionSearch").hide();
+      $("#featureSearch").hide();
+      
+      // bind actions to these button sets
+      console.log($("#radioRegion"));
+      $("#radioRegion").click(function(){
+        $("#regionSearch").show();
+        $("#featureSearch").hide();
+      });
+        
+      $("#radioFeature").click(function(){
+        $("#featureSearch").show();
+        $("#regionSearch").hide();
+      });
+      
+      
       return this;
     }
-
+    
   });
   
   $(document).ready(function(){
@@ -35,7 +54,8 @@
     Backbone.history.start();
   
     // initialize views
-    var goRegionView = new GoRegionView({el: $("#regionGo")});
+    var goRegionView = new choiceView({el: $("#locationChoice")});
+    
   });
   
 }

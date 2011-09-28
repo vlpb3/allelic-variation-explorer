@@ -1,22 +1,64 @@
 !!! 5
 html(lang='en')
 
-script(src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.3/jquery.min.js")
+// jQuery import
+script(src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js")
+script(src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js")
+
+// underscore and backbone
 script(src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.1.7/underscore-min.js")
 script(src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.5.3/backbone-min.js")
 
+// d3.js stuff
 script(type="text/javascript", src="javascripts/d3.js")
 script(type="text/javascript", src="javascripts/d3.behavior.js")
+
+// other libs
 script(src="/socket.io/socket.io.js")
+
+// application scripts
 script(type="text/javascript", src="javascripts/client.js")
 
+// css
+link(type="text/css", href="stylesheets/Aristo/Aristo.css", rel="stylesheet")
 
 h1= title
   img#settings(src="/images/Black_Settings_small.png", alt="settings icon")
 
 p
-  div#regionGo
-  
+  div#locationChoice
+    div#radio
+      input(type="radio"
+        id="radioRegion"
+        name="radio"
+        class="ui-corner-left")
+      label(for="radioRegion")
+        | go to region
+      input(type="radio"
+        id="radioFeature"
+        name="radio"
+        class="ui-corner-right")
+      label(for="radioFeature")
+        | go to feature
+    p
+      div#regionSearch
+        select
+          option
+            value=["chrom1"]
+          option
+            value=["chrom2"]
+        
+        |  from
+        input()
+        |  to
+        input()
+        
+      div#featureSearch
+        | feature
+        input()
+        |  with flanking region
+        input()
+      
   
 p
   div#chart

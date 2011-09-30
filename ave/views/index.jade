@@ -42,16 +42,12 @@ p
         | go to feature
     p
       div#regionSearch
-        select
-          option
-            value=["chrom1"]
-          option
-            value=["chrom2"]
-        
+        | chromosome
+        input#chrom(type="number")
         |  from
-        input()
+        input#start(type="number")
         |  to
-        input()
+        input#end(type="number")
         
       div#featureSearch
         | feature

@@ -51,6 +51,7 @@ io.sockets.on('connection', function(socket) {
 		});
 	});
 	socket.on('getData', function(region) {
+	  console.log(region)
 		seqdb.getRegion(region, function(err, data){
 			if (err) throw err;
 			else {

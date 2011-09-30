@@ -47,10 +47,10 @@ function addFeatures(data, callback) {
 				var val = attr[1];
 				feature.attributes[key] = val;
 			}
-            if (farr[2] !== 'chromosome') {
+      if (farr[2] !== 'chromosome') {
 				var len = end - start;
 				MAX_LEN = len > MAX_LEN ? len : MAX_LEN;
-			};
+			}
 
 			feature.save(function(err){
 				if (err) callback(err);
@@ -59,7 +59,7 @@ function addFeatures(data, callback) {
 			
 		} else {
 			if (--left === 0) callback(null, 'Features deployed in db.');
-		};
+		}
 	}); 
 }
 
@@ -70,7 +70,7 @@ function makeLocusDb(callback){
 				if (err) return seriesCallback(err);
 				var left = genes.length;
 				genes.forEach(function(gene) {
-					locus = new Locus;
+					locus = new Locus();
 					locus.gene = gene;
           locus.startIdx = gene.startIdx;
           locus.endIdx = gene.endIdx;
@@ -78,7 +78,7 @@ function makeLocusDb(callback){
 						if (err) return seriesCallback(err);
 						if(--left === 0) {
 							return seriesCallback(null, 'all loci created and saved');
-						};
+						}
 					});
 				});				
 			});
@@ -151,7 +151,7 @@ function makeLocusDb(callback){
 		            },
 		            function(err, results) {
 		                if (err) return parallelCallback(err);
-		                var geneModel = new GeneModel;
+		                var geneModel = new GeneModel();
 		                geneModel.mRNA = mRNA;
 		                geneModel.protein = results.proteins;
 		                geneModel.fivePrimeUTRs = results.fivePrimeUTRs;
@@ -168,7 +168,7 @@ function makeLocusDb(callback){
 		                    if (err) return seriesCallback(err);
 		                    if (--left === 0) {
 													return seriesCallback(null, 'all mRNAs processed');
-												};
+												}
 		                });
 		            });
 		        });
@@ -236,7 +236,7 @@ function reloadDb (callback){
 				drop(model);
 				if(--left === 0) {
 					return seriesCallback(null, "Old data deleted from db.");
-				};
+				}
 			});
 		},
 		// read in gff files and put all the features into db
@@ -276,6 +276,7 @@ function getFromRegion(model, type, loc, callback) {
 }
 
 function getRegion(region, callback){
+  console.log(region);
 	var start = region.start/SCALE;
 	var end = region.end/SCALE;
 	var chrom = region.chrom;

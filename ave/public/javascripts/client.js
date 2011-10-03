@@ -257,29 +257,46 @@
 
   var VisView = Backbone.View.extend({
     
-    dafaults: {
-      trackH: 20,
-      glyphH: 12,
-      width: 720,
-      height: 10000,
-      left: 40,
-      right: 40,
-      top: 20,
-      bottom: 40
-    },
-    
     initialize: function() {
-      _.bindAll(this, "render");
+      _.bindAll(this, "render", "draw");
+      
+      this.trackH = 20;
+      this.glyphH = 12;
+      this.width = 720;
+      this.height = 10000;
+      this.left = 40;
+      this.right = 40;
+      this.top = 20;
+      this.bottom = 4;
+    
+      this.model.bind('change', function(model, change){
+        this.draw();
+      });
+      
       this.render();
     },
     
     render: function() {
+      
       this.svg = d3.select("#chart").append("svg:svg")
-        .attr("width", this.get("left") + this.get("width") + this.get("right"))
-        .attr("height", this.get("top") + this.get("height") + this.get("bottom"));
+          .attr("width", this.left + this.width + this.right)
+          .attr("height", this.top + this.height + this.bottom)
+        .append("svg:g")
+          .attr("transform", "translate(" + this.left + "," + this.top + ")");
+      this.draw();
+      return this;
     },
     
-    redraw: function() {
+    draw: function() {
+      var starts = this.model.get("starts");
+      var ends = this.model.get("ends");
+      this.startFrom = 0;
+      
+      this.x = scale.linear().domain([starts, ends]).range([0, this.width]);
+      
+    },
+    
+    drawLoci: function() {
       
     }
     

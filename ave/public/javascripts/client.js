@@ -210,7 +210,11 @@
       var loci = this.get("bufferData").loci;
       displayData.loci = _.select(loci, this.isLocusInRegion);
  
+      // set obtained data to the model
+      this.set({"displayData": displayData});
       
+      // calculate haplotypes from SNPs in the region
+      this.calcHaplotypes();
     },
     
     isLocusInRegion: function(locus) {
@@ -221,11 +225,65 @@
     },
     
     calcHaplotypes: function() {
+
+      var displayData = this.get("displayData");
+      var SNPs = displayData.SNPs;
       
+      // create strains object
+      var strains = _.reduce(SNPs, function(memo, snp) {
+        var strain = snp.attributes.Strain;
+        var idx = snp.start;
+        var variant = snp.attributes.Change.split(":")[1];
+        var variantArr = (memo[strain] || []);
+        variantArr[idx] = variant;
+        memo[strain] = variantArr;
+        return memo;
+      }, {});
+
+      // group strains by snps
+      var haplotypes = {};
+      _.each(strains, function(strainSNPs, strainName, strains) {
+        var haplID = _.zip(_.keys(strainSNPs), _.compact(strainSNPs)).join();
+        var haplotype = (haplotypes[haplID] || []);
+        haplotype.push({name: strainName, snps: strainSNPs});
+        haplotypes[haplID] = haplotype;
+      });
+      
+      displayData.haplotypes = haplotypes;
+      this.set({"displayData": displayData});
     }
     
   });
 
+  var VisView = Backbone.View.extend({
+    
+    dafaults: {
+      trackH: 20,
+      glyphH: 12,
+      width: 720,
+      height: 10000,
+      left: 40,
+      right: 40,
+      top: 20,
+      bottom: 40
+    },
+    
+    initialize: function() {
+      _.bindAll(this, "render");
+      this.render();
+    },
+    
+    render: function() {
+      this.svg = d3.select("#chart").append("svg:svg")
+        .attr("width", this.get("left") + this.get("width") + this.get("right"))
+        .attr("height", this.get("top") + this.get("height") + this.get("bottom"));
+    },
+    
+    redraw: function() {
+      
+    }
+    
+  });
   
   
   $(document).ready(function(){
@@ -242,6 +300,11 @@
     // initialize router
     var appRouter = new AppRouter({model: dataModel});
     Backbone.history.start();
+    
+    var visView = new VisView({
+      el: $("#chart"),
+      model: dataModel
+    });
     
   });
   

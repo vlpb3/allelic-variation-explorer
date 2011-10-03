@@ -115,12 +115,17 @@
           SNPs: {},
           loci: {}
           },
-      "displayData": {waiting: true}
+      "displayData": {
+        waiting: true,
+        loci: [],
+        SNPs: []
+        }
     },
     
     initialize: function() {
       _.bindAll(this, "updatePosition", "updateDisplayData",
-        "waitForData", "updateBufferData", "importData");
+        "waitForData", "updateBufferData", "importData",
+        "isLocusInRegion", "calcHaplotypes");
 
       this.updateBufferData();
       
@@ -142,6 +147,9 @@
       bufferData.loci = data.loci;
       
       this.set({"bufferData": bufferData});
+      if (this.get("displayData").waiting) {
+         this.updateDisplayData();
+      }
     },
     
     waitForData: function(ifwait) {
@@ -187,8 +195,35 @@
     },
     
     updateDisplayData: function() {
+
+      // first fetch the fragment from the buffer
+      var displayData = this.get("displayData");
+
+      // get SNPs
+      var SNPs = this.get("bufferData").SNPs;
+      var pos = this.get("pos");
+      displayData.SNPs = _.select(SNPs, function(snp) {
+        return ((snp.start >= pos.starts) && (snp.start <= pos.ends));
+      });
+      
+      // get loci
+      var loci = this.get("bufferData").loci;
+      displayData.loci = _.select(loci, this.isLocusInRegion);
+ 
+      
+    },
+    
+    isLocusInRegion: function(locus) {
+      var pos = this.get("pos");
+      if(locus.gene.start <= pos.ends && locus.gene.end >= pos.starts) {
+        return true;
+      } else return false;
+    },
+    
+    calcHaplotypes: function() {
       
     }
+    
   });
 
   

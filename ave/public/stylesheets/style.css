@@ -23,7 +23,7 @@ h1 {
   text-align: center;
 }
 .geneLabel {
-  font-size: 9px;
+  font: 9px sans-serif;
 }
 svg {
   font: 10px sans-serif;

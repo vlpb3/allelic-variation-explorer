@@ -106,8 +106,8 @@
       "bufferX": 5,
       "pos": {
         "chrom": 1,
-        "starts": 0,
-        "ends": 10000
+        "starts": 3500,
+        "ends": 9000
       },
       "bufferData": {
           starts: 0,
@@ -120,7 +120,8 @@
         waiting: true,
         loci: [],
         SNPs: [],
-        features: []
+        features: [],
+        haplotypes: []
         }
     },
     
@@ -308,8 +309,9 @@
       var x = d3.scale.linear().domain([pos.starts, pos.ends]).range([0, this.width]);
       
       var displayData = this.model.get("displayData");
-      var features = this.model.get("displayData").features;
-
+      var features = displayData.features;
+      var haplotypes = displayData.haplotypes;
+      
       var glyphH = this.glyphH;
       var glyphT = this.glyphT;
       var trackH = this.trackH;
@@ -339,7 +341,7 @@
                 .attr("class", "geneLabel")
                 .attr("x", function(d) { return x(d.start); })
                 .attr("y", function(d) { return freePos; })
-                .attr("dy", "1.1em")
+                .attr("dy", "1.075em")
                 .attr("dx", "0.5em")
                 .text(function(d) { return d.attributes.Name; });
       geneLabel.exit().remove();
@@ -395,17 +397,106 @@
               .attr("x", function(d) { return x(d.start); })
               .attr("y", yPos)
               .attr("width", function(d) { return x(d.end) - x(d.start); })
-              .attr("fill", "teal");
+              .attr("fill", "steelblue");
       CDSRect.exit().remove();
       
       // calculate new freePos by calculating the max number of gene models per locus
-      var maxModels = _.reduce(UTR5s, function(memo, utr) {
-        var nModel = utr.attributes.Parent.split(",")[0].split(".")[1];
+      var maxModels = _.reduce(CDSs, function(memo, cds) {
+        var nModel = cds.attributes.Parent.split(",")[0].split(".")[1];
+        nModel = parseInt(nModel, 10); 
         memo = memo < nModel ? nModel : memo;
         return memo;
       }, 0);
       
       freePos += trackH*maxModels;
+      
+      console.log(displayData);
+      
+      // get SNPs with haplotype indexes
+      this.hapSNPs = [];
+      this.hapCounter = 0;
+      _.map(haplotypes, function(haplotype, idx, haplotypes) {
+        var snps = haplotype[0].snps;
+        _.map(snps, function(snp, idx, snps) {
+          var hapSNP = {
+            haplotype: this.hapCounter,
+            x: idx,
+            base: snp
+          };
+          this.hapSNPs.push(hapSNP);
+        }, this);
+        this.hapCounter += 1;
+      }, this);
+
+      // draw haplotypes
+      console.log(haplotypes);
+      var haplotypeBars = this.svg.selectAll('.hap').data(_.range(_.size(haplotypes)));
+      haplotypeBars.attr('y', function(d, i) { return freePos + i*trackH; });
+      haplotypeBars.enter().append('svg:rect')
+              .attr('class', 'hap')
+              .attr('height', glyphH)
+              .attr('width', width)
+              .attr('x', x(pos.starts))
+              .attr('y', function(d, i) { return freePos + i*trackH; })
+              .attr('fill', 'lavender');
+      haplotypeBars.exit().remove();
+
+      // draw SNPs
+      var SNPCircles = this.svg.selectAll('.SNP').data(this.hapSNPs);
+      SNPCircles.attr('cx', function(d) { return x(d.x); })
+                .attr('cy', function(d) {
+
+                  return (d.haplotype + maxModels + 1.5)*trackH;
+                  })
+                .attr('fill', this.baseColor);
+      SNPCircles.enter().append('svg:circle')
+                .attr('class', 'SNP')
+                .attr('r', glyphH/4)
+                .attr('cx', function(d) { return x(d.x); })
+                .attr('cy', function(d) {
+                  return (d.haplotype + maxModels + 1.5)*trackH;
+                  })
+                .attr('fill', this.baseColor);
+      SNPCircles.exit().remove(); 
+
+      // draw rules
+      this.height = (1 + maxModels + _.size(haplotypes))*trackH;
+      console.log(this.height);
+      var rules = this.svg.selectAll('g.rule')
+          .data(x.ticks(10), String);
+      this.svg.selectAll('.ruleLine')
+          .attr("y2", this.height);
+
+      rules.attr('transform', function(d) {return 'translate(' + x(d) + ',0)';});
+      var newRules = rules.enter().append('svg:g')
+          .attr('class', 'rule')
+          .attr('transform', function(d) {return 'translate(' + x(d) + ',0)';});
+
+      newRules.append('svg:line')
+          .attr("class", "ruleLine")
+          .attr('y1', 0)
+          .attr('y2', this.height)
+          .attr('stroke', 'black')
+          .attr('stroke-opacity', 0.1);
+
+      newRules.append("svg:text")
+          .attr('y', -10)
+          .attr('dy', '.71em')
+          .attr('text-anchor', 'middle')
+          .text(x.tickFormat(10));
+
+      rules.exit().remove();
+      
+    },
+    
+    baseColor: function(d) {
+      var baseColors = {
+        'A': 'red',
+        'C': 'green',
+        'G': 'blue',
+        'T': 'orange'
+      };
+      return baseColors[d.base];
     }
     
   });

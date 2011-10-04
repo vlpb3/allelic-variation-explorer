@@ -275,38 +275,46 @@ function getFromRegion(model, type, loc, callback) {
 		});
 }
 
-function getRegion(region, callback){
+function getRegion(region, callback) {
   console.log(region);
-	var start = region.start/SCALE;
-	var end = region.end/SCALE;
-	var chrom = region.chrom;
-	var leftEnd = start - MAX_LEN/SCALE;
-	leftEnd = leftEnd > 0 ? leftEnd : 0; 
-	var box = [[chrom - 0.1, start], [chrom + 0.1, end]];
-	var leftBox = [[chrom - 0.1, leftEnd], [chrom + 0.1, end]];
-	async.parallel({
-		loci: function(callback) {
-			Locus.find({
-				startIdx: {$within: {$box: leftBox}}
-			}, function(err, doc) {
-				if (err) callback(err);
-				else callback(null, doc);
-			});
-		},
-		SNPs: function(callback){
-			Feature.find({
-				type: /SNP/,
-				startIdx: {$within: {$box: box}}
-			}, function(err, doc) {
-				if (err) callback(err);
-				else callback(null, doc);
-			});
-		}		
-	},
-	function(err, data) {
-		if (err) console.log(err);
-		callback(null, data);
-	});
+  var start = region.start/SCALE;
+  var end = region.end/SCALE;
+  var chrom = region.chrom;
+  var leftEnd = start - MAX_LEN/SCALE;
+  leftEnd = leftEnd > 0 ? leftEnd : 0; 
+  var box = [[chrom - 0.1, start], [chrom + 0.1, end]];
+  var leftBox = [[chrom - 0.1, leftEnd], [chrom + 0.1, end]];
+  async.parallel({
+    loci: function(callback) {
+      Locus.find({
+        startIdx: {$within: {$box: leftBox}}
+      }, function(err, doc) {
+        if (err) callback(err);
+        else callback(null, doc);
+      });
+    },
+    SNPs: function(callback) {
+      Feature.find({
+        type: /SNP/,
+        startIdx: {$within: {$box: box}}
+      }, function(err, doc) {
+        if (err) callback(err);
+        else callback(null, doc);
+      });
+    },
+    features: function(callback) {
+      Feature.find({
+       startIdx: {$within: {$box: leftBox}}
+      }, function(err, doc) {
+        if (err) callback(err);
+        else callback(null, doc);
+      });
+    }
+  },
+  function(err, data) {
+    if (err) console.log(err);
+    callback(null, data);
+  });
 }
 
 exports.addFeatures = addFeatures;

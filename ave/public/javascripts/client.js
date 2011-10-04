@@ -7,6 +7,7 @@
       _.bindAll(this, "moveModel", "navigateTo");
       this.model = options.model;
       
+      this.navigateTo();
       // when model changes, navigate to new place      
       this.model.bind("change:pos", this.navigateTo);
     },
@@ -118,14 +119,15 @@
       "displayData": {
         waiting: true,
         loci: [],
-        SNPs: []
+        SNPs: [],
+        features: []
         }
     },
     
     initialize: function() {
       _.bindAll(this, "updatePosition", "updateDisplayData",
         "waitForData", "updateBufferData", "importData",
-        "isLocusInRegion", "calcHaplotypes");
+        "isLocusInRegion", "isFeatureInRegion", "calcHaplotypes");
 
       this.updateBufferData();
       
@@ -145,6 +147,7 @@
       bufferData.ends = data.region.end;
       bufferData.SNPs = data.SNPs;
       bufferData.loci = data.loci;
+      bufferData.features = data.features;
       
       this.set({"bufferData": bufferData});
       if (this.get("displayData").waiting) {
@@ -209,6 +212,10 @@
       // get loci
       var loci = this.get("bufferData").loci;
       displayData.loci = _.select(loci, this.isLocusInRegion);
+      
+      // get features
+      var features = this.get("bufferData").features;
+      displayData.features = _.select(features, this.isFeatureInRegion);
  
       // set obtained data to the model
       this.set({"displayData": displayData});
@@ -220,6 +227,13 @@
     isLocusInRegion: function(locus) {
       var pos = this.get("pos");
       if(locus.gene.start <= pos.ends && locus.gene.end >= pos.starts) {
+        return true;
+      } else return false;
+    },
+    
+    isFeatureInRegion: function(feature) {
+      var pos = this.get("pos");
+      if(feature.start <= pos.ends && feature.end >= pos.starts) {
         return true;
       } else return false;
     },
@@ -251,6 +265,7 @@
       
       displayData.haplotypes = haplotypes;
       this.set({"displayData": displayData});
+      this.trigger('change:displayData');
     }
     
   });
@@ -262,6 +277,7 @@
       
       this.trackH = 20;
       this.glyphH = 12;
+      this.glyphT = 4;
       this.width = 720;
       this.height = 10000;
       this.left = 40;
@@ -269,9 +285,7 @@
       this.top = 20;
       this.bottom = 4;
     
-      this.model.bind('change', function(model, change){
-        this.draw();
-      });
+      this.model.bind('change:displayData', this.draw, this);
       
       this.render();
     },
@@ -288,16 +302,110 @@
     },
     
     draw: function() {
-      var starts = this.model.get("starts");
-      var ends = this.model.get("ends");
-      this.startFrom = 0;
+      var pos = this.model.get("pos");
+      var width = this.width;
+
+      var x = d3.scale.linear().domain([pos.starts, pos.ends]).range([0, this.width]);
       
-      this.x = scale.linear().domain([starts, ends]).range([0, this.width]);
+      var displayData = this.model.get("displayData");
+      var features = this.model.get("displayData").features;
+
+      var glyphH = this.glyphH;
+      var glyphT = this.glyphT;
+      var trackH = this.trackH;
+      var freePos = glyphT; 
       
-    },
-    
-    drawLoci: function() {
+      // draw genes
+      var genes = _.select(features, function(feature) {
+        return feature.type === "gene";
+      });
       
+      var geneRect = this.svg.selectAll('.gene').data(genes);
+      geneRect.attr("x", function(d) { return x(d.start); })
+              .attr("width", function(d) { return x(d.end) - x(d.start); });
+      geneRect.enter().append("svg:rect")
+              .attr("class", "gene")
+              .attr("height", glyphH)
+              .attr("x", function(d) { return x(d.start); })
+              .attr("y", function(d) { return freePos; })
+              .attr("width", function(d) { return x(d.end) - x(d.start); })
+              .attr("fill", "chartreuse");
+      geneRect.exit().remove();
+
+      // draw gene labels
+      var geneLabel = this.svg.selectAll(".geneLabel").data(genes);
+      geneLabel.attr("x", function(d) { return x(d.start); });
+      geneLabel.enter().append("svg:text")
+                .attr("class", "geneLabel")
+                .attr("x", function(d) { return x(d.start); })
+                .attr("y", function(d) { return freePos; })
+                .attr("dy", "1.1em")
+                .attr("dx", "0.5em")
+                .text(function(d) { return d.attributes.Name; });
+      geneLabel.exit().remove();
+            
+      freePos += trackH;
+      
+      // draw gene models
+      var UTR5s = _.select(features, function(feature) {
+        return feature.type === "five_prime_UTR";
+      });
+      var UTR3s = _.select(features, function(feature) {
+        return feature.type === "three_prime_UTR";
+      });
+      var CDSs = _.select(features, function(feature) {
+        return feature.type === "CDS";
+      });
+
+      var yPos = function(d) {
+        var nModel = d.attributes.Parent.split(",")[0].split(".")[1] || 1; 
+        return freePos + (nModel - 1)*trackH;
+      };
+      
+      var UTR5Rect = this.svg.selectAll('.UTR5').data(UTR5s);
+      UTR5Rect.attr("x", function(d) { return x(d.start); })
+              .attr("width", function(d) { return x(d.end) - x(d.start); });
+      UTR5Rect.enter().append("svg:rect")
+              .attr("class", "UTR5")
+              .attr("height", glyphH)
+              .attr("x", function(d) { return x(d.start); })
+              .attr("y", yPos)
+              .attr("width", function(d) { return x(d.end) - x(d.start); })
+              .attr("fill", "slateblue");
+      UTR5Rect.exit().remove();
+      
+      var UTR3Rect = this.svg.selectAll('.UTR3').data(UTR3s);
+      UTR3Rect.attr("x", function(d) { return x(d.start); })
+              .attr("width", function(d) { return x(d.end) - x(d.start); });
+      UTR3Rect.enter().append("svg:rect")
+              .attr("class", "UTR3")
+              .attr("height", glyphH)
+              .attr("x", function(d) { return x(d.start); })
+              .attr("y", yPos)
+              .attr("width", function(d) { return x(d.end) - x(d.start); })
+              .attr("fill", "teal");
+      UTR3Rect.exit().remove();
+      
+      var CDSRect = this.svg.selectAll('.CDS').data(CDSs);
+      CDSRect.attr("x", function(d) { return x(d.start); })
+              .attr("width", function(d) { return x(d.end) - x(d.start); });
+      CDSRect.enter().append("svg:rect")
+              .attr("class", "CDS")
+              .attr("height", glyphH)
+              .attr("x", function(d) { return x(d.start); })
+              .attr("y", yPos)
+              .attr("width", function(d) { return x(d.end) - x(d.start); })
+              .attr("fill", "teal");
+      CDSRect.exit().remove();
+      
+      // calculate new freePos by calculating the max number of gene models per locus
+      var maxModels = _.reduce(UTR5s, function(memo, utr) {
+        var nModel = utr.attributes.Parent.split(",")[0].split(".")[1];
+        memo = memo < nModel ? nModel : memo;
+        return memo;
+      }, 0);
+      
+      freePos += trackH*maxModels;
     }
     
   });

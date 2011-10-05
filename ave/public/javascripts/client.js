@@ -290,18 +290,16 @@
       };
       
       var d3edibleTree = function(clusters) {
-        console.log("editing node");
         var children = [];
         children.push(clusters.left);
         children.push(clusters.right);
         children = _.compact(children);
-        console.log(_.size(children));
         if ( _.size(children) > 0 ) {
-          console.log("has children");
           clusters.children = children;
           _.map(clusters.children, d3edibleTree);
           delete clusters.left;
           delete clusters.right;
+          delete clusters.size;
         }
         return clusters;
       };
@@ -325,13 +323,15 @@
       }
      
      // convert clusterfuck generated tree into d3 edable tree
-     clusters = d3edibleTree(clusters);
+     // clusters = d3edibleTree(clusters);
      console.log(clusters);
      
      // put clusters into the model
      var displayData = this.get("displayData");
      displayData.clusters = clusters;
      this.set({displayData: displayData});
+     
+     this.trigger("change:displayData:clusters");    
     }
     
   });
@@ -339,7 +339,7 @@
   var VisView = Backbone.View.extend({
     
     initialize: function() {
-      _.bindAll(this, "render", "draw");
+      _.bindAll(this, "render", "draw", "drawTree");
       
       this.trackH = 20;
       this.glyphH = 12;
@@ -354,7 +354,7 @@
       this.browserWidth = 400;
     
       this.model.bind('change:displayData', this.draw, this);
-      
+      this.model.bind('change:displayData:clusters', this.drawTree, this);
       this.render();
     },
     
@@ -366,14 +366,7 @@
           .attr("height", this.top + this.height + this.bottom)
         .append("svg:g")
           .attr("transform", "translate(" + this.left + "," + this.top + ")");
-          
-      // tree div
-      this.svgTree = d3.select("#tree").append("svg:svg")
-          .attr("width", this.left + this.width + this.right)
-          .attr("height", this.top + this.height + this.bottom)
-        .append("svg:g")
-          .attr("transform", "translate(" + this.left + "," + this.top + ")");
-          
+                           
       this.draw();
       return this;
     },
@@ -489,7 +482,7 @@
         memo = memo < nModel ? nModel : memo;
         return memo;
       }, 0);
-
+      this.maxModels = maxModels;
       freePos += trackH*maxModels;
 
       // get SNPs with haplotype indexes
@@ -561,26 +554,56 @@
           .attr('text-anchor', 'middle')
           .text(x.tickFormat(10));
       rules.exit().remove();
+     },
+     
+     drawTree: function() {
+       var topTranslation = (this.maxModels + 1) * this.trackH;
+       var top = this.top + topTranslation;
+       // tree div
+       this.svgTree = d3.select("#tree").append("svg:svg")
+          .attr("width", this.left + this.width + this.right)
+          .attr("height", this.top + this.height + this.bottom)
+          .append("svg:g")
+          .attr("transform", "translate(" + this.left + "," + top + ")");
+      var displayData = this.model.get("displayData");
+      var haplotypes = displayData.haplotypes;
+      var clusters = displayData.clusters;
+      var height = _.size(haplotypes) * this.trackH;
       
-      //draw a tree for clustering
       var cluster = d3.layout.cluster()
-        .size([this.height, this.width]);
+        .size([height, this.width + this.left]);
+      cluster.separation(function(a, b) { return 1; });
+      cluster.children(function(d) {
+          if (d) return (d.children = _.compact([d.left , d.right]));
+        });
+      
       var diagonal = d3.svg.diagonal()
-          .projection(function(d) {return [d.x, d.y]; });
+          .projection(function(d) {return [d.y, d.x]; });
       
+      console.log(clusters);
       var nodes = cluster.nodes(clusters);
-      
-    },
-    
-    baseColor: function(d) {
-      var baseColors = {
-        'A': 'red',
-        'C': 'green',
-        'G': 'blue',
-        'T': 'orange'
-      };
-      return baseColors[d.base];
-    }
+      var link = this.svgTree.selectAll("path.link")
+          .data(cluster.links(nodes))
+        .enter().append("svg:path")
+          .attr("class", "link")
+          .attr("d", diagonal);
+      var node = this.svgTree.selectAll("g.node")
+          .data(nodes)
+        .enter().append("svg:g")
+          .attr("class", "node")
+          .attr("transform", function(d) { return "translate(" + d.y + d.x + ")";});
+        
+     },
+
+     baseColor: function(d) {
+       var baseColors = {
+         'A': 'red',
+         'C': 'green',
+         'G': 'blue',
+         'T': 'orange'
+       };
+       return baseColors[d.base];
+     }
     
   });
   

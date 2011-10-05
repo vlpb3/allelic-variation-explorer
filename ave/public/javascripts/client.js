@@ -128,7 +128,8 @@
     initialize: function() {
       _.bindAll(this, "updatePosition", "updateDisplayData",
         "waitForData", "updateBufferData", "importData",
-        "isLocusInRegion", "isFeatureInRegion", "calcHaplotypes");
+        "isLocusInRegion", "isFeatureInRegion", "calcHaplotypes",
+        "cluster");
 
       this.updateBufferData();
       
@@ -223,6 +224,9 @@
       
       // calculate haplotypes from SNPs in the region
       this.calcHaplotypes();
+      
+      // cluster haplotypes
+      this.cluster();
     },
     
     isLocusInRegion: function(locus) {
@@ -267,6 +271,67 @@
       displayData.haplotypes = haplotypes;
       this.set({"displayData": displayData});
       this.trigger('change:displayData');
+    },
+    
+    cluster: function() {
+      
+      var metric = function(hapl1, hapl2){
+        var score = 5;
+        var snps1 = hapl1.snps;
+        var snps2 = hapl2.snps;
+        var snpDiff = _.union(_.keys(snps1), _.keys(snps2));
+        var dist = _.reduce(snpDiff, function(memo, idx) {
+          if (snps1[idx] === snps2[idx]) {
+            return memo;
+          } else return (memo += score*score);
+        }, 0);
+        dist = Math.sqrt(dist);
+        return dist;
+      };
+      
+      var d3edibleTree = function(clusters) {
+        console.log("editing node");
+        var children = [];
+        children.push(clusters.left);
+        children.push(clusters.right);
+        children = _.compact(children);
+        console.log(_.size(children));
+        if ( _.size(children) > 0 ) {
+          console.log("has children");
+          clusters.children = children;
+          _.map(clusters.children, d3edibleTree);
+          delete clusters.left;
+          delete clusters.right;
+        }
+        return clusters;
+      };
+      
+      var haplotypes = this.get("displayData").haplotypes;
+      // reduce haplotypes to list of objects
+      // also add a list of strains for each haplotype
+      haplotypes = _.toArray(haplotypes);
+      haplotypes = _.reduce(haplotypes, function(memo, hapl) {
+        var strains = _.pluck(hapl, "name");
+        delete hapl[0].name;
+        hapl[0].strains = strains;
+        memo.push(hapl[0]);
+        return memo;
+      }, []);
+      
+      var clusters;
+      if (_.size(haplotypes) > 1) {
+      clusters = clusterfck.hcluster(haplotypes, metric,
+            clusterfck.AVERAGE_LINKAGE)[0];
+      }
+     
+     // convert clusterfuck generated tree into d3 edable tree
+     clusters = d3edibleTree(clusters);
+     console.log(clusters);
+     
+     // put clusters into the model
+     var displayData = this.get("displayData");
+     displayData.clusters = clusters;
+     this.set({displayData: displayData});
     }
     
   });
@@ -279,12 +344,14 @@
       this.trackH = 20;
       this.glyphH = 12;
       this.glyphT = 4;
-      this.width = 720;
+      this.width = $(window).width()/2 - 60;
       this.height = 10000;
       this.left = 40;
       this.right = 40;
       this.top = 20;
       this.bottom = 4;
+      this.browserLeft = 440;
+      this.browserWidth = 400;
     
       this.model.bind('change:displayData', this.draw, this);
       
@@ -293,11 +360,20 @@
     
     render: function() {
       
+      // browser div
       this.svg = d3.select("#chart").append("svg:svg")
           .attr("width", this.left + this.width + this.right)
           .attr("height", this.top + this.height + this.bottom)
         .append("svg:g")
           .attr("transform", "translate(" + this.left + "," + this.top + ")");
+          
+      // tree div
+      this.svgTree = d3.select("#tree").append("svg:svg")
+          .attr("width", this.left + this.width + this.right)
+          .attr("height", this.top + this.height + this.bottom)
+        .append("svg:g")
+          .attr("transform", "translate(" + this.left + "," + this.top + ")");
+          
       this.draw();
       return this;
     },
@@ -306,11 +382,13 @@
       var pos = this.model.get("pos");
       var width = this.width;
 
-      var x = d3.scale.linear().domain([pos.starts, pos.ends]).range([0, this.width]);
+      var x = d3.scale.linear().domain([pos.starts, pos.ends])
+          .range([0, this.width ]);
       
       var displayData = this.model.get("displayData");
       var features = displayData.features;
       var haplotypes = displayData.haplotypes;
+      var clusters = displayData.clusters;
       
       var glyphH = this.glyphH;
       var glyphT = this.glyphT;
@@ -412,11 +490,8 @@
         return memo;
       }, 0);
 
-      console.log(UTR3s);
       freePos += trackH*maxModels;
-      
 
-      
       // get SNPs with haplotype indexes
       this.hapSNPs = [];
       this.hapCounter = 0;
@@ -474,21 +549,26 @@
       var newRules = rules.enter().append('svg:g')
           .attr('class', 'rule')
           .attr('transform', function(d) {return 'translate(' + x(d) + ',0)';});
-
       newRules.append('svg:line')
           .attr("class", "ruleLine")
           .attr('y1', 0)
           .attr('y2', this.height)
           .attr('stroke', 'black')
           .attr('stroke-opacity', 0.1);
-
       newRules.append("svg:text")
           .attr('y', -10)
           .attr('dy', '.71em')
           .attr('text-anchor', 'middle')
           .text(x.tickFormat(10));
-
       rules.exit().remove();
+      
+      //draw a tree for clustering
+      var cluster = d3.layout.cluster()
+        .size([this.height, this.width]);
+      var diagonal = d3.svg.diagonal()
+          .projection(function(d) {return [d.x, d.y]; });
+      
+      var nodes = cluster.nodes(clusters);
       
     },
     

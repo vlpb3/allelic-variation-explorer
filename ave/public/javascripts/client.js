@@ -7,7 +7,7 @@
       _.bindAll(this, "moveModel", "navigateTo");
       this.model = options.model;
       
-      this.navigateTo();
+      // this.navigateTo();
       // when model changes, navigate to new place      
       this.model.bind("change:pos", this.navigateTo);
     },
@@ -366,6 +366,7 @@
       
       var UTR5Rect = this.svg.selectAll('.UTR5').data(UTR5s);
       UTR5Rect.attr("x", function(d) { return x(d.start); })
+              .attr("y", yPos)
               .attr("width", function(d) { return x(d.end) - x(d.start); });
       UTR5Rect.enter().append("svg:rect")
               .attr("class", "UTR5")
@@ -378,6 +379,7 @@
       
       var UTR3Rect = this.svg.selectAll('.UTR3').data(UTR3s);
       UTR3Rect.attr("x", function(d) { return x(d.start); })
+              .attr("y", yPos)
               .attr("width", function(d) { return x(d.end) - x(d.start); });
       UTR3Rect.enter().append("svg:rect")
               .attr("class", "UTR3")
@@ -390,6 +392,7 @@
       
       var CDSRect = this.svg.selectAll('.CDS').data(CDSs);
       CDSRect.attr("x", function(d) { return x(d.start); })
+              .attr("y", yPos)
               .attr("width", function(d) { return x(d.end) - x(d.start); });
       CDSRect.enter().append("svg:rect")
               .attr("class", "CDS")
@@ -401,16 +404,18 @@
       CDSRect.exit().remove();
       
       // calculate new freePos by calculating the max number of gene models per locus
-      var maxModels = _.reduce(CDSs, function(memo, cds) {
-        var nModel = cds.attributes.Parent.split(",")[0].split(".")[1];
+      var allFeatures = UTR5s.concat(CDSs).concat(UTR3s);
+      var maxModels = _.reduce(allFeatures, function(memo, f) {
+        var nModel = f.attributes.Parent.split(",")[0].split(".")[1];
         nModel = parseInt(nModel, 10); 
         memo = memo < nModel ? nModel : memo;
         return memo;
       }, 0);
-      
+
+      console.log(UTR3s);
       freePos += trackH*maxModels;
       
-      console.log(displayData);
+
       
       // get SNPs with haplotype indexes
       this.hapSNPs = [];
@@ -429,7 +434,6 @@
       }, this);
 
       // draw haplotypes
-      console.log(haplotypes);
       var haplotypeBars = this.svg.selectAll('.hap').data(_.range(_.size(haplotypes)));
       haplotypeBars.attr('y', function(d, i) { return freePos + i*trackH; });
       haplotypeBars.enter().append('svg:rect')
@@ -461,7 +465,6 @@
 
       // draw rules
       this.height = (1 + maxModels + _.size(haplotypes))*trackH;
-      console.log(this.height);
       var rules = this.svg.selectAll('g.rule')
           .data(x.ticks(10), String);
       this.svg.selectAll('.ruleLine')

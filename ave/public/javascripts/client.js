@@ -289,21 +289,6 @@
         return dist;
       };
       
-      var d3edibleTree = function(clusters) {
-        var children = [];
-        children.push(clusters.left);
-        children.push(clusters.right);
-        children = _.compact(children);
-        if ( _.size(children) > 0 ) {
-          clusters.children = children;
-          _.map(clusters.children, d3edibleTree);
-          delete clusters.left;
-          delete clusters.right;
-          delete clusters.size;
-        }
-        return clusters;
-      };
-      
       var haplotypes = this.get("displayData").haplotypes;
       // reduce haplotypes to list of objects
       // also add a list of strains for each haplotype
@@ -316,22 +301,21 @@
         return memo;
       }, []);
       
-      var clusters;
+      var clusters = {};
       if (_.size(haplotypes) > 1) {
       clusters = clusterfck.hcluster(haplotypes, metric,
             clusterfck.AVERAGE_LINKAGE)[0];
       }
-     
-     // convert clusterfuck generated tree into d3 edable tree
-     // clusters = d3edibleTree(clusters);
-     console.log(clusters);
+      // arrange haplotypes by clustered order
+      // haplotypes = clusterHaplotypes([], clusters);
      
      // put clusters into the model
      var displayData = this.get("displayData");
+     // displayData.haplotypes = haplotypes;
      displayData.clusters = clusters;
      this.set({displayData: displayData});
      
-     this.trigger("change:displayData:clusters");    
+     this.trigger("change:displayData:clusters");
     }
     
   });
@@ -339,7 +323,8 @@
   var VisView = Backbone.View.extend({
     
     initialize: function() {
-      _.bindAll(this, "render", "draw", "drawTree");
+      _.bindAll(this, "render", "draw", "drawTree",
+        "isLeaf", "leaf2haplotype");
       
       this.trackH = 20;
       this.glyphH = 12;
@@ -353,8 +338,7 @@
       this.browserLeft = 440;
       this.browserWidth = 400;
     
-      this.model.bind('change:displayData', this.draw, this);
-      this.model.bind('change:displayData:clusters', this.drawTree, this);
+      this.model.bind('change:displayData:clusters', this.draw, this);
       this.render();
     },
     
@@ -373,7 +357,7 @@
           .attr("height", this.top + this.height + this.bottom)
         .append("svg:g")
           .attr("transform", "translate(" + this.left + "," + this.top + ")");
-      this.draw();
+      // this.draw();
       return this;
     },
     
@@ -491,8 +475,20 @@
       this.maxModels = maxModels;
       freePos += trackH*maxModels;
 
+      this.drawTree();
       // get SNPs with haplotype indexes
-      this.hapSNPs = [];
+      this.hapSNPs = _.reduce(this.leaves, function(memo, leaf) {
+        _.each(leaf.snps, function(base, pos) {
+         var snp = {
+           x: pos,
+           y: leaf.x,
+           base: base
+         };
+         memo.push(snp);
+        });
+        return memo;
+      }, []);
+/*      
       this.hapCounter = 0;
       _.map(haplotypes, function(haplotype, idx, haplotypes) {
         var snps = haplotype[0].snps;
@@ -506,16 +502,17 @@
         }, this);
         this.hapCounter += 1;
       }, this);
-
+*/
       // draw haplotypes
-      var haplotypeBars = this.svg.selectAll('.hap').data(_.range(_.size(haplotypes)));
-      haplotypeBars.attr('y', function(d, i) { return freePos + i*trackH; });
+      console.log(this.leaves);
+      var haplotypeBars = this.svg.selectAll('.hap').data(this.leaves);
+      haplotypeBars.attr('y', function(d) { return d.x + freePos - trackH/2;});
       haplotypeBars.enter().append('svg:rect')
               .attr('class', 'hap')
               .attr('height', glyphH)
               .attr('width', width)
               .attr('x', x(pos.starts))
-              .attr('y', function(d, i) { return freePos + i*trackH; })
+              .attr('y', function(d) { return d.x + freePos - trackH/2;})
               .attr('fill', 'lavender');
       haplotypeBars.exit().remove();
 
@@ -523,8 +520,7 @@
       var SNPCircles = this.svg.selectAll('.SNP').data(this.hapSNPs);
       SNPCircles.attr('cx', function(d) { return x(d.x); })
                 .attr('cy', function(d) {
-
-                  return (d.haplotype + maxModels + 1.5)*trackH;
+                  return d.y + freePos - glyphT;
                   })
                 .attr('fill', this.baseColor);
       SNPCircles.enter().append('svg:circle')
@@ -532,10 +528,13 @@
                 .attr('r', glyphH/4)
                 .attr('cx', function(d) { return x(d.x); })
                 .attr('cy', function(d) {
-                  return (d.haplotype + maxModels + 1.5)*trackH;
+                    return d.y + freePos - glyphT;
                   })
-                .attr('fill', this.baseColor);
+                .attr('fill', this.baseColor)
+                .on('click', function(d, i) {
+                  console.log(d3.event);});
       SNPCircles.exit().remove(); 
+
 
       // draw rules
       this.height = (1 + maxModels + _.size(haplotypes))*trackH;
@@ -588,6 +587,7 @@
 
       var link = this.svgTree.selectAll("path.link")
           .data(cluster.links(nodes));
+      
       link.attr("d", diagonal);
       link.enter().append("svg:path")
           .attr("class", "link")
@@ -604,8 +604,26 @@
             return "translate(" + d.y + ", " + d.x + ")";
           });
       node.append("svg:circle")
-        .attr("r", this.glyphH/2);
+        .attr("r", this.glyphH/2 - 1.5);
       node.exit().remove();
+      
+      // save leaf nodes so that haplotypes can be arranged acordingly
+      // to clustering by d3
+      var leaves = _.select(nodes, this.isLeaf);
+      this.leaves = _.map(leaves, this.leaf2haplotype);
+      console.log(nodes);
+     },
+     
+     isLeaf: function(node) {
+       if (_.size(node.children) === 0) return true;
+       else return false;
+     },
+     
+     leaf2haplotype: function(leaf) {
+       leaf.snps = leaf.canonical.snps;
+       leaf.strains = leaf.canonical.strains;
+       delete leaf.canonical;
+       return leaf;
      },
 
      baseColor: function(d) {

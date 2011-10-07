@@ -46,12 +46,12 @@ io.sockets.on('connection', function(socket) {
 			seqdb.getFromRegion(seqdb.Feature, 'mRNA', {chrom: 1, start: 3000, end: 1000000},
 				function(err, doc) {
 					if (err) console.log(err);
-					console.dir("mrnas: " + doc[0])
+					console.dir("mrnas: " + doc[0]);
 				} );
 		});
 	});
 	socket.on('getData', function(region) {
-	  console.log(region)
+	  console.log(region);
 		seqdb.getRegion(region, function(err, data){
 			if (err) throw err;
 			else {
@@ -59,7 +59,7 @@ io.sockets.on('connection', function(socket) {
 				socket.emit('data', data);
 			}
 		});
-	})
+	});
 });
 
 app.listen(3000);

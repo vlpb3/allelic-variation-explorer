@@ -33,11 +33,14 @@ h1 {
 .geneLabel {
   font: 9px sans-serif;
 }
+.snpTip {
+  font: 7px;
+}
 .node circle {
   fill: #fff;
   stroke: #4682b4;
   stroke-width: 1.5px;
-  opacity: 0.6;
+  opacity: 0.25;
 }
 .link {
   fill: none;
@@ -52,4 +55,7 @@ circle {
 }
 rect {
   opacity: 0.6;
+}
+.hap {
+  opacity: 0.25;
 }

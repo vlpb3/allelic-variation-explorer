@@ -504,7 +504,6 @@
       }, this);
 */
       // draw haplotypes
-      console.log(this.leaves);
       var haplotypeBars = this.svg.selectAll('.hap').data(this.leaves);
       haplotypeBars.attr('y', function(d) { return d.x + freePos - trackH/2;});
       haplotypeBars.enter().append('svg:rect')
@@ -513,10 +512,11 @@
               .attr('width', width)
               .attr('x', x(pos.starts))
               .attr('y', function(d) { return d.x + freePos - trackH/2;})
-              .attr('fill', 'lavender');
+              .attr('fill', 'steelblue');
       haplotypeBars.exit().remove();
 
       // draw SNPs
+      hapSNPs = this.hapSNPs;
       var SNPCircles = this.svg.selectAll('.SNP').data(this.hapSNPs);
       SNPCircles.attr('cx', function(d) { return x(d.x); })
                 .attr('cy', function(d) {
@@ -531,11 +531,72 @@
                     return d.y + freePos - glyphT;
                   })
                 .attr('fill', this.baseColor)
-                .on('click', function(d, i) {
-                  console.log(d3.event);});
+                .on('mouseover', onSNPmouseOver)
+                .on('mouseout', onSNPmouseOut);
       SNPCircles.exit().remove(); 
-
-
+      
+      var svg = this.svg;
+      
+      // react to hover over the snp
+      function onSNPmouseOver(d, i) {
+        var pos = d.x;
+        var tx = x(d.x);
+        var ty = d.y + freePos - glyphH*0.75;
+        
+        // show the position of the SNP
+        var g = d3.select(this.parentNode);
+        g.append("svg:text")
+          .attr("class", "snpTip")
+          .attr("x", tx)
+          .attr("y", ty)
+          .attr('text-anchor', 'middle')
+          .text(pos);
+        
+        // fade out the haplotypes that do not have this SNP
+        var nodeWithSNP =   _.reduce(hapSNPs, function(memo, snp) {
+            if (snp.x === pos) memo.push(snp.y);
+            console.log(snp.y);
+            return memo; 
+          }, []);
+          
+        var posWithSNP= _.map(nodeWithSNP, function(nodePos){
+          return nodePos + freePos -trackH/2;
+        });
+        
+        var posWithoutSNP= _.reduce(hapSNPs, function(memo, snp) {
+          memo.push(snp.y + freePos - trackH/2);
+          return memo; 
+        }, []);
+        
+        posWithoutSNP = _.unique(posWithoutSNP);
+        posWithoutSNP = _.difference(posWithoutSNP, posWithSNP);
+        _.each(posWithoutSNP, function(y){
+          $('[y|="' + y + '"]').fadeTo("slow", 0.1, function() {});
+        });
+        d3.selectAll(".nodeCircle").style("fill", function(d) {
+          if ((_.size(d.children) === 0) && _.include(nodeWithSNP, d.x)) {
+            console.log(d);
+            return "steelblue";
+          }
+          else return "#fff";
+        });
+      }
+      
+      function onSNPmouseOut(d, i) {
+        var g = d3.select(this.parentNode);
+        // remove the SNP tip
+        g.selectAll(".snpTip").remove();
+        // fade to the original state
+        $(".hap").stop(true, true).fadeTo("slow", 0.25, function() {});
+        d3.selectAll(".nodeCircle").style("fill", "#fff");
+      }
+      
+      function onHaplCLick(d, i) {
+        // when haplotype bar is clicked open the dialog with the
+        // details about the haplotype
+        
+      }
+      
       // draw rules
       this.height = (1 + maxModels + _.size(haplotypes))*trackH;
       var rules = this.svg.selectAll('g.rule')
@@ -604,6 +665,7 @@
             return "translate(" + d.y + ", " + d.x + ")";
           });
       node.append("svg:circle")
+        .attr("class", "nodeCircle")
         .attr("r", this.glyphH/2 - 1.5);
       node.exit().remove();
       
@@ -611,7 +673,6 @@
       // to clustering by d3
       var leaves = _.select(nodes, this.isLeaf);
       this.leaves = _.map(leaves, this.leaf2haplotype);
-      console.log(nodes);
      },
      
      isLeaf: function(node) {

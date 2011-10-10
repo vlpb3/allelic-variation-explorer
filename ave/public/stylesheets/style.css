@@ -1,6 +1,6 @@
 body {
   font-family: "Helvetica Neue", "Lucida Grande", "Arial";
-  font-size: 13 px;
+  font-size: 13px;
   text-stroke: 1px rgba(255,255,255,0.10);
   color: #555;
 }
@@ -22,13 +22,20 @@ h1 {
 #locationChoice {
   text-align: center;
 }
+#go {
+  align: right;
+}
 #chart {
-  width: 50%;
-  float: right;
+  position: absolute;
+  top: 180px;
 }
 #tree {
-  width: 50%;
-  float: left;
+  position: absolute;
+  top: 180px;
+  position: absolute;
+}
+#navigate {
+  position: absolute;
 }
 .geneLabel {
   font: 9px sans-serif;
@@ -47,6 +54,40 @@ h1 {
   stroke: #ccc;
   stroke-width: 1.5px;
 }
+.ui-dialog-content {
+  font-family: "Helvetica Neue", "Lucida Grande", "Arial";
+  font-size: 13px;
+}
+.hap {
+  opacity: 0.25;
+}
+.mini_icon {
+  float: left;
+  display: block;
+  width: 16px;
+  height: 16px;
+  background: url("../images/icons.png");
+  margin-left: 25px;
+  margin-bottom: 25px;
+}
+.icon_settings {
+  background-position: -352px -66px;
+}
+.icon_left {
+  background-position: -185px -66px;
+}
+.icon_right {
+  background-position: -227px -66px;
+}
+.icon_plus {
+  background-position: -227px -151px;
+}
+.icon_minus {
+  background-position: -268px -151px;
+}
+.icon_search {
+  background-position: -268px -24px;
+}
 svg {
   font: 10px sans-serif;
 }
@@ -55,7 +96,4 @@ circle {
 }
 rect {
   opacity: 0.6;
-}
-.hap {
-  opacity: 0.25;
 }

@@ -53,7 +53,7 @@
         $("#chrom").val(pos.chrom);
         $("#start").val(pos.starts);
         $("#end").val(pos.ends);
-      });         
+      });    
     },
     
     events: {
@@ -96,6 +96,103 @@
       return this;
     }
     
+  });
+  
+  var NavigateView = Backbone.View.extend({
+    
+    initialize: function() {
+      _.bindAll(this, "render", "updateString",
+        "goLeft", "zoomOut", "zoomIn", "goRight");
+      this.step = 5;
+      this.render();
+      this.updateString();
+      this.model.bind("change:pos", this.updateString);
+    },
+    
+    render: function() {
+      var winWidth = $(window).width();
+      $("#navigate").css("left", winWidth/2);
+      $("#navigate").css("width", winWidth/2);
+    },
+    
+    events: {
+      "click #goLeft": "goLeft",
+      "click #zoomOut": "zoomOut",
+      "click #zoomIn": "zoomIn",
+      "click #goRight": "goRight"
+    },
+    
+    goLeft: function() {
+      var pos = this.model.get("pos");
+      var step = Math.floor((pos.ends - pos.starts) / this.step);
+      var starts = pos.starts - step;
+      starts = starts > 0 ? starts : 0;
+      var ends = pos.ends - step;
+      var update = {
+        pos: {
+          "starts": starts,
+          "ends": ends,
+          "chrom": pos.chrom
+        }
+      };
+      this.model.set(update);
+    },
+    
+    zoomOut: function() {
+      var pos = this.model.get("pos");
+      var step = Math.floor((pos.ends - pos.starts) / 2);
+      var starts = pos.starts - step;
+      starts = starts > 0 ? starts : 0;
+      var ends = pos.ends + step;
+      var update = {
+        pos: {
+          "starts": starts,
+          "ends": ends,
+          "chrom": pos.chrom
+        }
+      };
+      this.model.set(update);
+    },
+    
+    zoomIn: function() {
+      var pos = this.model.get("pos");
+      var step = Math.floor((pos.ends - pos.starts) / 4);
+      var starts = pos.starts + step;
+      var ends = pos.ends - step;
+      var update = {
+        pos: {
+          "starts": starts,
+          "ends": ends,
+          "chrom": pos.chrom
+        }
+      };
+      this.model.set(update);
+      
+    },
+    
+    goRight: function() {
+      var pos = this.model.get("pos");
+      var step = Math.floor((pos.ends - pos.starts) / this.step);
+      var starts = pos.starts + step;
+      var ends = pos.ends + step;
+      var update = {
+        pos: {
+          "starts": starts,
+          "ends": ends,
+          "chrom": pos.chrom
+        }
+      };
+      this.model.set(update);
+    },
+
+    updateString: function() {
+      var pos = this.model.get("pos");
+      var positionStr = "Chr" + pos.chrom + ":" + pos.starts + ".." + pos.ends;
+      var strech = pos.ends - pos.starts;
+      positionStr += " fragment: " + strech + "bp";
+      $("#positionText").html(positionStr);
+      
+    }
   });
   
   // model for all the data
@@ -329,10 +426,10 @@
       this.trackH = 20;
       this.glyphH = 12;
       this.glyphT = 4;
-      this.width = $(window).width()/2 - 60;
+      this.width = $(window).width()/2 - 20;
       this.height = 10000;
-      this.left = 40;
-      this.right = 40;
+      this.left = 10;
+      this.right = 10;
       this.top = 20;
       this.bottom = 4;
       this.browserLeft = 440;
@@ -343,6 +440,10 @@
     },
     
     render: function() {
+      
+      // allign properly elements
+      var winWidth = $(window).width();
+      $("#chart").css("left", winWidth/2);
       
       // browser div
       this.svg = d3.select("#chart").append("svg:svg")
@@ -512,7 +613,8 @@
               .attr('width', width)
               .attr('x', x(pos.starts))
               .attr('y', function(d) { return d.x + freePos - trackH/2;})
-              .attr('fill', 'steelblue');
+              .attr('fill', 'steelblue')
+              .on('click', onHaplCLick);
       haplotypeBars.exit().remove();
 
       // draw SNPs
@@ -555,7 +657,6 @@
         // fade out the haplotypes that do not have this SNP
         var nodeWithSNP =   _.reduce(hapSNPs, function(memo, snp) {
             if (snp.x === pos) memo.push(snp.y);
-            console.log(snp.y);
             return memo; 
           }, []);
           
@@ -575,7 +676,6 @@
         });
         d3.selectAll(".nodeCircle").style("fill", function(d) {
           if ((_.size(d.children) === 0) && _.include(nodeWithSNP, d.x)) {
-            console.log(d);
             return "steelblue";
           }
           else return "#fff";
@@ -594,7 +694,18 @@
       function onHaplCLick(d, i) {
         // when haplotype bar is clicked open the dialog with the
         // details about the haplotype
+        var snpStr = "";
+        _.each(d.snps, function(snp, pos){
+          snpStr += pos + ": " + snp + ", ";
+        });
         
+        $('<div>').dialog({
+          title: 'Haplotype Info',
+          close: function(ev, ui) {
+            $(this).remove();
+          }
+        }).append("<p>Strains: </br> " + d.strains + "</p>" + 
+          "<p>SNPs: </br>" + snpStr + "</p>");
       }
       
       // draw rules
@@ -709,6 +820,11 @@
     var goRegionView = new choiceView({
       el: $("#locationChoice"),
       model: dataModel
+    });
+    
+    var navigateView = new NavigateView({
+      el: $("#navigate"),
+      model: dataModel 
     });
     
     // initialize router

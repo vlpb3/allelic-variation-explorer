@@ -27,7 +27,7 @@ script(type="text/javascript", src="javascripts/client.js")
 link(type="text/css", href="stylesheets/Aristo/Aristo.css", rel="stylesheet")
 
 h1= title
-  img#settings(src="/images/Black_Settings_small.png", alt="settings icon")
+  span(class="mini_icon icon_settings")
 
 p
   div#locationChoice
@@ -52,15 +52,24 @@ p
         input#start(type="number")
         |  to
         input#end(type="number")
+        | Go
         
       div#featureSearch
         | feature
         input()
         |  with flanking region
         input()
-      
+        span#search(class="mini_icon icon_search")
+br
+
+p 
+  div#navigate
+    span#goLeft(class="mini_icon icon_left")
+    span#zoomOut(class="mini_icon icon_minus")
+    span#zoomIn(class="mini_icon icon_plus")
+    span#goRight(class="mini_icon icon_right")
+    span#positionText
   
-p
   div#graphs
     div#chart
     div#tree

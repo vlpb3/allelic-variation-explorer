@@ -276,7 +276,6 @@ function getFromRegion(model, type, loc, callback) {
 }
 
 function getRegion(region, callback) {
-  console.log(region);
   var start = region.start/SCALE;
   var end = region.end/SCALE;
   var chrom = region.chrom;
@@ -313,7 +312,24 @@ function getRegion(region, callback) {
   },
   function(err, data) {
     if (err) console.log(err);
+    data.region = region;
     callback(null, data);
+  });
+}
+
+function getFeatureRegion(name, flank, callback) {
+  Feature.find({
+    "attributes.Name" : name
+  }, function(err, doc) {
+    if (err) callback(err);
+    else if (doc.length === 0) callback(null, {});
+    else {
+      var start = doc[0].start - flank;
+      start = start > 0 ? start : 0;
+      var end = doc[0].end + flank;
+      var chrom = doc[0].startIdx[0];
+      callback(null, {start: start, end: end, chrom: chrom});
+    }
   });
 }
 
@@ -337,3 +353,4 @@ exports.getFromRegion = getFromRegion;
 exports.Feature = Feature;
 exports.reloadDb = reloadDb;
 exports.getRegion = getRegion;
+exports.getFeatureRegion = getFeatureRegion;

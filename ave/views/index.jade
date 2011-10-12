@@ -47,19 +47,20 @@ p
     p
       div#regionSearch
         | chromosome
-        input#chrom(type="number")
+        input#chrom(type="number", size="5")
         |  from
         input#start(type="number")
         |  to
         input#end(type="number")
-        | Go
-        
+        input#go(type="submit", value="Go")
+          
       div#featureSearch
         | feature
-        input()
+        input#name(type="string")
         |  with flanking region
-        input()
-        span#search(class="mini_icon icon_search")
+        input#flank(type="number")
+        input#search(type="submit", value="Search")
+
 br
 
 p 

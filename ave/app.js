@@ -39,6 +39,7 @@ app.get('/', function(req, res){
 
 // io
 io.sockets.on('connection', function(socket) {
+  
 	socket.on('reloadDb', function(){
 		seqdb.reloadDb(function(err, results) {
 			if(err) console.log(err);
@@ -50,15 +51,24 @@ io.sockets.on('connection', function(socket) {
 				} );
 		});
 	});
+	
 	socket.on('getData', function(region) {
 	  console.log(region);
 		seqdb.getRegion(region, function(err, data){
 			if (err) throw err;
 			else {
-				data.region = region;
 				socket.emit('data', data);
 			}
 		});
+	});
+	
+	socket.on("getFeatureRegion", function(req) {
+	  var name = req.name;
+	  var flank = req.flank;
+	  seqdb.getFeatureRegion(name, flank, function(err, reg) {
+	    if (err) console.log(err);
+	    socket.emit('featureRegion', reg);
+	  });
 	});
 });
 

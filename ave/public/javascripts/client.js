@@ -251,6 +251,7 @@
       this.set({"bufferData": bufferData});
       if (this.get("displayData").waiting) {
          this.updateDisplayData();
+         this.waitForData(false); // check if it works properly
       }
     },
     
@@ -283,7 +284,7 @@
       // check if there is a need for fetching new buffer
       var startToClose = (bufferData.starts > 0) &&
         (bufferData.starts > (pos.starts - span));
-      var endToClose = bufferData.ends - pos.ends - span;
+      var endToClose = (pos.ends + span) > bufferData.ends;
       var otherChromosome = pos.chrom !== bufferData.chrom;
       // if there is fetch
       if (startToClose || endToClose || otherChromosome) {
@@ -536,7 +537,7 @@
       var CDSs = _.select(features, function(feature) {
         return feature.type === "CDS";
       });
-
+      console.log(CDSs);
       var yPos = function(d) {
         var nModel = d.attributes.Parent.split(",")[0].split(".")[1] || 1; 
         return freePos + (nModel - 1)*trackH;
@@ -658,7 +659,6 @@
       haplotypeBars.exit().remove();
 
       // draw SNPs
-      hapSNPs = this.hapSNPs;
       var SNPCircles = this.svg.selectAll('.SNP').data(this.hapSNPs);
       SNPCircles.attr('cx', function(d) { return x(d.x); })
                 .attr('cy', function(d) {

@@ -9,6 +9,8 @@ var seqdb = require('./seqdb');
 var app = module.exports = express.createServer();
 var io = require('socket.io').listen(app);
 
+var stalker = require('stalker');
+
 // Configuration
 
 app.configure(function(){
@@ -63,7 +65,7 @@ io.sockets.on('connection', function(socket) {
 		});
 	});
 	
-	socket.on("getFeatureRegion", function(req) {
+	socket.on('getFeatureRegion', function(req) {
 	  var name = req.name;
 	  var flank = req.flank;
 	  seqdb.getFeatureRegion(name, flank, function(err, reg) {
@@ -74,6 +76,13 @@ io.sockets.on('connection', function(socket) {
 });
 
 // use stalker to watch the database directory
+stalker.watch('./data', function(err, file) {
+  console.log("There was file added: ");
+  console.log(file);
+}, function(err, file) {
+  console.log("There was file deleted: ");
+  console.log(file);
+});
 
 app.listen(3000);
 console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);

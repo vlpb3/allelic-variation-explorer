@@ -23,6 +23,11 @@ h1 {
   text-align: left;
   border-bottom: solid 2px #dcdcdc;
 }
+#controls {
+  position: absolute;
+  top: 95px;
+  left: 810px;
+}
 #chart {
   position: absolute;
   top: 190px;
@@ -39,6 +44,18 @@ h1 {
 }
 #positionText {
   align: right;
+}
+#included {
+  float: left;
+  width: 40%;
+}
+#excluded {
+  float: right;
+  width: 40%;
+}
+#shuffling {
+  float: left;
+  width: 20%;
 }
 .geneLabel {
   font: 9px sans-serif;
@@ -99,4 +116,7 @@ circle {
 }
 rect {
   opacity: 0.6;
+}
+div {
+  outline: 1px dashed #f00;
 }

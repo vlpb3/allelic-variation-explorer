@@ -50,6 +50,7 @@ p
         class="ui-corner-right")
       label(for="radioFeature")
         | go to feature
+
     p
       div#regionSearch
         | chromosome
@@ -66,6 +67,34 @@ p
         |  with flanking region
         input#flank(type="number")
         input#search(type="submit", value="Search")
+
+      div#controls
+        
+        button#filterButton(type="button")
+          | filter
+
+div#filterDialog
+  div#filterRadio
+    input(type="radio"
+      id="radioStrains"
+      name="filterRadio"
+      class="ui-corner-left")
+    label(for="radioStrains")
+      | Strains
+    input(type="radio"
+      id="radioSNPs"
+      name="filterRadio"
+      class="ui-corner-right")
+    label(for="radioSNPs")
+      | SNPs
+  p
+    div
+      div#included
+        | bla
+      div#shuffling
+        | ble 
+      div#excluded
+        | lkajrl
 
 br
 

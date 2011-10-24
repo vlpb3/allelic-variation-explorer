@@ -31,7 +31,7 @@ app.configure('production', function(){
 
 // Routes
 
-app.get('/', function(req, res){
+app.get('/', function(req, res) {
   res.render('index', {
     title: 'Allelic Variation Explorer'
   });
@@ -44,7 +44,8 @@ io.sockets.on('connection', function(socket) {
 		seqdb.reloadDb(function(err, results) {
 			if(err) console.log(err);
 			else console.log(results);
-			seqdb.getFromRegion(seqdb.Feature, 'mRNA', {chrom: 1, start: 3000, end: 1000000},
+			seqdb.getFromRegion(seqdb.Feature, 'mRNA',
+			  {chrom: 1, start: 3000, end: 1000000},
 				function(err, doc) {
 					if (err) console.log(err);
 					console.dir("mrnas: " + doc[0]);
@@ -71,6 +72,8 @@ io.sockets.on('connection', function(socket) {
 	  });
 	});
 });
+
+// use stalker to watch the database directory
 
 app.listen(3000);
 console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);

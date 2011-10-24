@@ -27,7 +27,8 @@
     
     navigateTo: function(){
       var pos = this.model.get("pos");
-      var path = "goto/chrom" + pos.chrom + "/start" + pos.starts + "/end" + pos.ends;  
+      var path = "goto/chrom" + pos.chrom + "/start" +
+        pos.starts + "/end" + pos.ends;  
       this.navigate(path);
     }
   });
@@ -186,11 +187,41 @@
 
     updateString: function() {
       var pos = this.model.get("pos");
-      var positionStr = "Chr" + pos.chrom + ":" + pos.starts + ".." + pos.ends;
+      var positionStr = "Chr" + pos.chrom + ":" +
+        pos.starts + ".." + pos.ends;
       var strech = pos.ends - pos.starts;
       positionStr += " fragment: " + strech + "bp";
       $("#positionText").html(positionStr);
       
+    }
+  });
+  
+  var ControlsView = Backbone.View.extend({
+    
+    initialize: function() {
+      _.bindAll(this, "render", "openFilterDialog");
+
+      this.render();
+    },
+    
+    render: function() {
+      $("#filterDialog").hide();
+      $("#filterButton").button();
+    },
+    
+    events: {
+      "click #filterButton": "openFilterDialog"
+    },
+    
+    openFilterDialog: function() {
+      var filterDialog = $("#filterDialog")
+          // .load("./filterDialog")
+          .dialog({
+            title: "Exclude/Include SNPs/strains"
+          });
+      console.log("radio: ");
+      console.log($("#filterRadio"));
+      $("#filterRadio").buttonset();
     }
   });
   
@@ -858,6 +889,11 @@
     var navigateView = new NavigateView({
       el: $("#navigate"),
       model: dataModel 
+    });
+    
+    var controlsView = new ControlsView({
+      el: $("#controls"),
+      model: dataModel
     });
     
     // initialize router

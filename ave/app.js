@@ -76,13 +76,12 @@ io.sockets.on('connection', function(socket) {
 });
 
 // use stalker to watch the database directory
-stalker.watch('./data', function(err, file) {
-  console.log("There was file added: ");
-  console.log(file);
-}, function(err, file) {
-  console.log("There was file deleted: ");
-  console.log(file);
+stalker.watch('./data', {buffer: 5000}, function(err, f) {
+  seqdb.onDbFilesChange();
+}, function(err, f) {
+  seqdb.onDbFilesChange();
 });
 
 app.listen(3000);
-console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
+console.log("Express server listening on port %d in %s mode",
+  app.address().port, app.settings.env);

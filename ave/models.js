@@ -20,7 +20,6 @@ var FeatureSchema = new Schema({
 
 mongoose.model('Feature', FeatureSchema);
 
-
 var GeneModelSchema = new Schema({
 	mRNA: {},
 	protein: [FeatureSchema],
@@ -43,10 +42,18 @@ var LocusSchema = new Schema({
 
 mongoose.model('Locus', LocusSchema);
 
+var DbFileSchema = new Schema({
+  file: String
+});
+
+mongoose.model('DbFile', DbFileSchema);
+
 var Feature = mongoose.model('Feature');
 var GeneModel = mongoose.model('GeneModel');
 var Locus = mongoose.model('Locus');
+var DbFile = mongoose.model('DbFile');
 
 exports.Feature = Feature;
 exports.GeneModel = GeneModel;
 exports.Locus = Locus;
+exports.DbFile = DbFile;

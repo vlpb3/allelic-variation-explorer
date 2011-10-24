@@ -1,12 +1,15 @@
 var fs = require('fs');
 var Step = require('step');
 var async = require('async');
+var _ = require('underscore');
 
 var models = require('./models');
+
 
 var Feature = models.Feature;
 var GeneModel = models.GeneModel;
 var Locus = models.Locus;
+var DbFile = models.DbFile;
 
 var DATA_DIR = process.cwd() + '/data/';
 var MAX_LEN = 5000;
@@ -207,6 +210,14 @@ function importGff(callback) {
 			var left = gffFiles.length;
 			var gffData = '';
 			gffFiles.forEach(function(iFile) {
+			  var dbFile = new DbFile();
+			  dbFile.file = iFile;
+			  dbFile.save(function(err) {
+			    if (err) {
+			      console.log("could not save dbFile");
+			      throw err;
+			    }
+			  });
 				fs.readFile(iFile, 'utf8', function (err, data){
 					if (err) return waterfallCallback(err);
 					gffData += data;
@@ -226,11 +237,48 @@ function importGff(callback) {
 	]);
 }
 
+function onDbFilesChange() {
+  async.parallel({
+    filesInDb: function(asyncCallback) {
+      DbFile.find({}, asyncCallback);
+    },
+    filesInFolder: function(asyncCallback) {
+      getGffFiles(asyncCallback);
+    }
+  },
+  function(err, results) {
+    if (err) throw err;
+    console.log("in db: ");
+    console.log(results.filesInDb);
+    console.log("in files: ");
+    console.log(results.filesInFolder);
+    var filesInDb = _.pluck(results.filesInDb, 'file');
+    
+    // if both lists are of same size, check if they have same elements
+    if (_.size(results.filesInDb) === _.size(results.filesInFolder)) {
+      if (_.difference(results.filesInFolder, filesInDb).length > 0) {
+        reloadDb(function(err, result) {
+          if (err) throw err;
+          console.log('reloaded db \n results: ');
+          console.log(result);
+        });
+      }
+    }
+    else reloadDb(function(err, result) {
+      if (err) throw err;
+      console.log('reloaded db\n results: ');
+      console.log(result);
+    });
+    
+  }
+  );  
+}
+
 function reloadDb (callback){
 	async.series([
 		// first delete old data from databse
 		function(seriesCallback){
-			var models = [Feature, Locus, GeneModel];
+			var models = [Feature, Locus, GeneModel, DbFile];
 			var left = models.length;
 			models.forEach(function(model) {
 				drop(model);
@@ -354,3 +402,4 @@ exports.Feature = Feature;
 exports.reloadDb = reloadDb;
 exports.getRegion = getRegion;
 exports.getFeatureRegion = getFeatureRegion;
+exports.onDbFilesChange = onDbFilesChange;

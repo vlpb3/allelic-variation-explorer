@@ -88,12 +88,30 @@ div#filterDialog
       | SNPs
   p
     div
-      div#included
-        | bla
-      div#shuffling
-        | ble 
       div#excluded
-        | lkajrl
+        b
+          | Excluded:
+        div#exclSNPs
+          ul
+        div#exclStrains
+          ul
+      div#shuffling
+        button#removeButton(type="button")
+          | < Remove
+        button#addButton(type="button")
+          | Add >
+      div#included
+        b
+          | Included:
+        div#inclSNPs
+          ul
+        div#inclStrains 
+          ul
+  p
+    div#applyFilters
+      button(type="button")
+        | Apply Changes
+  
 
 br
 

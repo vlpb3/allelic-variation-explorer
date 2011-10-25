@@ -268,8 +268,8 @@ function onDbFilesChange() {
       if (err) throw err;
       console.log('reloaded db\n results: ');
       console.log(result);
+      console.log("Please restart app to finish database update");
     });
-    
   }
   );  
 }

@@ -199,7 +199,9 @@
   var ControlsView = Backbone.View.extend({
     
     initialize: function() {
-      _.bindAll(this, "render", "openFilterDialog");
+      _.bindAll(this, "render", "openFilterDialog",
+        "renderStrainList", "renderSNPList", "initLists",
+        "applyFilters", "removeSelected", "addSelected");
 
       this.render();
     },
@@ -215,14 +217,118 @@
     
     openFilterDialog: function() {
       var filterDialog = $("#filterDialog")
-          // .load("./filterDialog")
           .dialog({
-            title: "Exclude/Include SNPs/strains"
+            title: "Exclude/Include SNPs/strains",
+            width: 450
           });
-      console.log("radio: ");
-      console.log($("#filterRadio"));
+          
       $("#filterRadio").buttonset();
+      $("#applyFilters button").button()
+        .click(this.applyFilters);
+      
+      // hide the lists
+      $("#exclStrains").hide();
+      $("#inclStrains").hide();
+      $("#exclSNPs").hide();
+      $("#inclSNPs").hide();
+      
+      // fill lists in
+      this.initLists();
+      
+      // connect list rendering to toggle buttons
+      $("#radioStrains").click(this.renderStrainList);
+      $("#radioSNPs").click(this.renderSNPList);
+      
+      $("#addButton").button()
+        .click(this.addSelected);
+      $("#removeButton").button()
+        .click(this.removeSelected);
+      
+      $("#included ul").selectable({
+        stop: function() {
+          $("#addButton").removeClass("ui-state-active");
+          $("#removeButton").addClass("ui-state-active");
+            
+        }
+      });
+      $("#excluded ul").selectable({
+        stop: function() {
+          $("#removeButton").removeClass("ui-state-active");
+          $("#addButton").addClass("ui-state-active");
+        }
+      });
+    },
+    
+    initLists: function() {
+      var filters = this.model.get("displayData").filters;
+      var SNPsIncl = filters.SNPs.incl;
+      var SNPsExcl = filters.SNPs.excl;
+      var strainsIncl = filters.strains.incl;
+      var strainsExcl = filters.strains.excl;
+      
+      // append lists
+      var inclSNPsAnchor = $("#inclSNPs ul");
+      _.each(SNPsIncl, function(snpID, i) {
+        inclSNPsAnchor.append("<li>" + snpID + "</li>");
+      });
+      var inclStrainsAnchor = $("#inclStrains ul");
+      _.each(strainsIncl, function(strain, i) {
+        inclStrainsAnchor.append("<li>" + strain + "</li>");
+      });
+      var exclSNPsAnchor = $("#exclSNPs ul");
+      _.each(SNPsExcl, function(snpID, i) {
+        exclSNPsAnchor.append("<li>" + snpID + "</li>");
+      });
+      var exclStrainsAnchor = $("#exclStrains ul");
+      _.each(strainsExcl, function(strain, i) {
+        exclStrainsAnchor.append("<li>" + strain + "</li>");
+      });
+      
+    },
+      
+    // strains list rendering
+    renderStrainList: function() {
+      $("#exclStrains").show();
+      $("#inclStrains").show();
+      $("#exclSNPs").hide();
+      $("#inclSNPs").hide();
+    },
+    
+    // SNPs list rendering
+    renderSNPList: function() {
+      // hide strain lists and show snp lists
+      $("#exclStrains").hide();
+      $("#inclStrains").hide();
+      $("#exclSNPs").show();
+      $("#inclSNPs").show();
+    },
+    
+    addSelected: function() {
+      // add SNPs or strains depending on which toggle is on
+      var active = $("#filterRadio .ui-state-active").attr("for");
+      if (active === "radioSNPs") {
+        $("#exclSNPs ul .ui-selected").appendTo($("#inclSNPs ul"));
+      }
+      else {
+        $("#exclStrains ul .ui-selected").appendTo($("#inclStrains ul"));
+      }
+    },
+    
+    removeSelected: function() {
+      // remove SNPs or strains depending on which toggle is on
+      var active = $("#filterRadio .ui-state-active").attr("for");
+      if (active === "radioSNPs") {
+        $("#inclSNPs ul .ui-selected").appendTo($("#exclSNPs ul"));
+      }
+      else {
+        $("#inclStrains ul .ui-selected").appendTo($("#exclStrains ul"));
+      }
+    },
+    
+    applyFilters: function() {
+      
     }
+    
   });
   
   // model for all the data
@@ -248,7 +354,17 @@
         loci: [],
         SNPs: [],
         features: [],
-        haplotypes: []
+        haplotypes: [],
+        filters: {
+          SNPs: {
+            incl: [],
+            excl: []
+          },
+          strains: {
+            incl: [],
+            excl: []
+          }
+        }
         }
     },
     
@@ -292,7 +408,6 @@
     },
     
     goToFeatureRegion: function(region) {
-      console.log(region);
       var pos = this.get("pos");
       pos.starts = region.start;
       pos.ends = region.end;
@@ -355,6 +470,30 @@
         return ((snp.start >= pos.starts) && (snp.start <= pos.ends));
       });
       
+      // for filtring get list of strains and snsp
+      var snpAttr = _.pluck(displayData.SNPs, "attributes");
+      var strainList = _.pluck(snpAttr, "Strain").sort();
+      strainList = _.uniq(strainList, true);
+      var newStrainIncl = _.difference(strainList,
+        displayData.filters.strains.excl);
+      displayData.filters.strains.incl = newStrainIncl;
+      // and SNPs
+      var snpIDList = _.pluck(snpAttr, "ID");
+      var newSNPIncl = _.difference(snpIDList,
+        displayData.filters.SNPs.excl);
+      
+      
+      // set them in the model
+      displayData.filters.strains.incl = newStrainIncl;
+      displayData.filters.SNPs.incl = newSNPIncl.sort(
+        function(a, b) {return a - b;});
+      
+      // select SNPs again according to strain and SNP ID restictions
+      displayData.SNPs = _.select(SNPs, function(snp) {
+        return (_.include(newStrainIncl, snp.attributes.Strain) &&
+          _.include(newSNPIncl, snp.attributes.ID));
+      });
+      
       // get loci
       var loci = this.get("bufferData").loci;
       displayData.loci = _.select(loci, this.isLocusInRegion);
@@ -362,7 +501,7 @@
       // get features
       var features = this.get("bufferData").features;
       displayData.features = _.select(features, this.isFeatureInRegion);
- 
+      
       // set obtained data to the model
       this.set({"displayData": displayData});
       
@@ -568,7 +707,6 @@
       var CDSs = _.select(features, function(feature) {
         return feature.type === "CDS";
       });
-      console.log(CDSs);
       var yPos = function(d) {
         var nModel = d.attributes.Parent.split(",")[0].split(".")[1] || 1; 
         return freePos + (nModel - 1)*trackH;

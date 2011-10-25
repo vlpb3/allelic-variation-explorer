@@ -45,17 +45,34 @@ h1 {
 #positionText {
   align: right;
 }
-#included {
-  float: left;
-  width: 40%;
-}
+#included,
 #excluded {
-  float: right;
-  width: 40%;
+  height: 25em;
+  padding: 2%;
+  float: left;
+  width: 33%;
+  text-align: center;
+}
+#included ul,
+#excluded ul {
+  background: #f5fffa;
+  list-style-type: none;
+  padding-left: 0;
+  margin-left: 1em;
+  height: 20em;
+  overflow: -moz-scrollbars-vertical;
+  overflow-y: auto;
+  text-align: center;
 }
 #shuffling {
+  margin-top: 5em;
   float: left;
-  width: 20%;
+  width: 25%;
+  text-align: center;
+}
+#applyFilters {
+  clear: top;
+  text-align: center;
 }
 .geneLabel {
   font: 9px sans-serif;
@@ -77,6 +94,12 @@ h1 {
 .ui-dialog-content {
   font-family: "Helvetica Neue", "Lucida Grande", "Arial";
   font-size: 13px;
+}
+.ui-selecting {
+  background: #b9e0f5;
+}
+.ui-selected {
+  background: #b9e0f5;
 }
 .hap {
   opacity: 0.2;
@@ -117,6 +140,6 @@ circle {
 rect {
   opacity: 0.6;
 }
-div {
+div#ble {
   outline: 1px dashed #f00;
 }

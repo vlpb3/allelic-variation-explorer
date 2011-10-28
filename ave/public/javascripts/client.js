@@ -192,7 +192,6 @@
       var strech = pos.ends - pos.starts;
       positionStr += " fragment: " + strech + "bp";
       $("#positionText").html(positionStr);
-      
     }
   });
   
@@ -200,7 +199,7 @@
     
     initialize: function() {
       _.bindAll(this, "render", "openFilterDialog",
-        "renderStrainList", "renderSNPList", "initLists",
+        "renderStrainList", "renderSNPList", "updateLists",
         "applyFilters", "removeSelected", "addSelected");
 
       this.render();
@@ -209,46 +208,37 @@
     render: function() {
       $("#filterDialog").hide();
       $("#filterButton").button();
-    },
-    
-    events: {
-      "click #filterButton": "openFilterDialog"
-    },
-    
-    openFilterDialog: function() {
-      var filterDialog = $("#filterDialog")
-          .dialog({
-            title: "Exclude/Include SNPs/strains",
-            width: 450
-          });
-          
+      
+      // filter dialog stuff
+      this.filterDialog = $("#filterDialog").dialog({
+        autoOpen: false,
+        title: "Exclude/Include SNPs/strains",
+        width: 450
+      });
+      
       $("#filterRadio").buttonset();
       $("#applyFilters button").button()
         .click(this.applyFilters);
-      
+
       // hide the lists
       $("#exclStrains").hide();
       $("#inclStrains").hide();
       $("#exclSNPs").hide();
       $("#inclSNPs").hide();
-      
-      // fill lists in
-      this.initLists();
-      
+
       // connect list rendering to toggle buttons
       $("#radioStrains").click(this.renderStrainList);
       $("#radioSNPs").click(this.renderSNPList);
-      
+
       $("#addButton").button()
         .click(this.addSelected);
       $("#removeButton").button()
         .click(this.removeSelected);
-      
+
       $("#included ul").selectable({
         stop: function() {
           $("#addButton").removeClass("ui-state-active");
           $("#removeButton").addClass("ui-state-active");
-            
         }
       });
       $("#excluded ul").selectable({
@@ -259,7 +249,18 @@
       });
     },
     
-    initLists: function() {
+    events: {
+      "click #filterButton": "openFilterDialog"
+    },
+    
+    openFilterDialog: function() {
+      $("#filterDialog").dialog('open');
+      
+      // fill lists in
+      this.updateLists();    
+    },
+    
+    updateLists: function() {
       var filters = this.model.get("displayData").filters;
       var SNPsIncl = filters.SNPs.incl;
       var SNPsExcl = filters.SNPs.excl;
@@ -268,22 +269,25 @@
       
       // append lists
       var inclSNPsAnchor = $("#inclSNPs ul");
+      inclSNPsAnchor.empty();
       _.each(SNPsIncl, function(snpID, i) {
         inclSNPsAnchor.append("<li>" + snpID + "</li>");
       });
       var inclStrainsAnchor = $("#inclStrains ul");
+      inclStrainsAnchor.empty();
       _.each(strainsIncl, function(strain, i) {
         inclStrainsAnchor.append("<li>" + strain + "</li>");
       });
       var exclSNPsAnchor = $("#exclSNPs ul");
+      exclSNPsAnchor.empty();
       _.each(SNPsExcl, function(snpID, i) {
         exclSNPsAnchor.append("<li>" + snpID + "</li>");
       });
       var exclStrainsAnchor = $("#exclStrains ul");
+      exclStrainsAnchor.empty();
       _.each(strainsExcl, function(strain, i) {
         exclStrainsAnchor.append("<li>" + strain + "</li>");
       });
-      
     },
       
     // strains list rendering
@@ -326,9 +330,22 @@
     },
     
     applyFilters: function() {
-      
+      // get excluded lists from the dialog
+      var exclStrainsLi = $("#exclStrains ul li");
+      var newExclStrains = _.map(exclStrainsLi, function(li, idx) {
+        return $(li).text();
+      });
+      var exclSNPsLi = $("#exclSNPs ul li");
+      var newExclSNPs = _.map(exclSNPsLi, function(li, idx) {
+        return $(li).text();
+      });
+      // feed them back to the model
+      var displayData = this.model.get("displayData");
+      displayData.filters.strains.excl = newExclStrains;
+      displayData.filters.SNPs.excl = newExclSNPs;
+      this.model.set({"displayData": displayData});
+      this.model.updateDisplayData();
     }
-    
   });
   
   // model for all the data
@@ -619,7 +636,7 @@
       this.right = 5;
       this.top = 20;
       this.bottom = 4;
-    
+      
       this.model.bind('change:displayData:clusters', this.draw);
       this.render();
     },
@@ -775,21 +792,7 @@
         });
         return memo;
       }, []);
-/*      
-      this.hapCounter = 0;
-      _.map(haplotypes, function(haplotype, idx, haplotypes) {
-        var snps = haplotype[0].snps;
-        _.map(snps, function(snp, idx, snps) {
-          var hapSNP = {
-            haplotype: this.hapCounter,
-            x: idx,
-            base: snp
-          };
-          this.hapSNPs.push(hapSNP);
-        }, this);
-        this.hapCounter += 1;
-      }, this);
-*/
+
         // draw rules
       this.height = (1 + maxModels + _.size(haplotypes))*trackH;
       var rules = this.svg.selectAll('g.rule')

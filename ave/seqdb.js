@@ -10,6 +10,7 @@ var Feature = models.Feature;
 var GeneModel = models.GeneModel;
 var Locus = models.Locus;
 var DbFile = models.DbFile;
+var RefSeq = models.RefSeq;
 
 var DATA_DIR = process.cwd() + '/data/';
 var MAX_LEN = 5000;
@@ -299,6 +300,66 @@ function reloadDb (callback){
 	);
 }
 
+function importRefSeq(callback) {
+  // pattern for getting position of the seq in fasta file
+  // assumes pattern (Chr1:1..1000)
+  var chunk = 1000;
+  var locPattern = />Chr(\d+):(\d+)\.\.(\d+)/;
+  
+  async.waterfall([
+    function(waterfallcallback){
+      fs.readdir(DATA_DIR, waterfallcallback);
+    },
+    function(files, waterfallcallback){
+      var fastaFiles = _.filter(files, function(iFile) {
+        return iFile.split(".")[1] === "fas";
+      });
+      waterfallCallback(null, fastaFiles);
+    },
+    function(fastaFiles, waterfallCallback) {
+      var left = _.size(fastaFiles);
+      _.each(fastaFiles, function(iFile) {
+        fs.readFile(iFile, function(err, data) {
+          if(err) throw wrr;
+          var lines = data.toString('utf-8').split("\n");
+          var head = lines[0];
+          var match = head.match(locPattern);
+          var chrom = parseInt(match[1], 10);
+          var starts = parseInt(match[2], 10);
+          var ends = parseInt(match[3], 10);
+          var refSeq = new RefSeq();
+          refSeq.chrom = chrom;
+          refSeq.starts = starts;
+          refSeq.startIdx = [chrom, starts/SCALE];
+          refSeq.sequence = "";
+          _.reduce(_.rest(lines), function(rS, line) {
+            rS.sequence += line;
+            if (rS.seq.length >= chunk) {
+              var newRS = new RefSeq();
+              newRS.sequence = rS.sequence.slice(chunk + 1);
+              rS.sequence = rS.sequence.slice(0, chunk);
+              rS.ends = rS.starts + rS.sequence.length - 1;
+              rS.endIdx = [chrom, rS.ends/SCALE];
+              newRS.starts = rS.ends + 1;
+              newRS.startIdx = [chrom, newRS.starts/SCALE];
+              // save old to db
+              rS.save(function(err) {
+                if (err) {
+                  console.log("error while saving refSeq");
+                  throw err;
+                }
+              });
+              return newRS;
+            }
+            return rS;
+          }, refSeq);
+        });
+        if(--left <= 0) waterfallcallback(null, "finished import");
+      });
+    }
+  ]);
+}
+
 function drop(model) {
 	//var model = mongoose.model(model);
 	model.collection.drop();
@@ -403,3 +464,4 @@ exports.reloadDb = reloadDb;
 exports.getRegion = getRegion;
 exports.getFeatureRegion = getFeatureRegion;
 exports.onDbFilesChange = onDbFilesChange;
+exports.importRefSeq = importRefSeq;

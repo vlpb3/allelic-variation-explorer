@@ -74,6 +74,9 @@ h1 {
   clear: top;
   text-align: right;
 }
+#haplDialog {
+  display: none;
+}
 .geneLabel {
   font: 9px sans-serif;
 }

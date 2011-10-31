@@ -977,18 +977,38 @@
      onHaplCLick: function(d, i) {
        // when haplotype bar is clicked open the dialog with the
        // details about the haplotype
+       // all dialogs use the clone of the same div
+       
+       var pos = this.model.get("pos");
+       var socket = this.model.get("socket");
+       console.log(pos);
        var snpStr = "";
        _.each(d.snps, function(snp, pos){
          snpStr += pos + ": " + snp + ", ";
        });
        
-       $('<div>').dialog({
-         title: 'Haplotype Info',
+       var haplDialog = $("#haplDialog").clone().dialog({
+         
+         title: 'Haplotype for Chr' + pos.chrom +
+         ":" + pos.starts + ".." + pos.ends,
+       
          close: function(ev, ui) {
            $(this).remove();
-         }
-       }).append("<p>Strains: </br> " + d.strains + "</p>" + 
-         "<p>SNPs: </br>" + snpStr + "</p>");
+         },
+                  
+         buttons: [{
+           id: "exportFasta",
+           text: "Export to Fasta",
+           click: function() {
+             console.log("exporting");
+             socket.emit('getFasta', {});
+           }
+         }]
+       });
+       
+       $(haplDialog).find("p:first").append("</br> " + d.strains);
+       $(haplDialog).find("p:eq(1)").append("</br> " + snpStr);
+      
      },
      
      isLeaf: function(node) {

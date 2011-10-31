@@ -73,6 +73,10 @@ io.sockets.on('connection', function(socket) {
 	    socket.emit('featureRegion', reg);
 	  });
 	});
+	
+	socket.on('getFasta', function(req) {
+    
+	});
 });
 
 // use stalker to watch the database directory

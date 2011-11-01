@@ -307,10 +307,10 @@ function importRefSeq(callback) {
   var locPattern = />Chr(\d+):(\d+)\.\.(\d+)/;
   
   async.waterfall([
-    function(waterfallcallback){
-      fs.readdir(DATA_DIR, waterfallcallback);
+    function(waterfallCallback){
+      fs.readdir(DATA_DIR, waterfallCallback);
     },
-    function(files, waterfallcallback){
+    function(files, waterfallCallback){
       var fastaFiles = _.filter(files, function(iFile) {
         return iFile.split(".")[1] === "fas";
       });
@@ -319,8 +319,8 @@ function importRefSeq(callback) {
     function(fastaFiles, waterfallCallback) {
       var left = _.size(fastaFiles);
       _.each(fastaFiles, function(iFile) {
-        fs.readFile(iFile, function(err, data) {
-          if(err) throw wrr;
+        fs.readFile(DATA_DIR + iFile, function(err, data) {
+          if(err) throw err;
           var lines = data.toString('utf-8').split("\n");
           var head = lines[0];
           var match = head.match(locPattern);
@@ -334,7 +334,7 @@ function importRefSeq(callback) {
           refSeq.sequence = "";
           _.reduce(_.rest(lines), function(rS, line) {
             rS.sequence += line;
-            if (rS.seq.length >= chunk) {
+            if (rS.sequence.length >= chunk) {
               var newRS = new RefSeq();
               newRS.sequence = rS.sequence.slice(chunk + 1);
               rS.sequence = rS.sequence.slice(0, chunk);
@@ -354,10 +354,27 @@ function importRefSeq(callback) {
             return rS;
           }, refSeq);
         });
-        if(--left <= 0) waterfallcallback(null, "finished import");
+        if(--left <= 0) waterfallCallback(null, "finished import");
       });
+    },
+    function(result, waterfallCallback) {
+      console.log(result);
+      callback(null);
     }
   ]);
+}
+
+function getRefRegion(region, callback) {
+  var start = region.start/SCALE;
+  var end = region.end/SCALE;
+  var chrom = region.chrom;
+  RefSeq.find({
+    startIdx: {'$gte': start},
+    endIdx: {'$lte': end}
+  }, function(err, data) {
+    if (err) throw err;
+    callback(null, data);
+    });
 }
 
 function drop(model) {
@@ -417,6 +434,16 @@ function getRegion(region, callback) {
         if (err) callback(err);
         else callback(null, doc);
       });
+    },
+    refseq: function(callback) {
+      getRefRegion(region, function(err, data) {
+        if (err) throw err;
+        data = _.sortBy(data, function(fragment) {
+          return fragment.starts;
+        });
+        data = _.pluck(data, "sequence").join();
+        callback(null, data);
+      });
     }
   },
   function(err, data) {
@@ -464,4 +491,4 @@ exports.reloadDb = reloadDb;
 exports.getRegion = getRegion;
 exports.getFeatureRegion = getFeatureRegion;
 exports.onDbFilesChange = onDbFilesChange;
-exports.importRefSeq = importRefSeq;
+exports.getRefRegion = getRefRegion;

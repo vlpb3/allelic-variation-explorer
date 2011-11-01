@@ -77,6 +77,11 @@ h1 {
 #haplDialog {
   display: none;
 }
+#fastaSeqArea {
+  width: 95%;
+  height: 10em;
+  font-family: "Andale Mono", "Fixed", "monospace";
+}
 .geneLabel {
   font: 9px sans-serif;
 }

@@ -364,7 +364,8 @@
           ends: 0,
           chrom: 0,
           SNPs: {},
-          loci: {}
+          loci: {},
+          refseq: ""
           },
       "displayData": {
         waiting: true,
@@ -372,6 +373,7 @@
         SNPs: [],
         features: [],
         haplotypes: [],
+        refSeq: "",
         filters: {
           SNPs: {
             incl: [],
@@ -411,6 +413,7 @@
       bufferData.SNPs = data.SNPs;
       bufferData.loci = data.loci;
       bufferData.features = data.features;
+      bufferData.refseq = data.refseq;
       
       this.set({"bufferData": bufferData});
       if (this.get("displayData").waiting) {
@@ -476,12 +479,13 @@
     },
     
     updateDisplayData: function() {
-
+      
+      var bufferData = this.get("bufferData");
       // first fetch the fragment from the buffer
       var displayData = this.get("displayData");
 
       // get SNPs
-      var SNPs = this.get("bufferData").SNPs;
+      var SNPs = bufferData.SNPs;
       var pos = this.get("pos");
       displayData.SNPs = _.select(SNPs, function(snp) {
         return ((snp.start >= pos.starts) && (snp.start <= pos.ends));
@@ -512,12 +516,19 @@
       });
       
       // get loci
-      var loci = this.get("bufferData").loci;
+      var loci = bufferData.loci;
       displayData.loci = _.select(loci, this.isLocusInRegion);
       
       // get features
-      var features = this.get("bufferData").features;
+      var features = bufferData.features;
       displayData.features = _.select(features, this.isFeatureInRegion);
+      
+      // get refseq fragment
+      var refseq = bufferData.refseq;
+      var sliceStart = pos.starts - bufferData.starts;
+      var sliceEnd = pos.ends - bufferData.starts;
+      refseq = refseq.slice(sliceStart, sliceEnd);
+      displayData.refseq = refseq;
       
       // set obtained data to the model
       this.set({"displayData": displayData});
@@ -981,34 +992,32 @@
        
        var pos = this.model.get("pos");
        var socket = this.model.get("socket");
-       console.log(pos);
        var snpStr = "";
        _.each(d.snps, function(snp, pos){
          snpStr += pos + ": " + snp + ", ";
        });
+       var posStr = "Chr" + pos.chrom + ":" + pos.starts + ".." + pos.ends;
        
        var haplDialog = $("#haplDialog").clone().dialog({
          
-         title: 'Haplotype for Chr' + pos.chrom +
-         ":" + pos.starts + ".." + pos.ends,
+         title: 'Haplotype for ' + posStr,
        
          close: function(ev, ui) {
            $(this).remove();
-         },
-                  
-         buttons: [{
-           id: "exportFasta",
-           text: "Export to Fasta",
-           click: function() {
-             console.log("exporting");
-             socket.emit('getFasta', {});
-           }
-         }]
+         }
        });
        
        $(haplDialog).find("p:first").append("</br> " + d.strains);
        $(haplDialog).find("p:eq(1)").append("</br> " + snpStr);
-      
+       var refseq = this.model.get("displayData").refseq;
+       var fastaStr = ">" + posStr + "\n";
+       _.each(refseq.split(""), function(base, idx, seq){
+         if ((idx+1) % 60 === 0) base += "\n";
+         fastaStr += base;
+       });
+       
+       $(haplDialog).find("textarea").val(fastaStr);
+      console.log(_.keys(d.snps));
      },
      
      isLeaf: function(node) {

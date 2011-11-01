@@ -74,8 +74,12 @@ io.sockets.on('connection', function(socket) {
 	  });
 	});
 	
-	socket.on('getFasta', function(req) {
-    
+	socket.on('getFasta', function(region) {
+    seqdb.getRefRegion(region, function (err, data) {
+      if (err) throw err;
+      console.log("fasta region: ");
+      console.log(data);
+    });
 	});
 });
 

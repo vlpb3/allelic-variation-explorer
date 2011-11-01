@@ -999,9 +999,7 @@
        var posStr = "Chr" + pos.chrom + ":" + pos.starts + ".." + pos.ends;
        
        var haplDialog = $("#haplDialog").clone().dialog({
-         
          title: 'Haplotype for ' + posStr,
-       
          close: function(ev, ui) {
            $(this).remove();
          }
@@ -1022,6 +1020,12 @@
        });
        
        $(haplDialog).find("textarea").val(fastaStr);
+       $(haplDialog).find("#saveFasta").click(function() {
+         var bb = new BlobBuilder;
+         bb.append(fastaStr);
+         var fname = $(haplDialog).find("#fastaFileName").val() + ".fas";
+         saveAs(bb.getBlob("text/plain;charset=utf-8"), fname);
+       });
      },
      
      isLeaf: function(node) {

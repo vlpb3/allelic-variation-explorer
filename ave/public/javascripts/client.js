@@ -1012,12 +1012,16 @@
        var refseq = this.model.get("displayData").refseq;
        var fastaStr = ">" + posStr + "\n";
        _.each(refseq.split(""), function(base, idx, seq){
+         var idxPos = pos.starts + idx;
+         if (_.include(_.keys(d.snps), idxPos.toString())) {
+           var variant = d.snps[idxPos];
+           base = "[" + base + "/" + variant + "]";
+         }
          if ((idx+1) % 60 === 0) base += "\n";
          fastaStr += base;
        });
        
        $(haplDialog).find("textarea").val(fastaStr);
-      console.log(_.keys(d.snps));
      },
      
      isLeaf: function(node) {

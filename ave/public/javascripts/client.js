@@ -257,7 +257,8 @@
       $("#filterDialog").dialog('open');
       
       // fill lists in
-      this.updateLists();    
+      this.updateLists();
+      this.renderStrainList();    
     },
     
     updateLists: function() {
@@ -532,7 +533,7 @@
       
       // set obtained data to the model
       this.set({"displayData": displayData});
-      
+      console.log(displayData.loci);
       // calculate haplotypes from SNPs in the region
       this.calcHaplotypes();
       

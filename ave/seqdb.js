@@ -304,62 +304,70 @@ function importRefSeq(callback) {
   // pattern for getting position of the seq in fasta file
   // assumes pattern (Chr1:1..1000)
   var chunk = 1000;
-  var locPattern = />Chr(\d+):(\d+)\.\.(\d+)/;
+  console.log("importing fasta");
   
   async.waterfall([
-    function(waterfallCallback){
-      fs.readdir(DATA_DIR, waterfallCallback);
+    function(wfallCbk){
+      fs.readdir(DATA_DIR, wfallCbk);
     },
-    function(files, waterfallCallback){
+    function(files, wfallCbk) {
       var fastaFiles = _.filter(files, function(iFile) {
         return iFile.split(".")[1] === "fas";
       });
-      waterfallCallback(null, fastaFiles);
+      wfallCbk(null, fastaFiles);
     },
-    function(fastaFiles, waterfallCallback) {
-      var left = _.size(fastaFiles);
-      _.each(fastaFiles, function(iFile) {
-        fs.readFile(DATA_DIR + iFile, function(err, data) {
-          if(err) throw err;
-          var lines = data.toString('utf-8').split("\n");
-          var head = lines[0];
-          var match = head.match(locPattern);
-          var chrom = parseInt(match[1], 10);
-          var starts = parseInt(match[2], 10);
-          var ends = parseInt(match[3], 10);
-          var refSeq = new RefSeq();
+    function(fastaFiles, wfallCbk) {
+      var allData = [];
+      // concatenate data from all fasta files
+      async.forEach(fastaFiles, function(iFile, fEachCbk) {
+        
+        fs.readFile(DATA_DIR + iFile, 'utf8', function(err, data) {
+          if (err) throw err;
+          var lines = data.split("\n");
+          allData = allData.concat(lines);
+          fEachCbk();
+        });
+      }, function() {
+        wfallCbk(null, allData);
+      });
+    },
+    function(data, wfallCbk) {
+      var chunk = 10000;
+      var locPattern = />Chr(\d+):(\d+)\.\.(\d+)/;
+      var refSeq = new RefSeq();
+      var chrom, starts, ends;
+      async.forEachSeries(data, function(line, fEachSerCbk) {
+        //if matches header get header data     
+        var match = line.match(locPattern);
+        if (match) {
+          refSeq = new RefSeq();
+          chrom = parseInt(match[1], 10);
+          starts = parseInt(match[2], 10);
+          ends = parseInt(match[3], 10);
           refSeq.chrom = chrom;
           refSeq.starts = starts;
           refSeq.startIdx = [chrom, starts/SCALE];
           refSeq.sequence = "";
-          _.reduce(_.rest(lines), function(rS, line) {
-            rS.sequence += line;
-            if (rS.sequence.length >= chunk) {
-              var newRS = new RefSeq();
-              newRS.sequence = rS.sequence.slice(chunk + 1);
-              rS.sequence = rS.sequence.slice(0, chunk);
-              rS.ends = rS.starts + rS.sequence.length - 1;
-              rS.endIdx = [chrom, rS.ends/SCALE];
-              newRS.starts = rS.ends + 1;
-              newRS.startIdx = [chrom, newRS.starts/SCALE];
-              // save old to db
-              rS.save(function(err) {
-                if (err) {
-                  console.log("error while saving refSeq");
-                  throw err;
-                }
-              });
-              return newRS;
-            }
-            return rS;
-          }, refSeq);
-        });
-        if(--left <= 0) waterfallCallback(null, "finished import");
-      });
-    },
-    function(result, waterfallCallback) {
-      console.log(result);
-      callback(null);
+        }
+        else refSeq.sequence += line;
+        if (refSeq.sequence.length >= chunk) {
+           var newRefSeq = new RefSeq();
+            newRefSeq.sequence = refSeq.sequence.slice(chunk + 1);
+            refSeq.sequence = refSeq.sequence.slice(0, chunk);
+            refSeq.ends = refSeq.starts + refSeq.sequence.length - 1;
+            refSeq.endIdx = [chrom, refSeq.ends/SCALE];
+            newRefSeq.starts = refSeq.ends + 1;
+            newRefSeq.startIdx = [chrom, newRefSeq.starts/SCALE];
+            refSeq.save(function(err) {
+              if (err) {
+                console.log("error while saving reference seq");
+                throw err;
+              }
+              refSeq = newRefSeq;
+              fEachSerCbk();
+            });
+        } else fEachSerCbk();
+      }, callback);
     }
   ]);
 }
@@ -469,6 +477,28 @@ function getFeatureRegion(name, flank, callback) {
   });
 }
 
+function annotateCodNCodSNPs() {
+  async.waterfall([
+    // get all CDSs in the database
+    function(waterfallCallback) {
+      Feaure.find({type: "CDS"}, waterfallCallback);
+    },
+    // get all SNPs within CDSs
+    function(CDSs, waterfallCallback) {
+      async.forEach(CDSs, function(cds) {
+        var box = [
+          [cds.startIdx[0] - 0.1, cds.startIdx[1]],
+          [cds.startIdx[0] + 0.1, cds.endIdx[1]]
+        ];
+        Features.find({
+          type: /SNP/,
+          startIdx: {$within: {$box: box}}
+        });
+      }, waterfallCallback);
+    }
+  ]);
+}
+
 exports.addFeatures = addFeatures;
 
 // tests
@@ -492,3 +522,4 @@ exports.getRegion = getRegion;
 exports.getFeatureRegion = getFeatureRegion;
 exports.onDbFilesChange = onDbFilesChange;
 exports.getRefRegion = getRefRegion;
+exports.importRefSeq = importRefSeq;

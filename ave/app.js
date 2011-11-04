@@ -83,6 +83,18 @@ io.sockets.on('connection', function(socket) {
 	});
 });
 
+// seqdb.importRefSeq(function(err) {
+//   if (err) throw err;
+//   console.log("data imported !");
+// });
+
+// seqdb.annotateCodNCodSNPs();
+// seqdb.getRefRegion({ start: 86715, end: 87162, chrom: 1 },
+//   function(err, data) {
+//     if (err) throw err;
+//     console.log(data);
+//   });
+
 // use stalker to watch the database directory
 stalker.watch('./data', {buffer: 5000}, function(err, f) {
   seqdb.onDbFilesChange();

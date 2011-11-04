@@ -473,7 +473,7 @@
       var span = pos.ends - pos.starts;
       var flank = (this.get("bufferX") - 1) * span/2;
       var start = pos.starts - flank;
-      newBufferStart = start >= 0 ? start : 0;
+      newBufferStart = start >= 0 ? start : 1;
       newBufferEnd = pos.ends + flank;
       var region = {chrom: pos.chrom, start: newBufferStart, end: newBufferEnd};   
       this.get("socket").emit("getData", region);
@@ -527,13 +527,12 @@
       // get refseq fragment
       var refseq = bufferData.refseq;
       var sliceStart = pos.starts - bufferData.starts;
-      var sliceEnd = pos.ends - bufferData.starts;
+      var sliceEnd = pos.ends - bufferData.starts + 1;
       refseq = refseq.slice(sliceStart, sliceEnd);
       displayData.refseq = refseq;
       
       // set obtained data to the model
       this.set({"displayData": displayData});
-      console.log(displayData.loci);
       // calculate haplotypes from SNPs in the region
       this.calcHaplotypes();
       
@@ -637,7 +636,7 @@
     initialize: function() {
       _.bindAll(this, "render", "draw", "drawTree",
         "isLeaf", "leaf2haplotype", "onSNPmouseOver", "onSNPmouseOut",
-        "onHaplCLick");
+        "onHaplCLick", "showCodingSNPs", "showNonCodingSNPs", "showAllSNPs");
       
       this.trackH = 20;
       this.glyphH = 12;
@@ -672,8 +671,60 @@
           .attr("height", this.top + this.height + this.bottom)
         .append("svg:g")
           .attr("transform", "translate(" + this.left + "," + this.top + ")");
+      
+      $("#codingRadio").buttonset();
+      $("#radioCoding").click(this.showCodingSNPs);
+      $("#radioNonCoding").click(this.showNonCodingSNPs);
+      $("#radioAllSNPs").click(this.showAllSNPs);
+      $("#radioAllSNPs").click();
       // this.draw();
       return this;
+    },
+    
+    showCodingSNPs: function() {
+      //fetch all coding snp
+      var snps = this.model.get('displayData').SNPs;
+      var codingSNPs = _.filter(snps, function(snp) {
+        return snp.attributes.coding;
+      });
+      var codingPos = _.pluck(codingSNPs, "start");
+      console.log(codingPos);
+      var SNPCircles = this.svg.selectAll('.SNP')
+        .transition().duration(200)
+        .style("opacity", function(d) {
+          if (_.include(codingPos, d.x)) return 0.6;
+          else return 0.1;
+        });
+    },
+
+    showNonCodingSNPs: function() {
+      //fetch all coding snp
+      var snps = this.model.get('displayData').SNPs;
+      var codingSNPs = _.filter(snps, function(snp) {
+        return snp.attributes.coding;
+      });
+      var codingPos = _.pluck(codingSNPs, "start");
+      console.log(codingPos);
+      var SNPCircles = this.svg.selectAll('.SNP')
+        .transition().duration(200)
+        .style("opacity", function(d) {
+          if (_.include(codingPos, d.x)) return 0.1;
+          else return 0.6;
+        });
+    },
+    showAllSNPs: function() {
+      //fetch all coding snp
+      var snps = this.model.get('displayData').SNPs;
+      var codingSNPs = _.filter(snps, function(snp) {
+        return snp.attributes.coding;
+      });
+      var codingPos = _.pluck(codingSNPs, "start");
+      console.log(codingPos);
+      var SNPCircles = this.svg.selectAll('.SNP')
+        .transition().duration(200)
+        .style("opacity", function(d) {
+          return 0.6;
+        });
     },
     
     draw: function() {
@@ -848,7 +899,8 @@
                 .attr('cy', function(d) {
                   return d.y + freePos - glyphT;
                   })
-                .attr('fill', this.baseColor);
+                .attr('fill', this.baseColor)
+                .attr('opacity', 0.6);
       SNPCircles.enter().append('svg:circle')
                 .attr('class', 'SNP')
                 .attr('r', glyphH/4)
@@ -863,6 +915,12 @@
       
       var svg = this.svg;
       
+      // fade in/out snps according to whats chosen
+      
+      var activeToggle = $("#codingRadio .ui-state-active").attr("for");
+      if (activeToggle === "radioNonCoding") this.showNonCodingSNPs();
+      else if (activeToggle === "radioCoding") this.showCodingSNPs();
+      else this.showAllSNPs();
       this.freePos = freePos;
      },
      
@@ -1022,7 +1080,7 @@
        
        $(haplDialog).find("textarea").val(fastaStr);
        $(haplDialog).find("#saveFasta").click(function() {
-         var bb = new BlobBuilder;
+         var bb = new BlobBuilder();
          bb.append(fastaStr);
          var fname = $(haplDialog).find("#fastaFileName").val() + ".fas";
          saveAs(bb.getBlob("text/plain;charset=utf-8"), fname);
@@ -1069,18 +1127,18 @@
       el: $("#navigate"),
       model: dataModel 
     });
-    
-    var controlsView = new ControlsView({
-      el: $("#controls"),
-      model: dataModel
-    });
-    
+
     // initialize router
     var appRouter = new AppRouter({model: dataModel});
     Backbone.history.start();
     
     var visView = new VisView({
       el: $("#chart"),
+      model: dataModel
+    });
+        
+    var controlsView = new ControlsView({
+      el: $("#controls"),
       model: dataModel
     });
     

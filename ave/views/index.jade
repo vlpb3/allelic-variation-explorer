@@ -71,10 +71,29 @@ p
         input#flank(type="number")
         input#search(type="submit", value="Search")
 
-      div#controls
+
+
+div#codingRadio
+  input(type="radio"
+    id="radioAllSNPs"
+    name="codingRadio"
+    class="ui-corner-left")
+  label(for="radioAllSNPs")
+    | All SNPs
+  input(type="radio"
+    id="radioNonCoding"
+    name="codingRadio")
+  label(for="radioNonCoding")
+    | Non-Coding
+  input(type="radio"
+    id="radioCoding"
+    name="codingRadio"
+    class="ui-corner-right")
+  label(for="radioCoding")
+    | Coding
         
-        button#filterButton(type="button")
-          | filter
+div#controls
+  input#filterButton(type="button", value="filter")
 
 div#haplDialog
   p 

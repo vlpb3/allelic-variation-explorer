@@ -214,10 +214,8 @@ function importGff(callback) {
 			  var dbFile = new DbFile();
 			  dbFile.file = iFile;
 			  dbFile.save(function(err) {
-			    if (err) {
-			      console.log("could not save dbFile");
+			    if (err) 
 			      throw err;
-			    }
 			  });
 				fs.readFile(iFile, 'utf8', function (err, data){
 					if (err) return waterfallCallback(err);
@@ -249,10 +247,6 @@ function onDbFilesChange() {
   },
   function(err, results) {
     if (err) throw err;
-    console.log("in db: ");
-    console.log(results.filesInDb);
-    console.log("in files: ");
-    console.log(results.filesInFolder);
     var filesInDb = _.pluck(results.filesInDb, 'file');
     
     // if both lists are of same size, check if they have same elements
@@ -351,14 +345,15 @@ function importRefSeq(callback) {
         }
         else refSeq.sequence += line;
         if (refSeq.sequence.length >= chunk) {
-           var newRefSeq = new RefSeq();
-            newRefSeq.sequence = refSeq.sequence.slice(chunk + 1);
-            refSeq.sequence = refSeq.sequence.slice(0, chunk);
-            refSeq.ends = refSeq.starts + refSeq.sequence.length - 1;
-            refSeq.endIdx = [chrom, refSeq.ends/SCALE];
-            newRefSeq.starts = refSeq.ends + 1;
-            newRefSeq.startIdx = [chrom, newRefSeq.starts/SCALE];
-            refSeq.save(function(err) {
+          var newRefSeq = new RefSeq();
+          newRefSeq.chrom = chrom;
+          newRefSeq.sequence = refSeq.sequence.slice(chunk + 1);
+          refSeq.sequence = refSeq.sequence.slice(0, chunk);
+          refSeq.ends = refSeq.starts + refSeq.sequence.length - 1;
+          refSeq.endIdx = [chrom, refSeq.ends/SCALE];
+          newRefSeq.starts = refSeq.ends + 1;
+          newRefSeq.startIdx = [chrom, newRefSeq.starts/SCALE];
+          refSeq.save(function(err) {
               if (err) {
                 console.log("error while saving reference seq");
                 throw err;
@@ -373,16 +368,42 @@ function importRefSeq(callback) {
 }
 
 function getRefRegion(region, callback) {
-  var start = region.start/SCALE;
-  var end = region.end/SCALE;
-  var chrom = region.chrom;
-  RefSeq.find({
-    startIdx: {'$gte': start},
-    endIdx: {'$lte': end}
-  }, function(err, data) {
-    if (err) throw err;
-    callback(null, data);
-    });
+  async.parallel([
+    function(paralCbk) {
+      RefSeq.find({
+        chrom: region.chrom,
+        starts: {"$gte": region.start, "$lte": region.end}
+      }, paralCbk);
+    },
+    function(paralCbk) {
+      RefSeq.find({
+      chrom: region.chrom,
+      ends: {"$gte": region.start, "$lte": region.end}
+      }, paralCbk);
+    },
+    function(paralCbk) {
+      RefSeq.find({
+        chrom: region.chrom,
+        starts: {"$lte": region.start},
+        ends: {"$gte": region.end}
+      }, paralCbk);
+    }],
+    function(err, data) {
+      if (err) throw err;
+      console.log("data: ");
+      console.log(data);
+      data = _.flatten(data);
+      data = _.sortBy(data, function(fragment) {
+        return fragment.starts;
+      });
+      var refSeq = _.pluck(data, "sequence").join();
+      var fragStart = data[0].starts;
+      var sliceStart = region.start - fragStart;
+      var sliceEnd = region.end - fragStart + 1;
+      refSeq = refSeq.slice(sliceStart, sliceEnd);
+      callback(null, refSeq);
+    }
+    );
 }
 
 function drop(model) {
@@ -446,10 +467,6 @@ function getRegion(region, callback) {
     refseq: function(callback) {
       getRefRegion(region, function(err, data) {
         if (err) throw err;
-        data = _.sortBy(data, function(fragment) {
-          return fragment.starts;
-        });
-        data = _.pluck(data, "sequence").join();
         callback(null, data);
       });
     }
@@ -478,23 +495,48 @@ function getFeatureRegion(name, flank, callback) {
 }
 
 function annotateCodNCodSNPs() {
+  
   async.waterfall([
+    
     // get all CDSs in the database
-    function(waterfallCallback) {
-      Feaure.find({type: "CDS"}, waterfallCallback);
+    function(wfallCbk) {
+      Feature.find({type: "CDS"}, wfallCbk);
     },
+    
     // get all SNPs within CDSs
-    function(CDSs, waterfallCallback) {
-      async.forEach(CDSs, function(cds) {
-        var box = [
-          [cds.startIdx[0] - 0.1, cds.startIdx[1]],
-          [cds.startIdx[0] + 0.1, cds.endIdx[1]]
-        ];
-        Features.find({
+    function(CDSs, wfallCbk) {
+      var codingSNPs = [];
+      async.forEach(CDSs, function(cds, fEachCbk) {
+        Feature.find({
           type: /SNP/,
-          startIdx: {$within: {$box: box}}
+          seqid: cds.seqid,
+          start: {"$gte": cds.start},
+          end: {"$lte": cds.end}
+        }, function(err, snps) {
+          if (err) {          
+            throw err;
+          }
+          codingSNPs = codingSNPs.concat(snps);
+          fEachCbk();
+      });
+      }, function() {
+          wfallCbk(null, codingSNPs);
         });
-      }, waterfallCallback);
+    },
+    function(codingSNPs, wfallCbk) {
+      async.forEach(codingSNPs, function(snp, asyncCbk) {
+        Feature.update(
+          {start: snp.start},
+          {"attributes.coding": true},
+          function(err) {
+           if (err) throw err;
+           asyncCbk();
+          }
+        )
+      }, function(err) {
+        if (err) throw err;
+        console.log("updated db");
+      });
     }
   ]);
 }
@@ -523,3 +565,5 @@ exports.getFeatureRegion = getFeatureRegion;
 exports.onDbFilesChange = onDbFilesChange;
 exports.getRefRegion = getRefRegion;
 exports.importRefSeq = importRefSeq;
+exports.annotateCodNCodSNPs = annotateCodNCodSNPs;
+exports.getRefRegion = getRefRegion;

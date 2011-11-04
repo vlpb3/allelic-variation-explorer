@@ -20,13 +20,15 @@ h1 {
   left: 200px;
 }
 #locationChoice {
+  float: left;
   text-align: left;
   border-bottom: solid 2px #dcdcdc;
 }
 #controls {
-  position: absolute;
-  top: 95px;
-  left: 810px;
+  float: right;
+}
+#codingRadio {
+  float: right;
 }
 #chart {
   position: absolute;
@@ -151,6 +153,6 @@ circle {
 rect {
   opacity: 0.6;
 }
-div#ble {
+div#re {
   outline: 1px dashed #f00;
 }

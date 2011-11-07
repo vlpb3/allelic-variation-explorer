@@ -1,5 +1,4 @@
 var fs = require('fs');
-var Step = require('step');
 var async = require('async');
 var _ = require('underscore');
 

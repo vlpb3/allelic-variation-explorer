@@ -283,7 +283,13 @@ function reloadDb (callback){
 		},
 		// read in gff files and put all the features into db
 		function(seriesCallback) {
-			importGff(seriesCallback);
+		  async.parallel([
+		      importGff,
+		      importRefSeq
+		    ], function(err, results) {
+		      if (err) throw err;
+		      seriesCallback(null, "data imported");
+		    });
 		}
 		],
 		function(err, results){
@@ -531,7 +537,7 @@ function annotateCodNCodSNPs() {
            if (err) throw err;
            asyncCbk();
           }
-        )
+        );
       }, function(err) {
         if (err) throw err;
         console.log("updated db");

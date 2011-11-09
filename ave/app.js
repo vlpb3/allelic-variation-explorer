@@ -24,11 +24,11 @@ app.configure(function(){
 });
 
 app.configure('development', function(){
-  app.use(express.errorHandler({ dumpExceptions: true, showStack: true })); 
+  app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
 });
 
 app.configure('production', function(){
-  app.use(express.errorHandler()); 
+  app.use(express.errorHandler());
 });
 
 // Routes
@@ -41,7 +41,7 @@ app.get('/', function(req, res) {
 
 // io
 io.sockets.on('connection', function(socket) {
-  
+
 	socket.on('reloadDb', function(){
 		seqdb.reloadDb(function(err, results) {
 			if(err) console.log(err);
@@ -54,7 +54,7 @@ io.sockets.on('connection', function(socket) {
 				} );
 		});
 	});
-	
+
 	socket.on('getData', function(region) {
 	  console.log(region);
 		seqdb.getRegion(region, function(err, data){
@@ -64,7 +64,7 @@ io.sockets.on('connection', function(socket) {
 			}
 		});
 	});
-	
+
 	socket.on('getFeatureRegion', function(req) {
 	  var name = req.name;
 	  var flank = req.flank;
@@ -73,7 +73,7 @@ io.sockets.on('connection', function(socket) {
 	    socket.emit('featureRegion', reg);
 	  });
 	});
-	
+
 	socket.on('getFasta', function(region) {
     seqdb.getRefRegion(region, function (err, data) {
       if (err) throw err;
@@ -96,11 +96,16 @@ io.sockets.on('connection', function(socket) {
 //   });
 
 // use stalker to watch the database directory
-stalker.watch('./data', {buffer: 5000}, function(err, f) {
-  seqdb.onDbFilesChange();
-}, function(err, f) {
-  seqdb.onDbFilesChange();
-});
+stalker.watch('./data', {buffer: 5000},
+  function(err, files) {
+    if (err) throw err;
+    seqdb.onDbFilesAdded(files);
+  },
+  function(err, files) {
+    if (err) throw err;
+    seqdb.onDbFilesRemoved(files);
+  }
+);
 
 app.listen(3000);
 console.log("Express server listening on port %d in %s mode",

@@ -42,7 +42,22 @@ var LocusSchema = new Schema({
 mongoose.model('Locus', LocusSchema);
 
 var DbFileSchema = new Schema({
-  file: String
+  fpath: String,
+  stat: {
+  	dev: Number,
+  	ino: Number,
+  	mode: Number,
+  	nlink: Number,
+  	uid: Number,
+  	gid: Number,
+  	rdev: Number,
+  	size: Number,
+  	blksize: Number,
+  	blocks: Number,
+  	atime: {},
+  	mtime: {},
+  	ctime: {}
+  }
 });
 mongoose.model('DbFile', DbFileSchema);
 

@@ -1,21 +1,21 @@
 (function ($) {
-  
-  // router stuff 
+
+  // router stuff
   var AppRouter = Backbone.Router.extend({
-    
+
     initialize: function(options) {
       _.bindAll(this, "moveModel", "navigateTo");
       this.model = options.model;
-      
+
       // this.navigateTo();
-      // when model changes, navigate to new place      
+      // when model changes, navigate to new place
       this.model.bind("change:pos", this.navigateTo);
     },
-    
+
     routes: {
       "goto/chrom:ch/start:s/end:e": "moveModel"
     },
-    
+
     moveModel: function(ch, s, e) {
       var pos = {
         "chrom": parseInt(ch, 10),
@@ -24,23 +24,23 @@
       };
       this.model.set({"pos": pos});
     },
-    
+
     navigateTo: function(){
       var pos = this.model.get("pos");
       var path = "goto/chrom" + pos.chrom + "/start" +
-        pos.starts + "/end" + pos.ends;  
+        pos.starts + "/end" + pos.ends;
       this.navigate(path);
     }
   });
-  
+
   // Views
   // view for choosing the region to display
   var choiceView = Backbone.View.extend({
-    
+
     initialize: function() {
 
       _.bindAll(this, "render", "updateModel", "goToFeature");
-      
+
       this.render();
       // get values form the model
       $("#radioRegion").click();
@@ -48,14 +48,14 @@
       $("#chrom").val(pos.chrom);
       $("#start").val(pos.starts);
       $("#end").val(pos.ends);
- 
+
     },
-    
+
     events: {
       "click #go" : "updateModel",
       "click #search": "goToFeature"
     },
-    
+
     updateModel: function() {
       var update = {
         "pos": {
@@ -66,40 +66,40 @@
       };
       this.model.set(update);
     },
-    
+
     goToFeature: function() {
       var name = $("#name").val();
       var flank = parseInt($("#flank").val(), 10);
       this.model.goToFeature(name, flank);
     },
-    
+
     render: function() {
 
       // get buttons displayed properly
       $("#radio").buttonset();
-      
+
       // hide both searchbox sets at the beginning
       $("#regionSearch").hide();
       $("#featureSearch").hide();
-      
+
       // bind actions to these button sets
       $("#radioRegion").click(function(){
         $("#regionSearch").show();
         $("#featureSearch").hide();
       });
-        
+
       $("#radioFeature").click(function(){
         $("#featureSearch").show();
         $("#regionSearch").hide();
       });
-      
+
       return this;
     }
-    
+
   });
-  
+
   var NavigateView = Backbone.View.extend({
-    
+
     initialize: function() {
       _.bindAll(this, "render", "updateString",
         "goLeft", "zoomOut", "zoomIn", "goRight");
@@ -108,20 +108,20 @@
       this.updateString();
       this.model.bind("change:pos", this.updateString);
     },
-    
+
     render: function() {
       var winWidth = $(window).width();
       $("#navigate").css("left", winWidth/2 - 95);
       $("#navigate").css("width", winWidth/2);
     },
-    
+
     events: {
       "click #goLeft": "goLeft",
       "click #zoomOut": "zoomOut",
       "click #zoomIn": "zoomIn",
       "click #goRight": "goRight"
     },
-    
+
     goLeft: function() {
       var pos = this.model.get("pos");
       var step = Math.floor((pos.ends - pos.starts) / this.step);
@@ -137,7 +137,7 @@
       };
       this.model.set(update);
     },
-    
+
     zoomOut: function() {
       var pos = this.model.get("pos");
       var step = Math.floor((pos.ends - pos.starts) / 2);
@@ -153,7 +153,7 @@
       };
       this.model.set(update);
     },
-    
+
     zoomIn: function() {
       var pos = this.model.get("pos");
       var step = Math.floor((pos.ends - pos.starts) / 4);
@@ -167,9 +167,9 @@
         }
       };
       this.model.set(update);
-      
+
     },
-    
+
     goRight: function() {
       var pos = this.model.get("pos");
       var step = Math.floor((pos.ends - pos.starts) / this.step);
@@ -194,9 +194,9 @@
       $("#positionText").html(positionStr);
     }
   });
-  
+
   var ControlsView = Backbone.View.extend({
-    
+
     initialize: function() {
       _.bindAll(this, "render", "openFilterDialog",
         "renderStrainList", "renderSNPList", "updateLists",
@@ -204,18 +204,18 @@
 
       this.render();
     },
-    
+
     render: function() {
       $("#filterDialog").hide();
       $("#filterButton").button();
-      
+
       // filter dialog stuff
       this.filterDialog = $("#filterDialog").dialog({
         autoOpen: false,
         title: "Exclude/Include SNPs/strains",
         width: 450
       });
-      
+
       $("#filterRadio").buttonset();
       $("#applyFilters button").button()
         .click(this.applyFilters);
@@ -248,26 +248,26 @@
         }
       });
     },
-    
+
     events: {
       "click #filterButton": "openFilterDialog"
     },
-    
+
     openFilterDialog: function() {
       $("#filterDialog").dialog('open');
-      
+
       // fill lists in
       this.updateLists();
-      this.renderStrainList();    
+      this.renderStrainList();
     },
-    
+
     updateLists: function() {
       var filters = this.model.get("displayData").filters;
       var SNPsIncl = filters.SNPs.incl;
       var SNPsExcl = filters.SNPs.excl;
       var strainsIncl = filters.strains.incl;
       var strainsExcl = filters.strains.excl;
-      
+
       // append lists
       var inclSNPsAnchor = $("#inclSNPs ul");
       inclSNPsAnchor.empty();
@@ -290,7 +290,7 @@
         exclStrainsAnchor.append("<li>" + strain + "</li>");
       });
     },
-      
+
     // strains list rendering
     renderStrainList: function() {
       $("#exclStrains").show();
@@ -298,7 +298,7 @@
       $("#exclSNPs").hide();
       $("#inclSNPs").hide();
     },
-    
+
     // SNPs list rendering
     renderSNPList: function() {
       // hide strain lists and show snp lists
@@ -307,7 +307,7 @@
       $("#exclSNPs").show();
       $("#inclSNPs").show();
     },
-    
+
     addSelected: function() {
       // add SNPs or strains depending on which toggle is on
       var active = $("#filterRadio .ui-state-active").attr("for");
@@ -318,7 +318,7 @@
         $("#exclStrains ul .ui-selected").appendTo($("#inclStrains ul"));
       }
     },
-    
+
     removeSelected: function() {
       // remove SNPs or strains depending on which toggle is on
       var active = $("#filterRadio .ui-state-active").attr("for");
@@ -329,7 +329,7 @@
         $("#inclStrains ul .ui-selected").appendTo($("#exclStrains ul"));
       }
     },
-    
+
     applyFilters: function() {
       // get excluded lists from the dialog
       var exclStrainsLi = $("#exclStrains ul li");
@@ -348,10 +348,10 @@
       this.model.updateDisplayData();
     }
   });
-  
+
   // model for all the data
   var DataModel = Backbone.Model.extend({
-    
+
     defaults: {
       "socket": io.connect("http://localhost"),
       "bufferX": 5,
@@ -387,7 +387,7 @@
         }
         }
     },
-    
+
     initialize: function() {
       _.bindAll(this, "updatePosition", "updateDisplayData",
         "waitForData", "updateBufferData", "importData",
@@ -395,7 +395,7 @@
         "goToFeature", "goToFeatureRegion",  "cluster");
 
       this.updateBufferData();
-      
+
       // update the model when position chnages
       this.bind("change:pos", function() {
         this.updatePosition();
@@ -404,10 +404,10 @@
       this.get("socket").on("data", this.importData);
       this.get("socket").on("featureRegion", this.goToFeatureRegion);
     },
-    
+
     importData: function(data) {
       var bufferData = this.get("bufferData");
-      
+
       bufferData.chrom = data.region.chrom;
       bufferData.starts = data.region.start;
       bufferData.ends = data.region.end;
@@ -415,19 +415,19 @@
       bufferData.loci = data.loci;
       bufferData.features = data.features;
       bufferData.refseq = data.refseq;
-      
+
       this.set({"bufferData": bufferData});
       if (this.get("displayData").waiting) {
          this.updateDisplayData();
          this.waitForData(false); // check if it works properly
       }
     },
-    
+
     goToFeature: function(name, flank) {
       this.waitForData(true);
       this.get("socket").emit("getFeatureRegion", {"name": name, "flank": flank});
     },
-    
+
     goToFeatureRegion: function(region) {
       var pos = this.get("pos");
       pos.starts = region.start;
@@ -436,18 +436,18 @@
       this.set({"pos": pos});
       this.trigger("change:pos");
     },
-    
+
     waitForData: function(ifwait) {
       var displayData = this.get("displayData");
       displayData.waiting = ifwait;
       this.set(displayData);
     },
-    
+
     updatePosition: function(){
       var pos = this.get("pos");
       var span = pos.ends - pos.starts;
       var bufferData = this.get("bufferData");
-      
+
       // check if there is a need for fetching new buffer
       var startToClose = (bufferData.starts > 0) &&
         (bufferData.starts > (pos.starts - span));
@@ -457,7 +457,7 @@
       if (startToClose || endToClose || otherChromosome) {
         this.updateBufferData();
       }
-      
+
       // check if new position is in buffer
       var startInBuffer = pos.starts >= bufferData.starts;
       var endInBuffer = pos.ends <= bufferData.ends;
@@ -467,7 +467,7 @@
       }
       else this.waitForData(true);
     },
-    
+
     updateBufferData: function() {
       var pos = this.get("pos");
       var span = pos.ends - pos.starts;
@@ -475,12 +475,12 @@
       var start = pos.starts - flank;
       newBufferStart = start >= 0 ? start : 1;
       newBufferEnd = pos.ends + flank;
-      var region = {chrom: pos.chrom, start: newBufferStart, end: newBufferEnd};   
+      var region = {chrom: pos.chrom, start: newBufferStart, end: newBufferEnd};
       this.get("socket").emit("getData", region);
     },
-    
+
     updateDisplayData: function() {
-      
+
       var bufferData = this.get("bufferData");
       // first fetch the fragment from the buffer
       var displayData = this.get("displayData");
@@ -491,7 +491,7 @@
       displayData.SNPs = _.select(SNPs, function(snp) {
         return ((snp.start >= pos.starts) && (snp.start <= pos.ends));
       });
-      
+
       // for filtring get list of strains and snsp
       var snpAttr = _.pluck(displayData.SNPs, "attributes");
       var strainList = _.pluck(snpAttr, "Strain").sort();
@@ -503,62 +503,63 @@
       var snpIDList = _.pluck(snpAttr, "ID");
       var newSNPIncl = _.difference(snpIDList,
         displayData.filters.SNPs.excl);
-      
-      
+
+
       // set them in the model
       displayData.filters.strains.incl = newStrainIncl;
       displayData.filters.SNPs.incl = newSNPIncl.sort(
         function(a, b) {return a - b;});
-      
+
       // select SNPs again according to strain and SNP ID restictions
       displayData.SNPs = _.select(SNPs, function(snp) {
         return (_.include(newStrainIncl, snp.attributes.Strain) &&
           _.include(newSNPIncl, snp.attributes.ID));
       });
-      
+
       // get loci
       var loci = bufferData.loci;
       displayData.loci = _.select(loci, this.isLocusInRegion);
-      
+
       // get features
       var features = bufferData.features;
       displayData.features = _.select(features, this.isFeatureInRegion);
-      
+
       // get refseq fragment
       var refseq = bufferData.refseq;
       var sliceStart = pos.starts - bufferData.starts;
       var sliceEnd = pos.ends - bufferData.starts + 1;
       refseq = refseq.slice(sliceStart, sliceEnd);
+
       displayData.refseq = refseq;
-      
+
       // set obtained data to the model
       this.set({"displayData": displayData});
       // calculate haplotypes from SNPs in the region
       this.calcHaplotypes();
-      
+
       // cluster haplotypes
       this.cluster();
     },
-    
+
     isLocusInRegion: function(locus) {
       var pos = this.get("pos");
       if(locus.gene.start <= pos.ends && locus.gene.end >= pos.starts) {
         return true;
       } else return false;
     },
-    
+
     isFeatureInRegion: function(feature) {
       var pos = this.get("pos");
       if(feature.start <= pos.ends && feature.end >= pos.starts) {
         return true;
       } else return false;
     },
-    
+
     calcHaplotypes: function() {
 
       var displayData = this.get("displayData");
       var SNPs = displayData.SNPs;
-      
+
       // create strains object
       var strains = _.reduce(SNPs, function(memo, snp) {
         var strain = snp.attributes.Strain;
@@ -578,14 +579,14 @@
         haplotype.push({name: strainName, snps: strainSNPs});
         haplotypes[haplID] = haplotype;
       });
-      
+
       displayData.haplotypes = haplotypes;
       this.set({"displayData": displayData});
       this.trigger('change:displayData');
     },
-    
+
     cluster: function() {
-      
+
       var metric = function(hapl1, hapl2){
         var score = 5;
         var snps1 = hapl1.snps;
@@ -599,7 +600,7 @@
         dist = Math.sqrt(dist);
         return dist;
       };
-      
+
       var haplotypes = this.get("displayData").haplotypes;
       // reduce haplotypes to list of objects
       // also add a list of strains for each haplotype
@@ -611,7 +612,7 @@
         memo.push(hapl[0]);
         return memo;
       }, []);
-      
+
       var clusters = {};
       if (_.size(haplotypes) > 1) {
       clusters = clusterfck.hcluster(haplotypes, metric,
@@ -619,25 +620,25 @@
       }
       // arrange haplotypes by clustered order
       // haplotypes = clusterHaplotypes([], clusters);
-     
+
      // put clusters into the model
      var displayData = this.get("displayData");
      // displayData.haplotypes = haplotypes;
      displayData.clusters = clusters;
      this.set({displayData: displayData});
-     
+
      this.trigger("change:displayData:clusters");
     }
-    
+
   });
 
   var VisView = Backbone.View.extend({
-    
+
     initialize: function() {
       _.bindAll(this, "render", "draw", "drawTree",
         "isLeaf", "leaf2haplotype", "onSNPmouseOver", "onSNPmouseOut",
         "onHaplCLick", "showCodingSNPs", "showNonCodingSNPs", "showAllSNPs");
-      
+
       this.trackH = 20;
       this.glyphH = 12;
       this.glyphT = 4;
@@ -647,17 +648,17 @@
       this.right = 5;
       this.top = 20;
       this.bottom = 4;
-      
+
       this.model.bind('change:displayData:clusters', this.draw);
       this.render();
     },
-    
+
     render: function() {
-      
+
       // allign properly elements
       var winWidth = $(window).width();
       $("#chart").css("left", winWidth/2);
-      
+
       // browser div
       this.svg = d3.select("#chart").append("svg:svg")
           .attr("width", this.left + this.width + this.right)
@@ -671,7 +672,7 @@
           .attr("height", this.top + this.height + this.bottom)
         .append("svg:g")
           .attr("transform", "translate(" + this.left + "," + this.top + ")");
-      
+
       $("#codingRadio").buttonset();
       $("#radioCoding").click(this.showCodingSNPs);
       $("#radioNonCoding").click(this.showNonCodingSNPs);
@@ -680,7 +681,7 @@
       // this.draw();
       return this;
     },
-    
+
     showCodingSNPs: function() {
       //fetch all coding snp
       var snps = this.model.get('displayData').SNPs;
@@ -726,7 +727,7 @@
           return 0.6;
         });
     },
-    
+
     draw: function() {
       var pos = this.model.get("pos");
       var width = this.width;
@@ -734,12 +735,12 @@
       this.x = d3.scale.linear().domain([pos.starts, pos.ends])
           .range([0, this.width ]);
       var x = this.x;
-          
+
       var displayData = this.model.get("displayData");
       var features = displayData.features;
       var haplotypes = displayData.haplotypes;
       var clusters = displayData.clusters;
-      
+
       var glyphH = this.glyphH;
       var glyphT = this.glyphT;
       var trackH = this.trackH;
@@ -749,7 +750,7 @@
       var genes = _.select(features, function(feature) {
         return feature.type === "gene";
       });
-      
+
       var geneRect = this.svg.selectAll('.gene').data(genes);
       geneRect.attr("x", function(d) { return x(d.start); })
               .attr("width", function(d) { return x(d.end) - x(d.start); });
@@ -774,9 +775,9 @@
                 .attr("dx", "0.5em")
                 .text(function(d) { return d.attributes.Name; });
       geneLabel.exit().remove();
-            
+
       freePos += trackH;
-      
+
       // draw gene models
       var UTR5s = _.select(features, function(feature) {
         return feature.type === "five_prime_UTR";
@@ -788,10 +789,10 @@
         return feature.type === "CDS";
       });
       var yPos = function(d) {
-        var nModel = d.attributes.Parent.split(",")[0].split(".")[1] || 1; 
+        var nModel = d.attributes.Parent.split(",")[0].split(".")[1] || 1;
         return freePos + (nModel - 1)*trackH;
       };
-      
+
       var UTR5Rect = this.svg.selectAll('.UTR5').data(UTR5s);
       UTR5Rect.attr("x", function(d) { return x(d.start); })
               .attr("y", yPos)
@@ -804,7 +805,7 @@
               .attr("width", function(d) { return x(d.end) - x(d.start); })
               .attr("fill", "slateblue");
       UTR5Rect.exit().remove();
-      
+
       var UTR3Rect = this.svg.selectAll('.UTR3').data(UTR3s);
       UTR3Rect.attr("x", function(d) { return x(d.start); })
               .attr("y", yPos)
@@ -817,7 +818,7 @@
               .attr("width", function(d) { return x(d.end) - x(d.start); })
               .attr("fill", "teal");
       UTR3Rect.exit().remove();
-      
+
       var CDSRect = this.svg.selectAll('.CDS').data(CDSs);
       CDSRect.attr("x", function(d) { return x(d.start); })
               .attr("y", yPos)
@@ -830,12 +831,12 @@
               .attr("width", function(d) { return x(d.end) - x(d.start); })
               .attr("fill", "steelblue");
       CDSRect.exit().remove();
-      
+
       // calculate new freePos by calculating the max number of gene models per locus
       var allFeatures = UTR5s.concat(CDSs).concat(UTR3s);
       var maxModels = _.reduce(allFeatures, function(memo, f) {
         var nModel = f.attributes.Parent.split(",")[0].split(".")[1];
-        nModel = parseInt(nModel, 10); 
+        nModel = parseInt(nModel, 10);
         memo = memo < nModel ? nModel : memo;
         return memo;
       }, 0);
@@ -879,7 +880,7 @@
           .attr('text-anchor', 'middle')
           .text(x.tickFormat(10));
       rules.exit().remove();
-  
+
       // draw haplotypes
       var haplotypeBars = this.svg.selectAll('.hap').data(this.leaves);
       haplotypeBars.attr('y', function(d) { return d.x + freePos - trackH/2;});
@@ -911,52 +912,52 @@
                 .attr('fill', this.baseColor)
                 .on('mouseover', this.onSNPmouseOver)
                 .on('mouseout', this.onSNPmouseOut);
-      SNPCircles.exit().remove(); 
-      
+      SNPCircles.exit().remove();
+
       var svg = this.svg;
-      
+
       // fade in/out snps according to whats chosen
-      
+
       var activeToggle = $("#codingRadio .ui-state-active").attr("for");
       if (activeToggle === "radioNonCoding") this.showNonCodingSNPs();
       else if (activeToggle === "radioCoding") this.showCodingSNPs();
       else this.showAllSNPs();
       this.freePos = freePos;
      },
-     
+
      drawTree: function() {
        var topTranslation = (this.maxModels + 1) * this.trackH;
        var top = this.top + topTranslation;
-       
+
        this.svgTree
         .attr("transform", "translate(" + this.left + "," + top + ")");
-       
+
        var displayData = this.model.get("displayData");
        var haplotypes = displayData.haplotypes;
        var clusters = displayData.clusters;
        var height = _.size(haplotypes) * this.trackH;
-      
+
       var cluster = d3.layout.cluster()
         .size([height, this.width + this.left]);
       cluster.separation(function(a, b) { return 1; });
       cluster.children(function(d) {
           if (d) return (d.children = _.compact([d.left , d.right]));
         });
-      
+
       var diagonal = d3.svg.diagonal()
           .projection(function(d) {return [d.y, d.x]; });
-      
+
       var nodes = cluster.nodes(clusters);
 
       var link = this.svgTree.selectAll("path.link")
           .data(cluster.links(nodes));
-      
+
       link.attr("d", diagonal);
       link.enter().append("svg:path")
           .attr("class", "link")
           .attr("d", diagonal);
       link.exit().remove();
-          
+
       var node = this.svgTree.selectAll("g.node").data(nodes);
       node.attr("transform", function(d) {
         return "translate(" + d.y + ", " + d.x + ")";
@@ -970,25 +971,25 @@
         .attr("class", "nodeCircle")
         .attr("r", this.glyphH/2 - 1.5);
       node.exit().remove();
-      
+
       // save leaf nodes so that haplotypes can be arranged acordingly
       // to clustering by d3
       var leaves = _.select(nodes, this.isLeaf);
       this.leaves = _.map(leaves, this.leaf2haplotype);
      },
-     
+
      onSNPmouseOver: function(d, i) {
        var freePos = this.freePos;
        var pos_x = d.x;
        var tx = this.x(d.x);
        var ty = d.y + freePos - this.glyphH*0.75;
-       
+
        //make circle bigger
        d3.select(d3.event.srcElement)
           .transition()
             .duration(200)
             .attr("r", this.glyphH/2);
-       
+
        // show the position of the SNP
        var g = d3.select(d3.event.srcElement.parentNode);
        g.append("svg:text")
@@ -997,11 +998,11 @@
          .attr("y", ty)
          .attr('text-anchor', 'middle')
          .text(pos_x);
-       
+
        // fade out the haplotypes that do not have this SNP
        var posWithSNP =   _.reduce(this.hapSNPs, function(memo, snp) {
            if (snp.x === pos_x) memo.push(snp.y);
-           return memo; 
+           return memo;
          }, []);
 
        d3.selectAll(".hap")
@@ -1011,7 +1012,7 @@
          if (_.include(posWithSNP, d.x)) return 0.2;
          else return 0.1;
        });
-       
+
        d3.selectAll(".nodeCircle")
         .transition()
           .duration(200)
@@ -1022,15 +1023,15 @@
             else return "#fff";
           });
       },
-     
+
      onSNPmouseOut: function(d, i) {
        var g = d3.select(d3.event.srcElement.parentNode);
-       
+
        // make circle smaller
        d3.select(d3.event.srcElement)
           .transition()
             .duration(200).attr("r", this.glyphH/4);
-            
+
        // remove the SNP tip
        g.selectAll(".snpTip").remove();
        // fade to the original state
@@ -1043,12 +1044,12 @@
           .duration(200)
           .style("fill", "#fff");
      },
-     
+
      onHaplCLick: function(d, i) {
        // when haplotype bar is clicked open the dialog with the
        // details about the haplotype
        // all dialogs use the clone of the same div
-       
+
        var pos = this.model.get("pos");
        var socket = this.model.get("socket");
        var snpStr = "";
@@ -1056,14 +1057,14 @@
          snpStr += pos + ": " + snp + ", ";
        });
        var posStr = "Chr" + pos.chrom + ":" + pos.starts + ".." + pos.ends;
-       
+
        var haplDialog = $("#haplDialog").clone().dialog({
          title: 'Haplotype for ' + posStr,
          close: function(ev, ui) {
            $(this).remove();
          }
        });
-       
+
        $(haplDialog).find("p:first").append("</br> " + d.strains);
        $(haplDialog).find("p:eq(1)").append("</br> " + snpStr);
        var refseq = this.model.get("displayData").refseq;
@@ -1077,7 +1078,7 @@
          if ((idx+1) % 60 === 0) base += "\n";
          fastaStr += base;
        });
-       
+
        $(haplDialog).find("textarea").val(fastaStr);
        $(haplDialog).find("#saveFasta").click(function() {
          var bb = new BlobBuilder();
@@ -1086,12 +1087,12 @@
          saveAs(bb.getBlob("text/plain;charset=utf-8"), fname);
        });
      },
-     
+
      isLeaf: function(node) {
        if (_.size(node.children) === 0) return true;
        else return false;
      },
-     
+
      leaf2haplotype: function(leaf) {
        leaf.snps = leaf.canonical.snps;
        leaf.strains = leaf.canonical.strains;
@@ -1108,10 +1109,10 @@
        };
        return baseColors[d.base];
      }
-    
+
   });
-  
-  
+
+
   $(document).ready(function(){
 
     // initialize models
@@ -1122,27 +1123,27 @@
       el: $("#locationChoice"),
       model: dataModel
     });
-    
+
     var navigateView = new NavigateView({
       el: $("#navigate"),
-      model: dataModel 
+      model: dataModel
     });
 
     // initialize router
     var appRouter = new AppRouter({model: dataModel});
     Backbone.history.start();
-    
+
     var visView = new VisView({
       el: $("#chart"),
       model: dataModel
     });
-        
+
     var controlsView = new ControlsView({
       el: $("#controls"),
       model: dataModel
     });
-    
+
   });
-  
+
 }
 )(jQuery);

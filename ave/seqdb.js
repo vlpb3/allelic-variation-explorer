@@ -274,7 +274,7 @@ function onDbFilesAdded(files) {
             console.log("Updated database");
             console.log("Please restart app to finish database update");
             paraCbk();
-          })
+          });
         }],
         function(err, results) {
           if (err) throw err;
@@ -318,7 +318,7 @@ function onDbFilesRemoved(files) {
             console.log("Updated database !");
             console.log("Please restart app to finish database update");
             paraCbk();
-          })
+          });
         }
       ]);
     }
@@ -491,20 +491,31 @@ function getRefRegion(region, callback) {
     }],
     function(err, data) {
       if (err) throw err;
-      console.log("data: ");
-      console.log(data);
-      data = _.flatten(data);
-      data = _.sortBy(data, function(fragment) {
-        return fragment.starts;
-      });
-      var refSeq = _.pluck(data, "sequence").join();
-      var fragStart = data[0].starts;
-      var sliceStart = region.start - fragStart;
-      var sliceEnd = region.end - fragStart + 1;
-      refSeq = refSeq.slice(sliceStart, sliceEnd);
-      callback(null, refSeq);
+      data = data[0].concat(data[1]).concat(data[2]);
+      async.waterfall([
+        function(wfCbk) {
+          async.sortBy(data, function(fragment, sortCbk) {
+              return sortCbk(null, fragment.starts);
+            },wfCbk
+          );
+        },
+        function(data, wfCbk) {
+          async.reduce(data, "", function(memo, fragment, redCbk) {
+            return redCbk(null, memo += fragment.sequence);
+          }, wfCbk);
+        },
+        function(refSeq, wfCbk) {
+          var fragStart = data[0].starts;
+          var sliceStart = region.start - fragStart;
+          var sliceEnd = region.end - fragStart + 1;
+          refSeq = refSeq.slice(sliceStart, sliceEnd);
+          console.log("reference: ");
+          console.log(refSeq);
+          return callback(null, refSeq);
+        }
+      ]);
     }
-    );
+  );
 }
 
 function drop(model) {
@@ -672,4 +683,3 @@ exports.onDbFilesRemoved = onDbFilesRemoved;
 exports.getRefRegion = getRefRegion;
 exports.importRefSeq = importRefSeq;
 exports.annotateCodNCodSNPs = annotateCodNCodSNPs;
-exports.getRefRegion = getRefRegion;

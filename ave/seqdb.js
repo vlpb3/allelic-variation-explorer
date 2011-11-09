@@ -269,17 +269,15 @@ function onDbFilesAdded(files) {
         },
         function(paraCbk) {
           console.log(" > reloading the db!");
-          // reloadDb(function(er, result) {
-          //   console.log(result);
-          //   console.log("Updated database");
-          //   console.log("Please restart app to finish database update");
-          //   paraCbk();
-          // })
+          reloadDb(function(er, result) {
+            console.log(result);
+            console.log("Updated database");
+            console.log("Please restart app to finish database update");
+            paraCbk();
+          })
         }],
         function(err, results) {
           if (err) throw err;
-          console.log("new data filesObjects: ");
-          console.log(dbFiles);
           wfallCbk(null, results);
         }
       );
@@ -315,12 +313,12 @@ function onDbFilesRemoved(files) {
         function(paraCbk) {
           // reload db
           console.log(" > reloading the db!");
-          // reloadDb(function(er, result) {
-          //   console.log(result);
-          //   console.log("Updated database");
-          //   console.log("Please restart app to finish database update");
-          //   paraCbk();
-          // })
+          reloadDb(function(er, result) {
+            console.log(result);
+            console.log("Updated database !");
+            console.log("Please restart app to finish database update");
+            paraCbk();
+          })
         }
       ]);
     }
@@ -362,15 +360,13 @@ function isDataFile(fname, callback) {
 function reloadDb(callback) {
     async.series([
     // first delete old data from databse
-
-
     function(seriesCallback) {
         var models = [Feature, Locus, GeneModel, DbFile];
         var left = models.length;
         models.forEach(function(model) {
             drop(model);
             if (--left === 0) {
-                return seriesCallback(null, "Old data deleted from db.");
+              return seriesCallback(null, "Old data deleted from db.");
             }
         });
     },
@@ -405,10 +401,15 @@ function importRefSeq(callback) {
       fs.readdir(DATA_DIR, wfallCbk);
     },
     function(files, wfallCbk) {
-      var fastaFiles = _.filter(files, function(iFile) {
-        return iFile.split(".")[1] === "fas";
-      });
-      wfallCbk(null, fastaFiles);
+      async.filter(files,
+        function(iFile, filterCbk) {
+          var fastaPattern = /.fas/;
+          return filterCbk(fastaPattern.test(iFile));
+        },
+        function(fastaFiles) {
+          return wfallCbk(null, fastaFiles);
+        }
+      );
     },
     function(fastaFiles, wfallCbk) {
       var allData = [];

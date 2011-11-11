@@ -42,21 +42,20 @@ app.get('/', function(req, res) {
 // io
 io.sockets.on('connection', function(socket) {
 
-	socket.on('reloadDb', function(){
-		seqdb.reloadDb(function(err, results) {
-			if(err) console.log(err);
-			else console.log(results);
-			seqdb.getFromRegion(seqdb.Feature, 'mRNA',
-			  {chrom: 1, start: 3000, end: 1000000},
-				function(err, doc) {
-					if (err) console.log(err);
-					console.dir("mrnas: " + doc[0]);
-				} );
-		});
-	});
+	// socket.on('reloadDb', function(){
+	// 	seqdb.reloadDb(function(err, results) {
+	// 		if(err) console.log(err);
+	// 		else console.log(results);
+	// 		seqdb.getFromRegion(seqdb.Feature, 'mRNA',
+	// 		  {chrom: 1, start: 3000, end: 1000000},
+	// 			function(err, doc) {
+	// 				if (err) console.log(err);
+	// 				console.dir("mrnas: " + doc[0]);
+	// 			} );
+	// 	});
+	// });
 
 	socket.on('getData', function(region) {
-	  console.log(region);
 		seqdb.getRegion(region, function(err, data){
 			if (err) throw err;
 			else {
@@ -65,22 +64,22 @@ io.sockets.on('connection', function(socket) {
 		});
 	});
 
-	socket.on('getFeatureRegion', function(req) {
-	  var name = req.name;
-	  var flank = req.flank;
-	  seqdb.getFeatureRegion(name, flank, function(err, reg) {
-	    if (err) console.log(err);
-	    socket.emit('featureRegion', reg);
-	  });
-	});
+	// socket.on('getFeatureRegion', function(req) {
+	//   var name = req.name;
+	//   var flank = req.flank;
+	//   seqdb.getFeatureRegion(name, flank, function(err, reg) {
+	//     if (err) console.log(err);
+	//     socket.emit('featureRegion', reg);
+	//   });
+	// });
 
-	socket.on('getFasta', function(region) {
-    seqdb.getRefRegion(region, function (err, data) {
-      if (err) throw err;
-      console.log("fasta region: ");
-      console.log(data);
-    });
-	});
+	// socket.on('getFasta', function(region) {
+ //    seqdb.getRefRegion(region, function (err, data) {
+ //      if (err) throw err;
+ //      console.log("fasta region: ");
+ //      console.log(data);
+ //    });
+	// });
 });
 
 // seqdb.getRefRegion({chrom: 1, start: 1, end: 100000},

@@ -131,7 +131,7 @@ function makeLocusDb(callback) {
                     exons: function(parallelCallback) {
                         Feature.find({
                             type: 'exon',
-                            'attributes.Parent': mRNAname
+
                         }, function(err, exons) {
                             if (err) return parallelCallback(err);
                             return parallelCallback(null, exons);
@@ -216,8 +216,8 @@ function importGff(callback) {
         });
     }, function(data, waterfallCallback) {
         addFeatures(data, waterfallCallback);
-    }, function(data, waterfallCallback) {
-        makeLocusDb(waterfallCallback);
+    // }, function(data, waterfallCallback) {
+    //     makeLocusDb(waterfallCallback);
     }, function(data, waterfallCallback) {
         return callback(null, data);
     }]);

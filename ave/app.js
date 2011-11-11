@@ -83,9 +83,11 @@ io.sockets.on('connection', function(socket) {
 	});
 });
 
-// seqdb.importRefSeq(function(err) {
-//   if (err) throw err;
-//   console.log("data imported !");
+// seqdb.getRefRegion({chrom: 1, start: 1, end: 100000},
+//     function(err, data) {
+//       if (err) throw err;
+//       console.log("refregion: !");
+//       console.log(data);
 // });
 
 // seqdb.annotateCodNCodSNPs();

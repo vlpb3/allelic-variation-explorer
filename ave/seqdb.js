@@ -1,6 +1,5 @@
 var fs = require('fs');
 var async = require('async');
-var _ = require('underscore');
 
 var models = require('./models');
 
@@ -15,6 +14,7 @@ var DATA_DIR = process.cwd() + '/data/';
 var MAX_LEN = 5000;
 var SCALE = 1000000;
 var CHROM_LEN = {
+    0: 0,
     1: 34.964571,
     2: 22.037565,
     3: 25.499034,
@@ -271,8 +271,8 @@ function onDbFilesAdded(files) {
           console.log(" > reloading the db!");
           reloadDb(function(er, result) {
             console.log(result);
-            console.log("Updated database");
-            console.log("Please restart app to finish database update");
+            console.log(" > Updated database");
+            console.log(" > Please restart app to finish database update");
             paraCbk();
           });
         }],
@@ -315,8 +315,8 @@ function onDbFilesRemoved(files) {
           console.log(" > reloading the db!");
           reloadDb(function(er, result) {
             console.log(result);
-            console.log("Updated database !");
-            console.log("Please restart app to finish database update");
+            console.log(" > Updated database !");
+            console.log(" > Please restart app to finish database update");
             paraCbk();
           });
         }
@@ -394,7 +394,7 @@ function importRefSeq(callback) {
   // pattern for getting position of the seq in fasta file
   // assumes pattern (Chr1:1..1000)
   var chunk = 1000;
-  console.log("importing fasta");
+  console.log(" > importing fasta");
 
   async.waterfall([
     function(wfallCbk){
@@ -509,8 +509,6 @@ function getRefRegion(region, callback) {
           var sliceStart = region.start - fragStart;
           var sliceEnd = region.end - fragStart + 1;
           refSeq = refSeq.slice(sliceStart, sliceEnd);
-          console.log("reference: ");
-          console.log(refSeq);
           return callback(null, refSeq);
         }
       ]);
@@ -543,38 +541,9 @@ function getFromRegion(model, type, loc, callback) {
 }
 
 function getRegion(region, callback) {
-  var start = region.start/SCALE;
-  var end = region.end/SCALE;
-  var chrom = region.chrom;
-  var leftEnd = start - MAX_LEN/SCALE;
-  leftEnd = leftEnd > 0 ? leftEnd : 0;
-  var box = [[chrom - 0.1, start], [chrom + 0.1, end]];
-  var leftBox = [[chrom - 0.1, leftEnd], [chrom + 0.1, end]];
   async.parallel({
-    loci: function(callback) {
-      Locus.find({
-        startIdx: {$within: {$box: leftBox}}
-      }, function(err, doc) {
-        if (err) callback(err);
-        else callback(null, doc);
-      });
-    },
-    SNPs: function(callback) {
-      Feature.find({
-        type: /SNP/,
-        startIdx: {$within: {$box: box}}
-      }, function(err, doc) {
-        if (err) callback(err);
-        else callback(null, doc);
-      });
-    },
     features: function(callback) {
-      Feature.find({
-       startIdx: {$within: {$box: leftBox}}
-      }, function(err, doc) {
-        if (err) callback(err);
-        else callback(null, doc);
-      });
+      getFeatures(region, callback);
     },
     refseq: function(callback) {
       getRefRegion(region, function(err, data) {
@@ -584,7 +553,7 @@ function getRegion(region, callback) {
     }
   },
   function(err, data) {
-    if (err) console.log(err);
+    if (err) throw error;
     data.region = region;
     callback(null, data);
   });
@@ -652,25 +621,19 @@ function annotateCodNCodSNPs(callback) {
     }
   ]);
 }
+
+function getFeatures(region, callback) {
+  var chrStr = "Chr" + region.chrom;
+  var regionQuery = {
+    start: {$lte: region.end},
+    end: {$gte: region.start},
+    seqid: {$regex: chrStr}
+  };
+
+  Feature.find(regionQuery, callback);
+}
+
 exports.addFeatures = addFeatures;
-
-// tests
-// console.log('test');
-
-
-function testdb1() {
-    var sf = 'Chr1\tTAIR10\tprotein\t3760\t5630\t.\t+\t.\t' + 'ID=AT1G01010.1-Protein;Name=AT1G01010.1;Derives_from=AT1G01010.1';
-    addFeatures(sf);
-}
-
-function testdb4() {
-    getFromRegion(Feature, 'protein', {
-        chrom: 1,
-        start: 100,
-        end: 3800
-    });
-}
-
 
 ////////////////////
 exports.getFromRegion = getFromRegion;
@@ -683,3 +646,4 @@ exports.onDbFilesRemoved = onDbFilesRemoved;
 exports.getRefRegion = getRefRegion;
 exports.importRefSeq = importRefSeq;
 exports.annotateCodNCodSNPs = annotateCodNCodSNPs;
+exports.getFeatures = getFeatures;

@@ -358,7 +358,7 @@
       "pos": {
         "chrom": 1,
         "starts": 3500,
-        "ends": 9000
+        "ends": 6000
       },
       "bufferData": {
           starts: 0,
@@ -526,14 +526,11 @@
 
       // get refseq fragment
       var refseq = bufferData.refseq
-      console.log("refSeq: ")
-      console.log(refseq);
       var sliceStart = pos.starts - bufferData.starts;
       var sliceEnd = pos.ends - bufferData.starts + 1;
       refseq = refseq.slice(sliceStart, sliceEnd);
 
       displayData.refseq = refseq;
-      console.log(displayData);
       // set obtained data to the model
       this.set({"displayData": displayData});
       // calculate haplotypes from SNPs in the region

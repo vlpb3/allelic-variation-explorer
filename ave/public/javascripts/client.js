@@ -374,7 +374,7 @@
         SNPs: [],
         features: [],
         haplotypes: [],
-        refSeq: "",
+        refseq: "",
         filters: {
           SNPs: {
             incl: [],
@@ -411,8 +411,9 @@
       bufferData.chrom = data.region.chrom;
       bufferData.starts = data.region.start;
       bufferData.ends = data.region.end;
-      bufferData.SNPs = data.SNPs;
-      bufferData.loci = data.loci;
+      bufferData.SNPs = _.filter(data.features, function(f) {
+        return f.type.match(/SNP_/);
+      });
       bufferData.features = data.features;
       bufferData.refseq = data.refseq;
 
@@ -480,7 +481,6 @@
     },
 
     updateDisplayData: function() {
-
       var bufferData = this.get("bufferData");
       // first fetch the fragment from the buffer
       var displayData = this.get("displayData");
@@ -517,21 +517,23 @@
       });
 
       // get loci
-      var loci = bufferData.loci;
-      displayData.loci = _.select(loci, this.isLocusInRegion);
+      // var loci = bufferData.loci;
+      // displayData.loci = _.select(loci, this.isLocusInRegion);
 
       // get features
       var features = bufferData.features;
       displayData.features = _.select(features, this.isFeatureInRegion);
 
       // get refseq fragment
-      var refseq = bufferData.refseq;
+      var refseq = bufferData.refseq
+      console.log("refSeq: ")
+      console.log(refseq);
       var sliceStart = pos.starts - bufferData.starts;
       var sliceEnd = pos.ends - bufferData.starts + 1;
       refseq = refseq.slice(sliceStart, sliceEnd);
 
       displayData.refseq = refseq;
-
+      console.log(displayData);
       // set obtained data to the model
       this.set({"displayData": displayData});
       // calculate haplotypes from SNPs in the region
@@ -689,7 +691,6 @@
         return snp.attributes.coding;
       });
       var codingPos = _.pluck(codingSNPs, "start");
-      console.log(codingPos);
       var SNPCircles = this.svg.selectAll('.SNP')
         .transition().duration(200)
         .style("opacity", function(d) {
@@ -705,7 +706,6 @@
         return snp.attributes.coding;
       });
       var codingPos = _.pluck(codingSNPs, "start");
-      console.log(codingPos);
       var SNPCircles = this.svg.selectAll('.SNP')
         .transition().duration(200)
         .style("opacity", function(d) {
@@ -720,7 +720,6 @@
         return snp.attributes.coding;
       });
       var codingPos = _.pluck(codingSNPs, "start");
-      console.log(codingPos);
       var SNPCircles = this.svg.selectAll('.SNP')
         .transition().duration(200)
         .style("opacity", function(d) {
@@ -910,8 +909,8 @@
                     return d.y + freePos - glyphT;
                   })
                 .attr('fill', this.baseColor)
-                .on('mouseover', this.onSNPmouseOver)
-                .on('mouseout', this.onSNPmouseOut);
+                .on("mouseover", this.onSNPmouseOver)
+                .on("mouseout", this.onSNPmouseOut);
       SNPCircles.exit().remove();
 
       var svg = this.svg;
@@ -1051,7 +1050,6 @@
        // all dialogs use the clone of the same div
 
        var pos = this.model.get("pos");
-       var socket = this.model.get("socket");
        var snpStr = "";
        _.each(d.snps, function(snp, pos){
          snpStr += pos + ": " + snp + ", ";

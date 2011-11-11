@@ -4,11 +4,11 @@ mongoose.connect('mongodb://localhost/seqdb');
 var Schema = mongoose.Schema;
 
 var FeatureSchema = new Schema({
-	seqid: String,
+	seqid: { type: String, index: true },
 	source: String,
-	type: {type: String},
-	start: Number,
-	end: Number,
+	type: { type: String, index: true },
+	start: { type: Number, index: true },
+	end: { type: Number, index: true },
 	startIdx: {},
 	endIdx: {},
 	score: String,
@@ -62,9 +62,9 @@ var DbFileSchema = new Schema({
 mongoose.model('DbFile', DbFileSchema);
 
 var RefSeqSchema = new Schema({
-  chrom: Number,
-  starts: Number,
-  ends: Number,
+  chrom: {type: Number, index: true},
+  starts: {type: Number, index: true},
+  ends: {type: Number, index: true},
   startIdx: {},
   endIdx: {},
   sequence: String

@@ -407,7 +407,8 @@
 
     importData: function(data) {
       var bufferData = this.get("bufferData");
-
+      console.log("region");
+      console.log(data.region);
       bufferData.chrom = data.region.chrom;
       bufferData.starts = data.region.start;
       bufferData.ends = data.region.end;
@@ -416,6 +417,8 @@
       });
       bufferData.features = data.features;
       bufferData.refseq = data.refseq;
+      console.log("reference: ");
+      console.log(data.refseq);
 
       this.set({"bufferData": bufferData});
       if (this.get("displayData").waiting) {

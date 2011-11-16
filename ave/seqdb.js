@@ -371,8 +371,6 @@ function reloadDb(callback) {
         });
     },
     // read in gff files and put all the features into db
-
-
     function(seriesCallback) {
         async.parallel([
         importGff, importRefSeq], function(err, results) {
@@ -459,6 +457,8 @@ function importRefSeq(callback) {
                 console.log("error while saving reference seq");
                 throw err;
               }
+              console.log("Ref start: " + refSeq.starts);
+              console.log("Ref end: " + refSeq.ends);
               refSeq = newRefSeq;
               fEachSerCbk();
             });
@@ -469,51 +469,42 @@ function importRefSeq(callback) {
 }
 
 function getRefRegion(region, callback) {
-  async.parallel([
-    function(paralCbk) {
+  async.waterfall([
+    function(wfCbk) {
+      // get all those that start within region
       RefSeq.find({
         chrom: region.chrom,
-        starts: {"$gte": region.start, "$lte": region.end}
-      }, paralCbk);
+        $or: [
+          {starts: {"$gte": region.start, "$lte": region.end}},
+          {ends: {"$gte": region.start, "$lte": region.end}},
+          {
+            starts: {"$lte": region.start},
+            ends: {"$gte": region.end}
+          }
+        ]
+      }, wfCbk);
     },
-    function(paralCbk) {
-      RefSeq.find({
-      chrom: region.chrom,
-      ends: {"$gte": region.start, "$lte": region.end}
-      }, paralCbk);
+    function(fragments, wfCbk) {
+      async.sortBy(fragments, function(fragment, sortCbk) {
+          return sortCbk(null, fragment.starts);
+        },wfCbk);
     },
-    function(paralCbk) {
-      RefSeq.find({
-        chrom: region.chrom,
-        starts: {"$lte": region.start},
-        ends: {"$gte": region.end}
-      }, paralCbk);
-    }],
-    function(err, data) {
-      if (err) throw err;
-      data = data[0].concat(data[1]).concat(data[2]);
-      async.waterfall([
-        function(wfCbk) {
-          async.sortBy(data, function(fragment, sortCbk) {
-              return sortCbk(null, fragment.starts);
-            },wfCbk
-          );
-        },
-        function(data, wfCbk) {
-          async.reduce(data, "", function(memo, fragment, redCbk) {
-            return redCbk(null, memo += fragment.sequence);
-          }, wfCbk);
-        },
-        function(refSeq, wfCbk) {
-          var fragStart = data[0].starts;
-          var sliceStart = region.start - fragStart;
-          var sliceEnd = region.end - fragStart + 1;
-          refSeq = refSeq.slice(sliceStart, sliceEnd);
-          return callback(null, refSeq);
-        }
-      ]);
+    function(fragments, wfCbk) {
+      async.reduce(fragments, "", function(memo, fragment, redCbk) {
+        return redCbk(null, memo += fragment.sequence);
+      }, function(err, refseq) {
+        if (err) throw err;
+        return wfCbk(null, {'fragments': fragments, 'refseq': refseq});
+      });
+    },
+    function(data, wfCbk) {
+      var fragStart = data.fragments[0].starts;
+      var sliceStart = region.start - fragStart;
+      var sliceEnd = region.end - fragStart + 1;
+      refSeq = data.refseq.slice(sliceStart, sliceEnd);
+      return callback(null, refSeq);
     }
-  );
+  ]);
 }
 
 function drop(model) {

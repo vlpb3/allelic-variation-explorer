@@ -64,14 +64,14 @@ io.sockets.on('connection', function(socket) {
 		});
 	});
 
-	// socket.on('getFeatureRegion', function(req) {
-	//   var name = req.name;
-	//   var flank = req.flank;
-	//   seqdb.getFeatureRegion(name, flank, function(err, reg) {
-	//     if (err) console.log(err);
-	//     socket.emit('featureRegion', reg);
-	//   });
-	// });
+	socket.on('getFeatureRegion', function(req) {
+	  var name = req.name;
+	  var flank = req.flank;
+	  seqdb.getFeatureRegion(name, flank, function(err, reg) {
+	    if (err) console.log(err);
+	    socket.emit('featureRegion', reg);
+	  });
+	});
 
 	// socket.on('getFasta', function(region) {
  //    seqdb.getRefRegion(region, function (err, data) {
@@ -82,19 +82,26 @@ io.sockets.on('connection', function(socket) {
 	// });
 });
 
-// seqdb.getRefRegion({chrom: 1, start: 1, end: 100000},
+// seqdb.getRefRegion({chrom: 1, start: 6484, end: 47889},
 //     function(err, data) {
 //       if (err) throw err;
 //       console.log("refregion: !");
 //       console.log(data);
+//       console.log(data.length);
 // });
 
 // seqdb.annotateCodNCodSNPs();
-// seqdb.getRefRegion({ start: 86715, end: 87162, chrom: 1 },
+// seqdb.getRefRegion({ start: 14584, end: 39789, chrom: 1 },
 //   function(err, data) {
 //     if (err) throw err;
+//     console.log("ref seq: ");
 //     console.log(data);
 //   });
+
+// seqdb.importRefSeq(function(err, res) {
+//   if (err) throw err;
+//   console.log(res);
+// })
 
 // use stalker to watch the database directory
 stalker.watch('./data', {buffer: 5000},

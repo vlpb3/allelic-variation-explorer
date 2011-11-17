@@ -407,8 +407,6 @@
 
     importData: function(data) {
       var bufferData = this.get("bufferData");
-      console.log("region");
-      console.log(data.region);
       bufferData.chrom = data.region.chrom;
       bufferData.starts = data.region.start;
       bufferData.ends = data.region.end;
@@ -417,8 +415,6 @@
       });
       bufferData.features = data.features;
       bufferData.refseq = data.refseq;
-      console.log("reference: ");
-      console.log(data.refseq);
 
       this.set({"bufferData": bufferData});
       if (this.get("displayData").waiting) {
@@ -984,13 +980,13 @@
        var ty = d.y + freePos - this.glyphH*0.75;
 
        //make circle bigger
-       d3.select(d3.event.srcElement)
+       d3.select(d3.event.target)
           .transition()
             .duration(200)
             .attr("r", this.glyphH/2);
 
        // show the position of the SNP
-       var g = d3.select(d3.event.srcElement.parentNode);
+       var g = d3.select(d3.event.target.parentNode);
        g.append("svg:text")
          .attr("class", "snpTip")
          .attr("x", tx)
@@ -1024,10 +1020,10 @@
       },
 
      onSNPmouseOut: function(d, i) {
-       var g = d3.select(d3.event.srcElement.parentNode);
+       var g = d3.select(d3.event.target.parentNode);
 
        // make circle smaller
-       d3.select(d3.event.srcElement)
+       d3.select(d3.event.target)
           .transition()
             .duration(200).attr("r", this.glyphH/4);
 

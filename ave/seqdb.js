@@ -457,8 +457,6 @@ function importRefSeq(callback) {
                 console.log("error while saving reference seq");
                 throw err;
               }
-              console.log("Ref start: " + refSeq.starts);
-              console.log("Ref end: " + refSeq.ends);
               refSeq = newRefSeq;
               fEachSerCbk();
             });

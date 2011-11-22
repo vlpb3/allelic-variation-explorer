@@ -437,10 +437,6 @@
     },
 
     goToFeatureRegion: function(region) {
-      if (_.size(region) <= 0) {
-        alert("could not find feature");
-        return;
-      }
       var pos = this.get("pos");
       pos.starts = region.start;
       pos.ends = region.end;

@@ -40,6 +40,7 @@ app.get('/', function(req, res) {
 });
 
 // socket.io
+io.set('log level', 1);
 io.sockets.on('connection', function(socket) {
 
 	// socket.on('reloadDb', function(){
@@ -69,7 +70,10 @@ io.sockets.on('connection', function(socket) {
 	  var flank = req.flank;
 	  seqdb.getFeatureRegion(name, flank, function(err, reg) {
 	    if (err) console.log(err);
-	    socket.emit('featureRegion', reg);
+        if (reg.start === undefined) {
+            socket.emit('featureNotFound',
+                "Feature has not been found");
+        } else socket.emit('featureRegion', reg);
 	  });
 	});
 

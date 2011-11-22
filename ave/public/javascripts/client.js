@@ -39,7 +39,8 @@
 
     initialize: function() {
 
-      _.bindAll(this, "render", "updateModel", "goToFeature");
+      _.bindAll(this, "render", "updateModel", "goToFeature",
+        "onFeatureNotFound");
 
       this.render();
       // get values form the model
@@ -49,6 +50,8 @@
       $("#start").val(pos.starts);
       $("#end").val(pos.ends);
 
+      this.model.get("socket")
+        .on("featureNotFound", this.onFeatureNotFound);
     },
 
     events: {
@@ -67,7 +70,12 @@
       this.model.set(update);
     },
 
+    onFeatureNotFound: function(info){
+      $("#searchMessage").text("\t " + info);
+    },
+
     goToFeature: function() {
+      $("#searchMessage").text("");
       var name = $("#name").val();
       var flank = parseInt($("#flank").val(), 10);
       this.model.goToFeature(name, flank);
@@ -429,6 +437,10 @@
     },
 
     goToFeatureRegion: function(region) {
+      if (_.size(region) <= 0) {
+        alert("could not find feature");
+        return;
+      }
       var pos = this.get("pos");
       pos.starts = region.start;
       pos.ends = region.end;

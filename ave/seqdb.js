@@ -542,7 +542,7 @@ function getRegion(region, callback) {
     }
   },
   function(err, data) {
-    if (err) throw error;
+    if (err) throw err;
     data.region = region;
     callback(null, data);
   });

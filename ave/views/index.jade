@@ -63,13 +63,15 @@ p
         |  to
         input#end(type="number")
         input#go(type="submit", value="Go")
-          
+
       div#featureSearch
         | feature
         input#name(type="string")
         |  with flanking region
         input#flank(type="number")
         input#search(type="submit", value="Search")
+        span#searchMessage
+
 
 
 
@@ -91,12 +93,12 @@ div#codingRadio
     class="ui-corner-right")
   label(for="radioCoding")
     | Coding
-        
+
 div#controls
   input#filterButton(type="button", value="filter")
 
 div#haplDialog
-  p 
+  p
     b Strains:
   p
     b SNPs:
@@ -104,7 +106,7 @@ div#haplDialog
     b Sequnce:
   p
     textarea#fastaSeqArea
-  p 
+  p
     | filename:
     input#fastaFileName(type="string")
     | .fas
@@ -143,24 +145,24 @@ div#filterDialog
           | Included:
         div#inclSNPs
           ul
-        div#inclStrains 
+        div#inclStrains
           ul
   p
     div#applyFilters
       button(type="button")
         | Apply Changes
-  
+
 
 br
 
-p 
+p
   div#navigate
     span#goLeft(class="mini_icon icon_left")
     span#zoomOut(class="mini_icon icon_minus")
     span#zoomIn(class="mini_icon icon_plus")
     span#goRight(class="mini_icon icon_right")
     span#positionText
-  
+
   div#graphs
     div#chart
     div#tree

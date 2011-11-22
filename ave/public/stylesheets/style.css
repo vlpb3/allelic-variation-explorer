@@ -87,6 +87,10 @@ h1 {
 #fastaFileName {
   width: 9em;
 }
+#searchMessage {
+  color: #f00;
+  font-weight: bolder;
+}
 .geneLabel {
   font: 9px sans-serif;
 }

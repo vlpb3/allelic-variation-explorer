@@ -531,13 +531,13 @@ function getFromRegion(model, type, loc, callback) {
 
 function getRegion(region, callback) {
   async.parallel({
-    features: function(callback) {
-      getFeatures(region, callback);
+    features: function(paraCbk) {
+      getFeatures(region, paraCbk);
     },
-    refseq: function(callback) {
+    refseq: function(paraCbk) {
       getRefRegion(region, function(err, data) {
         if (err) throw err;
-        callback(null, data);
+        paraCbk(null, data);
       });
     }
   },

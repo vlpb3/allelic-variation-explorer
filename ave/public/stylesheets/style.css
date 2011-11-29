@@ -119,7 +119,16 @@ h1 {
   background: #b9e0f5;
 }
 .hap {
+  fill: #4682b4;
   opacity: 0.2;
+}
+.ruleLine {
+  stroke: #000;
+  stroke-opacity: 0.1;
+}
+.message {
+  font-size: 13px;
+  stroke: #ff4500;
 }
 .mini_icon {
   float: left;

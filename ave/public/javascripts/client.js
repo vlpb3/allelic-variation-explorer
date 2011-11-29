@@ -362,6 +362,8 @@
 
     defaults: {
       "socket": io.connect("http://localhost"),
+      "rangeLimit": 25000,
+      "rangeExceeded": false,
       "bufferX": 5,
       "pos": {
         "chrom": 1,
@@ -532,7 +534,7 @@
       displayData.features = _.select(features, this.isFeatureInRegion);
 
       // get refseq fragment
-      var refseq = bufferData.refseq
+      var refseq = bufferData.refseq;
       var sliceStart = pos.starts - bufferData.starts;
       var sliceEnd = pos.ends - bufferData.starts + 1;
       refseq = refseq.slice(sliceStart, sliceEnd);
@@ -540,11 +542,24 @@
       displayData.refseq = refseq;
       // set obtained data to the model
       this.set({"displayData": displayData});
-      // calculate haplotypes from SNPs in the region
-      this.calcHaplotypes();
 
-      // cluster haplotypes
-      this.cluster();
+      // calculate haplotypes and do the clastering only when
+      // range does not exceed the limit
+      if ((pos.ends - pos.starts) > this.get("rangeLimit")) {
+        console.log("range exceeded");
+        this.set({"rangeExceeded": true});
+        // this.trigger("change:displayData:rangeExceeded")
+      } else {
+        if (!this.get("rangeExceeded")) {
+          this.set({"rangeExceeded": false});
+        }
+        // calculate haplotypes from SNPs in the region
+        this.calcHaplotypes();
+
+        // cluster haplotypes
+        this.cluster();
+      }
+
     },
 
     isLocusInRegion: function(locus) {
@@ -641,9 +656,11 @@
   var VisView = Backbone.View.extend({
 
     initialize: function() {
-      _.bindAll(this, "render", "draw", "drawTree",
-        "isLeaf", "leaf2haplotype", "onSNPmouseOver", "onSNPmouseOut",
-        "onHaplCLick", "showCodingSNPs", "showNonCodingSNPs", "showAllSNPs");
+      _.bindAll(this, "render", "draw", "drawGeneModels", "drawHaplotpes",
+                "drawScaleBars", "drawTree", "turnOffHaplotypes", "isLeaf",
+                "leaf2haplotype",
+                "onSNPmouseOver", "onSNPmouseOut", "onHaplCLick",
+                "showCodingSNPs", "showNonCodingSNPs", "showAllSNPs");
 
       this.trackH = 20;
       this.glyphH = 12;
@@ -656,6 +673,8 @@
       this.bottom = 4;
 
       this.model.bind('change:displayData:clusters', this.draw);
+      this.model.bind('change:rangeExceeded', this.draw);
+
       this.render();
     },
 
@@ -731,12 +750,8 @@
         });
     },
 
-    draw: function() {
-      var pos = this.model.get("pos");
-      var width = this.width;
+    draw2: function() {
 
-      this.x = d3.scale.linear().domain([pos.starts, pos.ends])
-          .range([0, this.width ]);
       var x = this.x;
 
       var displayData = this.model.get("displayData");
@@ -750,9 +765,71 @@
       this.freePos = glyphT;
       var freePos = this.freePos;
       // draw genes
-      var genes = _.select(features, function(feature) {
+
+
+        // draw rules
+      this.height = (1 + maxModels + _.size(haplotypes))*trackH;
+      var rules = this.svg.selectAll('g.rule')
+          .data(x.ticks(10), String);
+      this.svg.selectAll('.ruleLine')
+          .attr("y2", this.height);
+
+      rules.attr('transform', function(d) {return 'translate(' + x(d) + ',0)';});
+      var newRules = rules.enter().append('svg:g')
+          .attr('class', 'rule')
+          .attr('transform', function(d) {return 'translate(' + x(d) + ',0)';});
+      newRules.append('svg:line')
+          .attr("class", "ruleLine")
+          .attr('y1', 0)
+          .attr('y2', this.height)
+          .attr('stroke', 'black')
+          .attr('stroke-opacity', 0.1);
+      newRules.append("svg:text")
+          .attr('y', -10)
+          .attr('dy', '.71em')
+          .attr('text-anchor', 'middle')
+          .text(x.tickFormat(10));
+      rules.exit().remove();
+
+      var svg = this.svg;
+
+
+     },
+
+     draw: function() {
+      var pos = this.model.get("pos");
+      var rangeExceeded = this.model.get("rangeExceeded");
+      var width = this.width;
+
+      // recalculate scale for new region
+      this.x = d3.scale.linear().domain([pos.starts, pos.ends])
+                                .range([0, width]);
+
+      var displayData = this.model.get("displayData");
+      this.svg.selectAll('.message').remove();
+      this.drawGeneModels(displayData);
+      if (!rangeExceeded) {
+        this.drawTree();
+        this.drawHaplotpes();
+      } else {
+        this.turnOffHaplotypes();
+      }
+      this.drawScaleBars();
+     },
+
+     drawGeneModels: function(displayData) {
+      var x = this.x;
+
+      // draw loci
+      // get genes from all features
+      // var features = displayData.features;
+      var genes = _.select(displayData.features, function(feature) {
         return feature.type === "gene";
       });
+
+      var freePos = this.glyphT;
+      var glyphH = this.glyphH;
+      var trackH = this.trackH;
 
       var geneRect = this.svg.selectAll('.gene').data(genes);
       geneRect.attr("x", function(d) { return x(d.start); })
@@ -761,41 +838,51 @@
               .attr("class", "gene")
               .attr("height", glyphH)
               .attr("x", function(d) { return x(d.start); })
-              .attr("y", function(d) { return freePos; })
+              .attr("y", freePos)
               .attr("width", function(d) { return x(d.end) - x(d.start); })
               .attr("fill", "chartreuse");
       geneRect.exit().remove();
 
       // draw gene labels
       var geneLabel = this.svg.selectAll(".geneLabel").data(genes);
-      geneLabel.attr("x", function(d) { return x(d.start); })
+      geneLabel.attr("x", function(d) {
+                  // display label even when gene starts before region
+                  return (x(d.start) > 5) ? x(d.start) : 5;
+                })
                 .text(function(d) { return d.attributes.Name; });
       geneLabel.enter().append("svg:text")
                 .attr("class", "geneLabel")
-                .attr("x", function(d) { return x(d.start); })
-                .attr("y", function(d) { return freePos; })
+                .attr("x", function(d) {
+                  // display label even when gene starts before region
+                  return (x(d.start) > 3) ? x(d.start) : 3;
+                })
+                .attr("y", freePos)
                 .attr("dy", "1.075em")
                 .attr("dx", "0.5em")
                 .text(function(d) { return d.attributes.Name; });
       geneLabel.exit().remove();
 
-      freePos += trackH;
+      // update free position
+      freePos += this.trackH;
 
-      // draw gene models
-      var UTR5s = _.select(features, function(feature) {
+      // extract data needed to construct gene models
+      var UTR5s = _.select(displayData.features, function(feature) {
         return feature.type === "five_prime_UTR";
       });
-      var UTR3s = _.select(features, function(feature) {
+      var UTR3s = _.select(displayData.features, function(feature) {
         return feature.type === "three_prime_UTR";
       });
-      var CDSs = _.select(features, function(feature) {
+      var CDSs = _.select(displayData.features, function(feature) {
         return feature.type === "CDS";
       });
+
+      // function for determining the position on y axis
       var yPos = function(d) {
         var nModel = d.attributes.Parent.split(",")[0].split(".")[1] || 1;
         return freePos + (nModel - 1)*trackH;
       };
 
+      // draw gene models
       var UTR5Rect = this.svg.selectAll('.UTR5').data(UTR5s);
       UTR5Rect.attr("x", function(d) { return x(d.start); })
               .attr("y", yPos)
@@ -846,7 +933,19 @@
       this.maxModels = maxModels;
       freePos += trackH*maxModels;
 
-      this.drawTree();
+      // update free pos
+      this.freePos = freePos;
+     },
+
+    drawHaplotpes: function() {
+      var pos = this.model.get("pos");
+      var width = this.width;
+      var freePos = this.freePos;
+      var glyphH = this.glyphH;
+      var glyphT = this.glyphT;
+      var trackH = this.trackH;
+      var x = this.x;
+
       // get SNPs with haplotype indexes
       this.hapSNPs = _.reduce(this.leaves, function(memo, leaf) {
         _.each(leaf.snps, function(base, pos) {
@@ -860,30 +959,6 @@
         return memo;
       }, []);
 
-        // draw rules
-      this.height = (1 + maxModels + _.size(haplotypes))*trackH;
-      var rules = this.svg.selectAll('g.rule')
-          .data(x.ticks(10), String);
-      this.svg.selectAll('.ruleLine')
-          .attr("y2", this.height);
-
-      rules.attr('transform', function(d) {return 'translate(' + x(d) + ',0)';});
-      var newRules = rules.enter().append('svg:g')
-          .attr('class', 'rule')
-          .attr('transform', function(d) {return 'translate(' + x(d) + ',0)';});
-      newRules.append('svg:line')
-          .attr("class", "ruleLine")
-          .attr('y1', 0)
-          .attr('y2', this.height)
-          .attr('stroke', 'black')
-          .attr('stroke-opacity', 0.1);
-      newRules.append("svg:text")
-          .attr('y', -10)
-          .attr('dy', '.71em')
-          .attr('text-anchor', 'middle')
-          .text(x.tickFormat(10));
-      rules.exit().remove();
-
       // draw haplotypes
       var haplotypeBars = this.svg.selectAll('.hap').data(this.leaves);
       haplotypeBars.attr('y', function(d) { return d.x + freePos - trackH/2;});
@@ -893,7 +968,6 @@
               .attr('width', width)
               .attr('x', x(pos.starts))
               .attr('y', function(d) { return d.x + freePos - trackH/2;})
-              .attr('fill', 'steelblue')
               .on('click', this.onHaplCLick);
       haplotypeBars.exit().remove();
 
@@ -917,15 +991,55 @@
                 .on("mouseout", this.onSNPmouseOut);
       SNPCircles.exit().remove();
 
-      var svg = this.svg;
-
-      // fade in/out snps according to whats chosen
-
+      // fade in/out snps according to whats chosen on toggles
       var activeToggle = $("#codingRadio .ui-state-active").attr("for");
       if (activeToggle === "radioNonCoding") this.showNonCodingSNPs();
       else if (activeToggle === "radioCoding") this.showCodingSNPs();
       else this.showAllSNPs();
+
+      //update free position
+      var haplotypes = this.model.get("displayData").haplotypes;
+      freePos += _.size(haplotypes)*trackH;
       this.freePos = freePos;
+    },
+
+    drawScaleBars: function() {
+      // this.height = (1 + maxModels + _.size(haplotypes))*trackH;
+      var height = this.freePos;
+      var x = this.x
+
+      var rules = this.svg.selectAll('g.rule')
+          .data(x.ticks(10), String);
+      this.svg.selectAll('.ruleLine')
+          .attr("y2", height);
+
+      rules.attr('transform', function(d) {return 'translate(' + x(d) + ',0)';});
+      var newRules = rules.enter().append('svg:g')
+          .attr('class', 'rule')
+          .attr('transform', function(d) {return 'translate(' + x(d) + ',0)';});
+      newRules.append('svg:line')
+          .attr("class", "ruleLine")
+          .attr('y1', 0)
+          .attr('y2', height);
+      newRules.append("svg:text")
+          .attr('y', -10)
+          .attr('dy', '.71em')
+          .attr('text-anchor', 'middle')
+          .text(x.tickFormat(10));
+      rules.exit().remove();
+    },
+
+     turnOffHaplotypes: function() {
+      // remove all haplotype specific stuff
+      this.svg.selectAll('.hap').remove();
+      this.svg.selectAll('.SNP').remove();
+      $("#tree").hide();
+      var message = "Fragemnt to big, haplotype clustering turned off.";
+      this.svg.append("svg:text")
+        .attr('class', 'message')
+        .attr('y', this.freePos + this.trackH)
+        .text(message);
+
      },
 
      drawTree: function() {

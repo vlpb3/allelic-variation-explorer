@@ -13,12 +13,12 @@
     },
 
     routes: {
-      "goto/chrom:ch/start:s/end:e": "moveModel"
+      "goto/:ch/start:s/end:e": "moveModel"
     },
 
     moveModel: function(ch, s, e) {
       var pos = {
-        "chrom": parseInt(ch, 10),
+        "chrom": ch,
         "starts": parseInt(s, 10),
         "ends": parseInt(e, 10)
       };
@@ -27,7 +27,7 @@
 
     navigateTo: function(){
       var pos = this.model.get("pos");
-      var path = "goto/chrom" + pos.chrom + "/start" +
+      var path = "goto/" + pos.chrom + "/start" +
         pos.starts + "/end" + pos.ends;
       this.navigate(path);
     }
@@ -62,7 +62,7 @@
     updateModel: function() {
       var update = {
         "pos": {
-          "chrom": parseInt($("#chrom").val(), 10),
+          "chrom": $("#chrom").val(),
           "starts": parseInt($("#start").val(), 10),
           "ends": parseInt($("#end").val(), 10)
         }
@@ -195,7 +195,7 @@
 
     updateString: function() {
       var pos = this.model.get("pos");
-      var positionStr = "Chr" + pos.chrom + ":" +
+      var positionStr = pos.chrom + ":" +
         pos.starts + ".." + pos.ends;
       var strech = pos.ends - pos.starts;
       positionStr += " fragment: " + strech + "bp";
@@ -362,18 +362,18 @@
 
     defaults: {
       "socket": io.connect("http://localhost"),
-      "rangeLimit": 25000,
+      "rangeLimit": 20000,
       "rangeExceeded": false,
       "bufferX": 5,
       "pos": {
-        "chrom": 1,
+        "chrom": "Chr1",
         "starts": 3500,
         "ends": 6000
       },
       "bufferData": {
           starts: 0,
           ends: 0,
-          chrom: 0,
+          chrom: "",
           SNPs: {},
           loci: {},
           refseq: ""
@@ -413,6 +413,7 @@
       // when data come back
       this.get("socket").on("data", this.importData);
       this.get("socket").on("featureRegion", this.goToFeatureRegion);
+      this.get("socket").on("geneModels", this.importData);
     },
 
     importData: function(data) {
@@ -420,11 +421,13 @@
       bufferData.chrom = data.region.chrom;
       bufferData.starts = data.region.start;
       bufferData.ends = data.region.end;
-      bufferData.SNPs = _.filter(data.features, function(f) {
-        return f.type.match(/SNP_/);
-      });
+      if (!this.get("rangeExceeded")) {
+        bufferData.SNPs = _.filter(data.features, function(f) {
+          return f.type.match(/SNP_/);
+        });
+        bufferData.refseq = data.refseq;
+      }
       bufferData.features = data.features;
-      bufferData.refseq = data.refseq;
 
       this.set({"bufferData": bufferData});
       if (this.get("displayData").waiting) {
@@ -458,6 +461,16 @@
       var span = pos.ends - pos.starts;
       var bufferData = this.get("bufferData");
 
+      // if the region is to big stop displaying hapltypes
+      if (span > this.get("rangeLimit")) {
+        this.set({"rangeExceeded": true});
+      } else {
+        if (this.get("rangeExceeded")) {
+          this.waitForData(true);
+          this.set({"rangeExceeded": false});
+        }
+      }
+
       // check if there is a need for fetching new buffer
       var startToClose = (bufferData.starts > 0) &&
         (bufferData.starts > (pos.starts - span));
@@ -486,13 +499,30 @@
       newBufferStart = start >= 0 ? start : 1;
       newBufferEnd = pos.ends + flank;
       var region = {chrom: pos.chrom, start: newBufferStart, end: newBufferEnd};
-      this.get("socket").emit("getData", region);
+      console.log(this.get("rangeExceeded"))
+      if (this.get("rangeExceeded")) {
+        this.get("socket").emit("getGeneModels", region);
+      } else {
+        this.get("socket").emit("getData", region);
+      }
     },
 
     updateDisplayData: function() {
       var bufferData = this.get("bufferData");
       // first fetch the fragment from the buffer
       var displayData = this.get("displayData");
+
+      // get features
+      var features = bufferData.features;
+      displayData.features = _.select(features, this.isFeatureInRegion);
+
+      // if range exceeded save just features and return
+      if (this.get("rangeExceeded")) {
+        // set obtained data to the model
+        this.set({"displayData": displayData});
+        this.trigger("change:displayData:clusters");
+        return;
+      }
 
       // get SNPs
       var SNPs = bufferData.SNPs;
@@ -525,14 +555,6 @@
           _.include(newSNPIncl, snp.attributes.ID));
       });
 
-      // get loci
-      // var loci = bufferData.loci;
-      // displayData.loci = _.select(loci, this.isLocusInRegion);
-
-      // get features
-      var features = bufferData.features;
-      displayData.features = _.select(features, this.isFeatureInRegion);
-
       // get refseq fragment
       var refseq = bufferData.refseq;
       var sliceStart = pos.starts - bufferData.starts;
@@ -540,26 +562,15 @@
       refseq = refseq.slice(sliceStart, sliceEnd);
 
       displayData.refseq = refseq;
+
       // set obtained data to the model
       this.set({"displayData": displayData});
 
-      // calculate haplotypes and do the clastering only when
-      // range does not exceed the limit
-      if ((pos.ends - pos.starts) > this.get("rangeLimit")) {
-        console.log("range exceeded");
-        this.set({"rangeExceeded": true});
-        // this.trigger("change:displayData:rangeExceeded")
-      } else {
-        if (!this.get("rangeExceeded")) {
-          this.set({"rangeExceeded": false});
-        }
-        // calculate haplotypes from SNPs in the region
-        this.calcHaplotypes();
+      // calculate haplotypes from SNPs in the region
+      this.calcHaplotypes();
 
-        // cluster haplotypes
-        this.cluster();
-      }
-
+      // cluster haplotypes
+      this.cluster();
     },
 
     isLocusInRegion: function(locus) {
@@ -639,8 +650,6 @@
       clusters = clusterfck.hcluster(haplotypes, metric,
             clusterfck.AVERAGE_LINKAGE)[0];
       }
-      // arrange haplotypes by clustered order
-      // haplotypes = clusterHaplotypes([], clusters);
 
      // put clusters into the model
      var displayData = this.get("displayData");
@@ -658,14 +667,14 @@
     initialize: function() {
       _.bindAll(this, "render", "draw", "drawGeneModels", "drawHaplotpes",
                 "drawScaleBars", "drawTree", "turnOffHaplotypes", "isLeaf",
-                "leaf2haplotype",
+                "leaf2haplotype", "turnOnHaplotypes",
                 "onSNPmouseOver", "onSNPmouseOut", "onHaplCLick",
                 "showCodingSNPs", "showNonCodingSNPs", "showAllSNPs");
 
       this.trackH = 20;
       this.glyphH = 12;
       this.glyphT = 4;
-      this.width = $(window).width()/2 - 25;
+      this.width = $(window).width()/2 - 20;
       this.height = 10000;
       this.left = 5;
       this.right = 5;
@@ -673,7 +682,7 @@
       this.bottom = 4;
 
       this.model.bind('change:displayData:clusters', this.draw);
-      this.model.bind('change:rangeExceeded', this.draw);
+      // this.model.bind('change:rangeExceeded', this.draw);
 
       this.render();
     },
@@ -682,10 +691,13 @@
 
       // allign properly elements
       var winWidth = $(window).width();
-      $("#chart").css("left", winWidth/2);
+      this.width = winWidth/2 - 20;
+      $("#tree").css("width", winWidth/2 - 5);
+      $("#chart").css("width", winWidth/2 - 5);
 
       // browser div
       this.svg = d3.select("#chart").append("svg:svg")
+          .attr("class", "chart")
           .attr("width", this.left + this.width + this.right)
           .attr("height", this.top + this.height + this.bottom)
         .append("svg:g")
@@ -693,6 +705,7 @@
 
           // tree div
       this.svgTree = d3.select("#tree").append("svg:svg")
+          .attr("class", "tree")
           .attr("width", this.left + this.width + this.right)
           .attr("height", this.top + this.height + this.bottom)
         .append("svg:g")
@@ -750,52 +763,6 @@
         });
     },
 
-    draw2: function() {
-
-      var x = this.x;
-
-      var displayData = this.model.get("displayData");
-      var features = displayData.features;
-      var haplotypes = displayData.haplotypes;
-      var clusters = displayData.clusters;
-
-      var glyphH = this.glyphH;
-      var glyphT = this.glyphT;
-      var trackH = this.trackH;
-      this.freePos = glyphT;
-      var freePos = this.freePos;
-      // draw genes
-
-
-        // draw rules
-      this.height = (1 + maxModels + _.size(haplotypes))*trackH;
-      var rules = this.svg.selectAll('g.rule')
-          .data(x.ticks(10), String);
-      this.svg.selectAll('.ruleLine')
-          .attr("y2", this.height);
-
-      rules.attr('transform', function(d) {return 'translate(' + x(d) + ',0)';});
-      var newRules = rules.enter().append('svg:g')
-          .attr('class', 'rule')
-          .attr('transform', function(d) {return 'translate(' + x(d) + ',0)';});
-      newRules.append('svg:line')
-          .attr("class", "ruleLine")
-          .attr('y1', 0)
-          .attr('y2', this.height)
-          .attr('stroke', 'black')
-          .attr('stroke-opacity', 0.1);
-      newRules.append("svg:text")
-          .attr('y', -10)
-          .attr('dy', '.71em')
-          .attr('text-anchor', 'middle')
-          .text(x.tickFormat(10));
-      rules.exit().remove();
-
-      var svg = this.svg;
-
-
-     },
-
      draw: function() {
       var pos = this.model.get("pos");
       var rangeExceeded = this.model.get("rangeExceeded");
@@ -809,6 +776,7 @@
       this.svg.selectAll('.message').remove();
       this.drawGeneModels(displayData);
       if (!rangeExceeded) {
+        this.turnOnHaplotypes();
         this.drawTree();
         this.drawHaplotpes();
       } else {
@@ -1005,8 +973,13 @@
 
     drawScaleBars: function() {
       // this.height = (1 + maxModels + _.size(haplotypes))*trackH;
+      var pos = this.model.get("pos");
       var height = this.freePos;
-      var x = this.x
+      var width = this.width;
+
+      this.x = d3.scale.linear().domain([pos.starts, pos.ends])
+                                .range([0, width]);
+      var x = this.x;
 
       var rules = this.svg.selectAll('g.rule')
           .data(x.ticks(10), String);
@@ -1034,15 +1007,31 @@
       this.svg.selectAll('.hap').remove();
       this.svg.selectAll('.SNP').remove();
       $("#tree").hide();
-      var message = "Fragemnt to big, haplotype clustering turned off.";
+      var winWidth = $(window).width();
+      this.width = winWidth - 20;
+      $("#chart").css("width", winWidth - 5);
+      $(".chart").attr("width", this.left + this.width + this.right);
+
+      var message = "Displayed region exceeds " +
+        this.model.get("rangeLimit")/1000 + " kb and haplotype clustering has been turned off.";
       this.svg.append("svg:text")
         .attr('class', 'message')
+        .attr('anchor', 'middle')
         .attr('y', this.freePos + this.trackH)
         .text(message);
+     },
 
+     turnOnHaplotypes: function() {
+       var winWidth = $(window).width();
+       this.width = winWidth/2 - 20;
+
+       $("#chart").css("width", winWidth/2 - 5);
+       $(".chart").attr("width", this.left + this.width + this.right);
+       $("#tree").show();
      },
 
      drawTree: function() {
+
        var topTranslation = (this.maxModels + 1) * this.trackH;
        var top = this.top + topTranslation;
 

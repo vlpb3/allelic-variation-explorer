@@ -100,7 +100,7 @@ function importGff(callback) {
             });
         }, function(message, wfallCbk) {
             console.log(message);
-            return callback(null, data);
+            return callback(null, message);
         }
     ]);
 }

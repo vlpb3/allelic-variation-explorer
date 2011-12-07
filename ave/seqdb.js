@@ -65,15 +65,14 @@ function addFeatures(data, callback) {
 function getGffFiles(callback) {
     fs.readdir(DATA_DIR, function(err, files) {
         if (err) {return callback(err);}
-        var gffFiles = [];
-        var left = files.length;
-        files.forEach(function(iFile) {
-            if (iFile.slice(-4) === '.gff') {
-                gffFiles.push(DATA_DIR + iFile);
+        async.reduce(files, [], function(memo, file, reduceCbk) {
+            if (file.slice(-4) === '.gff') {
+                memo.push(DATA_DIR + file);
             }
-            if (--left === 0) {
-                return callback(null, gffFiles);
-            }
+            reduceCbk(null, memo)
+        }, function(err, gffFiles) {
+            if (err) { callback(err);}
+            callback(null, gffFiles);
         });
     });
 }

@@ -226,49 +226,47 @@ function drop(model) {
     model.collection.drop();
 }
 
-function annotateCodNCodSNPs(callback) {
-
-    async.waterfall([
-
-        // get all CDSs in the database
-        function(wfallCbk) {
-            Feature.find({type: 'CDS'}, wfallCbk);
-        },
-        // get all SNPs within CDSs
-        function(CDSs, wfallCbk) {
-            var codingSNPs = [];
-            async.forEach(CDSs, function(cds, fEachCbk) {
-                Feature.find({
-                    type: /SNP/,
-                    seqid: cds.seqid,
-                    start: {$gte: cds.start, $lte: cds.end}
-                }, function(err, snps) {
-                    if (err) {
-                        throw err;
-                    }
-                    codingSNPs = codingSNPs.concat(snps);
-                    fEachCbk();
-                });
-            }, function() {
-                wfallCbk(null, codingSNPs);
-            });
-        },
-        function(codingSNPs, wfallCbk) {
-            async.forEach(codingSNPs, function(snp, asyncCbk) {
-                Feature.update(
-                    {seqid: snp.seqid, start: snp.start},
-                    {'attributes.coding': true},
-                    function(err) {
-                        if (err) {throw err;}
-                        asyncCbk();
-                    }
-                );
-            }, function(err) {
-                if (err) {throw err;}
-                callback(null);
-            });
+function updateSNPs(cds, callback) {
+    console.log('> updating snps');
+    console.log(cds);
+    console.log('> fetching snps at: ' + cds.seqid + ":" + cds.start + ".." + cds.end);
+    Feature.update({
+        type: /SNP/,
+        seqid: cds.seqid,
+        start: {$gte: cds.start, $lte: cds.end}
+    },
+    {'attributes.coding': true},
+    function(err) {
+        if (err) {
+            throw err;
         }
-    ]);
+        callback();
+    });
+}
+
+function annotateCodNCodSNPs(callback) {
+    console.log('> annotating coding SNPs');
+    var stream = Feature
+    .where('type', 'CDS')
+    .select('seqid', 'start', 'end')
+    .batchSize(100)
+    .stream();
+
+    stream.on('data', function(docs) {
+        stream.pause();
+        updateSNPs(docs, function() {
+            stream.resume();
+        });
+    })
+
+    stream.on('error', function(err){
+        console.log("! Error while fetching CDS data");
+        throw err;
+    })
+
+    stream.on('close', function() {
+        callback(null, "SNPs annotation finished.");
+    })
 }
 
 function reloadDb(callback) {
@@ -292,6 +290,7 @@ function reloadDb(callback) {
                     seriesCallback(null, 'data imported');
                 });
         }, function(seriesCallback) {
+            console.log('> Annotating SNPs');
             annotateCodNCodSNPs(function(err) {
                 if (err) {throw err;}
                 seriesCallback(null, 'SNPs annotated');

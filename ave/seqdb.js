@@ -23,9 +23,9 @@ var CHROM_LEN = {
 function addFeatures(data, callback) {
     var lines = data.split('\n');
     async.forEachSeries(lines, function(line, fEachCbk) {
-        var farr = line.split('\t')
-        if (line[0] == '#' || farr.length !== 9) {
-            fEachCbk();
+        var farr = line.split('\t');
+        if ((line[0] == '#') || (farr.length !== 9)) {
+            return fEachCbk();
         }
         var feature = new Feature();
         feature.seqid = farr[0];
@@ -50,10 +50,10 @@ function addFeatures(data, callback) {
                 if (err) {
                     console.log("error while saving feature");
                     console.log(err);
-                    fEachCbk(err);
+                    return fEachCbk(err);
                 }
                 console.log('> Feature at: ' + feature.seqid + ": " + feature.start);
-                fEachCbk();
+                return fEachCbk();
             });
         })
     }, function(err){

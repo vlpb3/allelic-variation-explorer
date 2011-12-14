@@ -20,9 +20,8 @@ var CHROM_LEN = {
     5: 31.270811
 };
 
-function addFeatures(data, callback) {
-    var lines = data.split('\n');
-    async.forEachSeries(lines, function(line, fEachCbk) {
+function addFeatures(lines) {
+    async.forEachLimit(lines, 16, function(line, fEachCbk) {
         var farr = line.split('\t');
         if ((line[0] == '#') || (farr.length !== 9)) {
             return fEachCbk();
@@ -57,8 +56,11 @@ function addFeatures(data, callback) {
             });
         })
     }, function(err){
-        if (err) { callback(err); }
-        callback(null, '> Features deployed in db.')
+        if (err) {
+            console.log('Error while importing featres');
+            throw err;
+        }
+        console.log('> imported chunk');
     });
 }
 
@@ -89,11 +91,22 @@ function importGff(callback) {
                 dbFile.save(function(err) {
                     if (err) {throw err;}
                 });
-                fs.readFile(iFile, 'utf8', function(err, data) {
-                    if (err) {return fEachCbk(err);}
-                    console.log('> Fetched data from ' + iFile);
-                    addFeatures(data, fEachCbk);
+                var readStream = fs.createReadStream(iFile);
+                var dataString = '';
+                readStream.on('data', function(chunk) {
+                    dataString += chunk;
+                    var fullSplit = dataString.split('\n');
+                    var data = fullSplit.slice(0, fullSplit.length-1);
+                    dataString = fullSplit.slice(fullSplit.length-1);
+                    addFeatures(data);
                 });
+                readStream.on('error', function(err) {
+                    console.log('Error while reading file stream.');
+                    fEachCbk(err);
+                });
+                readStream.on('end', function() {
+                    fEachCbk();
+                })
             }, function(err) {
                 if (err) {wfallCbk(err);}
                 wfallCbk(null, '> Finished importing GFF data.');

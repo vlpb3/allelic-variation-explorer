@@ -23,39 +23,39 @@ var CHROM_LEN = {
 function addFeatures(data, callback) {
     var lines = data.split('\n');
     async.forEachSeries(lines, function(line, fEachCbk) {
-        if ((line[0] !== '#') && (line.length > 0)) {
-            var farr = line.split('\t');
-            var feature = new Feature();
-            feature.seqid = farr[0];
-            feature.source = farr[1];
-            feature.type = farr[2];
-            var start = parseInt(farr[3], 10);
-            var end = parseInt(farr[4], 10);
-            feature.start = start;
-            feature.end = end;
-            feature.score = farr[5];
-            feature.strand = farr[6];
-            feature.phase = farr[7];
-            var attrString = farr[8].split(';');
-            feature.attributes = {};
-            async.reduce(attrString, {}, function(memo, item, reduceCbk) {
-                var attr = item.split('=')
-                memo[attr[0]] = attr[1];
-                reduceCbk(null, memo)
-
-            }, function(err, attributes) {
-                feature.attributes = attributes;
-                feature.save(function(err) {
-                    if (err) {
-                        console.log("error while saving feature");
-                        console.log(err);
-                        fEachCbk(err);
-                    }
-                    console.log('> Feature at: ' + feature.seqid + ": " + feature.start);
-                    fEachCbk();
-                });
-            })
-        } else {fEachCbk()}
+        var farr = line.split('\t')
+        if (line[0] == '#' || farr.length !== 9) {
+            fEachCbk();
+        }
+        var feature = new Feature();
+        feature.seqid = farr[0];
+        feature.source = farr[1];
+        feature.type = farr[2];
+        var start = parseInt(farr[3], 10);
+        var end = parseInt(farr[4], 10);
+        feature.start = start;
+        feature.end = end;
+        feature.score = farr[5];
+        feature.strand = farr[6];
+        feature.phase = farr[7];
+        var attrString = farr[8].split(';');
+        feature.attributes = {};
+        async.reduce(attrString, {}, function(memo, item, reduceCbk) {
+            var attr = item.split('=')
+            memo[attr[0]] = attr[1];
+            reduceCbk(null, memo)
+        }, function(err, attributes) {
+            feature.attributes = attributes;
+            feature.save(function(err) {
+                if (err) {
+                    console.log("error while saving feature");
+                    console.log(err);
+                    fEachCbk(err);
+                }
+                console.log('> Feature at: ' + feature.seqid + ": " + feature.start);
+                fEachCbk();
+            });
+        })
     }, function(err){
         if (err) { callback(err); }
         callback(null, '> Features deployed in db.')

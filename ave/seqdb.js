@@ -21,7 +21,7 @@ var CHROM_LEN = {
 };
 
 function addFeatures(lines) {
-    async.forEachLimit(lines, 16, function(line, fEachCbk) {
+    async.forEachLimit(lines, 64, function(line, fEachCbk) {
         var farr = line.split('\t');
         if ((line[0] == '#') || (farr.length !== 9)) {
             return fEachCbk();
@@ -239,37 +239,52 @@ function drop(model) {
     model.collection.drop();
 }
 
-function updateSNPs(cds, callback) {
-    console.log('> updating snps');
-    console.log(cds);
-    console.log('> fetching snps at: ' + cds.seqid + ":" + cds.start + ".." + cds.end);
-    Feature.update({
-        type: /SNP/,
-        seqid: cds.seqid,
-        start: {$gte: cds.start, $lte: cds.end}
-    },
-    {'attributes.coding': true},
-    function(err) {
+function updateSNPs(CDSs, callback) {
+    async.forEachLimit(CDSs, 64, function(cds, fEachCbk) {
+        console.log('> updating snps');
+        console.log(cds);
+        console.log('> fetching snps at: ' + cds.seqid + ":" + cds.start + ".." + cds.end);
+        Feature.update({
+            type: /SNP/,
+            seqid: cds.seqid,
+            start: {$gte: cds.start, $lte: cds.end}
+        },
+        {'attributes.coding': true},
+        function(err) {
+            if (err) {
+                throw err;
+            }
+            fEachCbk();
+        });
+    }, function(err) {
         if (err) {
-            throw err;
+        console.log('> Error while iterating over cdss');
+        throw err;
         }
-        callback();
-    });
+        callback(null);
+    })
 }
 
 function annotateCodNCodSNPs(callback) {
     console.log('> annotating coding SNPs');
+    var docBuffer = 1024;
     var stream = Feature
     .where('type', 'CDS')
     .select('seqid', 'start', 'end')
-    .batchSize(100)
     .stream();
-
-    stream.on('data', function(docs) {
-        stream.pause();
-        updateSNPs(docs, function() {
-            stream.resume();
-        });
+    var docs = [];
+    stream.on('data', function(doc) {
+        docs.push(doc);
+        if (docs.lenght >= docBuffer) {
+            stream.pause();
+            updateSNPs(docs, function(err) {
+                if (err) {
+                throw err;
+                }
+                stream.resume()
+            });
+            docs = [];
+        }
     })
 
     stream.on('error', function(err){
@@ -278,7 +293,9 @@ function annotateCodNCodSNPs(callback) {
     })
 
     stream.on('close', function() {
-        callback(null, "SNPs annotation finished.");
+        if (docs.length > 0) {
+            updateSNPs(docs, callback );
+        }
     })
 }
 

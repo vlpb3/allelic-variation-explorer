@@ -239,50 +239,38 @@ function drop(model) {
 //    model.collection.drop();
 }
 
-function updateSNPs(CDSs, callback) {
-    async.forEachLimit(CDSs, 64, function(cds, fEachCbk) {
-        console.log('> fetching snps at: ' + cds.seqid + ":" + cds.start + ".." + cds.end);
-        Feature.update({
-            type: /SNP/,
-            seqid: cds.seqid,
-            start: {$gte: cds.start, $lte: cds.end}
-        },
-        {'attributes.coding': true},
-        function(err) {
-            if (err) {
-                throw err;
-            }
-            fEachCbk();
-        });
-    }, function(err) {
+function updateSNPs(cds, callback) {
+    console.log('> fetching snps at: ' + cds.seqid + ":" + cds.start + ".." + cds.end);
+    Feature.update({
+        type: /SNP/,
+        seqid: cds.seqid,
+        start: {$gte: cds.start},
+        end: {$lte: cds.end}
+    },
+    {'attributes.coding': true},
+    {multi: true},
+    function(err) {
         if (err) {
-        console.log('> Error while iterating over cdss');
-        throw err;
+            throw err;
         }
         callback(null);
-    })
+    });
 }
 
 function annotateCodNCodSNPs(callback) {
     console.log('> annotating coding SNPs');
-    var docBuffer = 1024;
     var stream = Feature
     .where('type', 'CDS')
     .select('seqid', 'start', 'end')
     .stream();
-    var docs = [];
     stream.on('data', function(doc) {
-        docs.push(doc);
-        if (docs.lenght >= docBuffer) {
-            stream.pause();
-            updateSNPs(docs, function(err) {
-                if (err) {
+        stream.pause();
+        updateSNPs(doc, function(err) {
+            if (err) {
                 throw err;
-                }
-                stream.resume()
-            });
-            docs = [];
-        }
+            }
+            stream.resume()
+        });
     })
 
     stream.on('error', function(err){
@@ -291,9 +279,7 @@ function annotateCodNCodSNPs(callback) {
     })
 
     stream.on('close', function() {
-        if (docs.length > 0) {
-            updateSNPs(docs, callback );
-        }
+        callback();
     })
 }
 

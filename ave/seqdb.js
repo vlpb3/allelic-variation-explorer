@@ -21,7 +21,7 @@ var CHROM_LEN = {
 };
 
 function addFeatures(lines) {
-    async.forEachLimit(lines, 64, function(line, fEachCbk) {
+    async.forEach(lines, function(line, fEachCbk) {
         var farr = line.split('\t');
         if ((line[0] == '#') || (farr.length !== 9)) {
             return fEachCbk();
@@ -236,13 +236,11 @@ function importRefSeq(callback) {
 }
 
 function drop(model) {
-    model.collection.drop();
+//    model.collection.drop();
 }
 
 function updateSNPs(CDSs, callback) {
     async.forEachLimit(CDSs, 64, function(cds, fEachCbk) {
-        console.log('> updating snps');
-        console.log(cds);
         console.log('> fetching snps at: ' + cds.seqid + ":" + cds.start + ".." + cds.end);
         Feature.update({
             type: /SNP/,
@@ -303,7 +301,7 @@ function reloadDb(callback) {
     async.series([
         // first delete old data from databse
         function(seriesCallback) {
-            var models = [Feature, DbFile];
+            var models = [DbFile, Feature, RefSeq];
             var left = models.length;
             models.forEach(function(model) {
                 drop(model);
@@ -315,7 +313,7 @@ function reloadDb(callback) {
         // read in gff files and put all the features into db
         function(seriesCallback) {
             async.series([
-                importGff, importRefSeq], function(err, results) {
+                importRefSeq, importGff], function(err, results) {
                     if (err) {throw err;}
                     seriesCallback(null, 'data imported');
                 });

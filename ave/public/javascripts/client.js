@@ -1096,6 +1096,7 @@
             .duration(200)
             .attr("r", this.glyphH/2);
 
+       console.log(d3.event);
        // show the position of the SNP
        var g = d3.select(d3.event.target.parentNode);
        g.append("svg:text")

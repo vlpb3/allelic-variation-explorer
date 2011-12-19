@@ -2,12 +2,13 @@ var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/seqdb');
 
     var Schema = mongoose.Schema;
+
     var FeatureSchema = new Schema({
-        seqid: { type: String, index: true },
-        source: String,
-        type: { type: String, index: true },
-        start: { type: Number, index: true },
-        end: { type: Number, index: true },
+        seqid: { type: String, index: true},
+        source: {type: String, index: true},
+        type: {type: String, index: true},
+        start: {type: Number, index: true},
+        end: {type: Number, index: true},
         score: String,
         strand: {type: String},
         phase: {type: String},

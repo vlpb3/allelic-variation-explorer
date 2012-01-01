@@ -2,6 +2,7 @@ syntax: glob
 # vim temp files
 *.swp
 *.DS_Store
+*.swo
 viewer/data/**
 ave/data/**
 *.gff

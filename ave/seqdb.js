@@ -262,14 +262,15 @@ function annotateCodNCodSNPs(callback) {
     var stream = Feature
     .where('type', 'CDS')
     .select('seqid', 'start', 'end')
+    .hint({type: 1})
     .stream();
     stream.on('data', function(doc) {
-        stream.pause();
+//        stream.pause();
         updateSNPs(doc, function(err) {
             if (err) {
                 throw err;
             }
-            stream.resume()
+//            stream.resume()
         });
     })
 

@@ -122,7 +122,7 @@ io.sockets.on('connection', function(socket) {
 // })
 
 // use stalker to watch the database directory
-stalker.watch('./data', {buffer: 5000},
+stalker.watch('./data/imports', {buffer: 5000},
     function(err, files) {
         if (err) throw err;
         seqdb.onDbFilesAdded(files);

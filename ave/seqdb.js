@@ -8,7 +8,7 @@ var Feature = models.Feature;
 var DbFile = models.DbFile;
 var RefSeq = models.RefSeq;
 
-var DATA_DIR = process.cwd() + '/data/';
+var DATA_DIR = process.cwd() + '/data/imports/';
 var MAX_LEN = 5000;
 var SCALE = 1000000;
 var CHROM_LEN = {
@@ -21,7 +21,7 @@ var CHROM_LEN = {
 };
 
 function addFeatures(lines) {
-    async.forEach(lines, function(line, fEachCbk) {
+    async.forEachLimit(lines, 128, function(line, fEachCbk) {
         var farr = line.split('\t');
         if ((line[0] == '#') || (farr.length !== 9)) {
             return fEachCbk();
@@ -51,7 +51,7 @@ function addFeatures(lines) {
                     console.log(err);
                     return fEachCbk(err);
                 }
-                console.log('> Feature at: ' + feature.seqid + ": " + feature.start);
+                console.log('> ' + feature.type + ' at ' + feature.seqid + ": " + feature.start);
                 return fEachCbk();
             });
         })
@@ -240,19 +240,20 @@ function drop(model) {
 }
 
 function updateSNPs(cds, callback) {
-    console.log('> fetching snps at: ' + cds.seqid + ":" + cds.start + ".." + cds.end);
-    Feature.update({
+
+    var query = Feature.find({
         type: /SNP/,
         seqid: cds.seqid,
         start: {$gte: cds.start},
         end: {$lte: cds.end}
-    },
-    {'attributes.coding': true},
-    {multi: true},
-    function(err) {
+    });
+
+    query.hint({'type': 1, 'seqid': 1, 'start': 1, 'end': 1})
+    .update({'attributes.coding': true}, function(err) {
         if (err) {
             throw err;
         }
+        console.log('> fetching snps at: ' + cds.seqid + ":" + cds.start + ".." + cds.end);
         callback(null);
     });
 }

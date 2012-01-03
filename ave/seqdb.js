@@ -244,11 +244,10 @@ function updateSNPs(cds, callback) {
     var query = Feature.find({
         type: /SNP/,
         seqid: cds.seqid,
-        start: {$gte: cds.start},
-        end: {$lte: cds.end}
+        start: {$gte: cds.start, $lte: cds.end}
     });
 
-    query.hint({'type': 1, 'seqid': 1, 'start': 1, 'end': 1})
+    query.hint({start: 1, seqid: 1, type: 1 })
     .update({'attributes.coding': true}, function(err) {
         if (err) {
             throw err;
@@ -266,23 +265,24 @@ function annotateCodNCodSNPs(callback) {
     .hint({type: 1})
     .stream();
     stream.on('data', function(doc) {
-//        stream.pause();
+        stream.pause();
         updateSNPs(doc, function(err) {
             if (err) {
                 throw err;
             }
-//            stream.resume()
+            stream.resume()
         });
-    })
+    });
 
     stream.on('error', function(err){
         console.log("! Error while fetching CDS data");
         throw err;
-    })
+    });
 
     stream.on('close', function() {
-        callback();
-    })
+        console.log('Finished annot.');
+        callback(null);
+    });
 }
 
 function reloadDb(callback) {

@@ -84,7 +84,7 @@ function importGff(callback) {
         function(wfallCbk) {
             getGffFiles(wfallCbk);
         }, function(gffFiles, wfallCbk) {
-            async.forEachLimit(gffFiles, 15, function(iFile, fEachCbk) {
+            async.forEachLimit(gffFiles, 16, function(iFile, fEachCbk) {
                 console.log('> Importing file ' + iFile);
                 var dbFile = new DbFile();
                 dbFile.file = iFile;

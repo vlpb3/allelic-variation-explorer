@@ -1,8 +1,8 @@
 {
   "name": "ave",
   "version": "0.1.0",
-  "author": "Mateusz Kuzak <m.t.kuzak@uva.nl>"
-  "private": true,
+  "author": "Mateusz Kuzak <m.t.kuzak@uva.nl>",
+  "private": "true",
   "dependencies": {
     "async": ">= 0.1.15",
     "connect": ">= 1.8.5",

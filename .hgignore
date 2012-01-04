@@ -3,8 +3,13 @@ syntax: glob
 *.swp
 *.DS_Store
 *.swo
+
+# data files
 viewer/data/**
 ave/data/**
 *.gff
+
+# node modules and stuff
+ave/node_modules/**
 npm-debug.log
 .monitor

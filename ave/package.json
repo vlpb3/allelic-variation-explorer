@@ -1,9 +1,19 @@
 {
-    "name": "application-name"
-  , "version": "0.0.1"
-  , "private": true
-  , "dependencies": {
-      "express": "2.4.6"
-    , "jade": ">= 0.0.1"
+  "name": "ave",
+  "version": "0.1.0",
+  "author": "Mateusz Kuzak <m.t.kuzak@uva.nl>"
+  "private": true,
+  "dependencies": {
+    "async": ">= 0.1.15",
+    "connect": ">= 1.8.5",
+    "express": ">= 2.5.4",
+    "jade": ">= 0.20.0",
+    "mongoose": ">= 2.4.8",
+    "socket.io": ">= 0.8.7",
+    "stalker": ">= 0.0.15",
+    "stylus": ">= 0.20.0"
+  },
+  "engine": {
+    "node": "0.6.x"
   }
 }

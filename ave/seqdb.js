@@ -21,7 +21,7 @@ var CHROM_LEN = {
 };
 
 function addFeatures(lines) {
-    async.forEachLimit(lines, 128, function(line, fEachCbk) {
+    async.forEach(lines, function(line, fEachCbk) {
         var farr = line.split('\t');
         if ((line[0] == '#') || (farr.length !== 9)) {
             return fEachCbk();
@@ -84,14 +84,14 @@ function importGff(callback) {
         function(wfallCbk) {
             getGffFiles(wfallCbk);
         }, function(gffFiles, wfallCbk) {
-            async.forEachLimit(gffFiles, 16, function(iFile, fEachCbk) {
+            async.forEachSeries(gffFiles, function(iFile, fEachCbk) {
                 console.log('> Importing file ' + iFile);
                 var dbFile = new DbFile();
                 dbFile.file = iFile;
                 dbFile.save(function(err) {
                     if (err) {throw err;}
                 });
-                var readStream = fs.createReadStream(iFile);
+                var readStream = fs.createReadStream(iFile, {bufferSize: 256*1024});
                 var dataString = '';
                 readStream.on('data', function(chunk) {
                     dataString += chunk;

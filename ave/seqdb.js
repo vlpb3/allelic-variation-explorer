@@ -91,7 +91,7 @@ function importGff(callback) {
                 dbFile.save(function(err) {
                     if (err) {throw err;}
                 });
-                var readStream = fs.createReadStream(iFile, {bufferSize: 256*1024});
+                var readStream = fs.createReadStream(iFile, {bufferSize: 2048*1024});
                 var dataString = '';
                 readStream.on('data', function(chunk) {
                     dataString += chunk;

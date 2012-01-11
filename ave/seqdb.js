@@ -91,14 +91,14 @@ function importGff(callback) {
                 dbFile.save(function(err) {
                     if (err) {throw err;}
                 });
-                var readStream = fs.createReadStream(iFile, {bufferSize: 2048*1024});
+                var readStream = fs.createReadStream(iFile, {bufferSize: 1024*1024});
                 var dataString = '';
                 readStream.on('data', function(chunk) {
                     dataString += chunk;
                     var fullSplit = dataString.split('\n');
                     var data = fullSplit.slice(0, fullSplit.length-1);
                     dataString = fullSplit.slice(fullSplit.length-1);
-                    addFeatures(data);
+                   addFeatures(data);
                 });
                 readStream.on('error', function(err) {
                     console.log('Error while reading file stream.');

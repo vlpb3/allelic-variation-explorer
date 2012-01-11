@@ -121,17 +121,17 @@ io.sockets.on('connection', function(socket) {
 //   console.log(res);
 // })
 
-// use stalker to watch the database directory
-stalker.watch('./data/imports', {buffer: 5000},
-    function(err, files) {
-        if (err) throw err;
-        seqdb.onDbFilesAdded(files);
-    },
-    function(err, files) {
-        if (err) throw err;
-        seqdb.onDbFilesRemoved(files);
-    }
-);
+// // use stalker to watch the database directory
+// stalker.watch('./data/imports', {buffer: 5000},
+//     function(err, files) {
+//         if (err) throw err;
+//         seqdb.onDbFilesAdded(files);
+//     },
+//     function(err, files) {
+//         if (err) throw err;
+//         seqdb.onDbFilesRemoved(files);
+//     }
+// );
 
 app.listen(3000);
 console.log("Express server listening on port %d in %s mode",

@@ -56,7 +56,7 @@ def importGff(seqdb, gffFiles):
 def importFasta(seqdb, fastaFiles):
     chunkSize = 1000000
     iFile = 0
-    refseqdb = seqdb.refseq
+    refseqdb = seqdb.refseqs
     # importing refseq from fasta
     for fname in fastaFiles:
         lines = open(fname, 'r').readlines()

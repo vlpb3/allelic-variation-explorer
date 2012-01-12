@@ -12,10 +12,9 @@ def main():
     # get handle to a sequence db
     dbh = c["seqdb"]
     
-    cdsPos = dbh.features.find({'type': 'CDS'}, {'seqid': 1, 'start': 1, 'end': 1})
-    nCDSs = cdsPos.count()
-    print ("Found %d CDSs." % nCDSs) 
-    
+    cdsPos = dbh.features.find({'type': 'CDS'}, {'seqid': 1, 'start': 1, 'end': 1},
+            timeout=False)
+
     for pos in cdsPos:
         seqid = pos['seqid']
         start = pos['start']
@@ -29,6 +28,8 @@ def main():
                 }
         dbh.features.update(snpQuery, {'$set': {'attributes.coding': 'true'}},
             mutli=True, safe=True)
+
+    cdsPos.close()
 
 if __name__ == "__main__":
     main()

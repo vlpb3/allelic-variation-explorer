@@ -27,7 +27,7 @@ def main():
                 'type': {'$regex': 'SNP'}
                 }
         dbh.features.update(snpQuery, {'$set': {'attributes.coding': 'true'}},
-            mutli=True, safe=True)
+            muliti=True, safe=True)
 
     cdsPos.close()
 

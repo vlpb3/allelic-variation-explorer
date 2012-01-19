@@ -34,7 +34,7 @@ def importGffLines(seqdb, lines):
 
 def profileImport(seqdb, gffFiles):
     """Profiles importing features in defferent chunk sizes."""
-    chunkSizes = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+    chunkSizes = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
     times = {}
     for chunkSize in chunkSizes:
         print('tesitng chun size %d' % chunkSize)
@@ -72,18 +72,18 @@ def profileImport(seqdb, gffFiles):
         fileSizes.append(os.path.getsize(iFile))
     for chunkSize in chunkSizes:
         tList = times[chunkSize]
-        speedList
-        for (t, s) in zip (tList, fileSizes)
+        speedList = []
+        for (t, s) in zip (tList, fileSizes):
             speedList.append(s/t)
         speeds.append(speedList)
     
     import matplotlib.pyplot as plt
 
     fig = plt.figure()
-    ax = fig.subplot(111)
+    ax = fig.add_subplot(111)
     plt.xticks(range(len(chunkSizes)), chunkSizes)
     ax.boxplot(speeds)
-    plt.savefig('profile.png')
+    plt.savefig('profiles.png')
 
 def importGff(seqdb, gffFiles):
     """Imports to provided db connection all annotations from gff

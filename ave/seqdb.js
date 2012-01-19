@@ -460,11 +460,10 @@ function getRefRegion(region, callback) {
 
 function getFeatures(region, callback) {
     var regionQuery = {
-        start: {$gte: region.start},
-        end: {$lte: region.end},
-        seqid: {$regex: region.chrom}
+      start: {$gte: region.start, $lte: region.end},
+      end: {$gte: region.start, $lte: region.end},
+      seqid: {$regex: region.chrom}
     };
-
     Feature.find(regionQuery, callback);
 }
 

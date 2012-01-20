@@ -428,10 +428,7 @@ function getRefRegion(region, callback) {
                 $or: [
                     {starts: {'$gte': region.start, '$lte': region.end}},
                     {ends: {'$gte': region.start, '$lte': region.end}},
-                    {
-                        starts: {'$lte': region.start},
-                        ends: {'$gte': region.end}
-                    }
+                    {starts: {'$lte': region.start}, ends: {'$gte': region.end}}
                 ]
             }, wfCbk);
         },
@@ -460,9 +457,9 @@ function getRefRegion(region, callback) {
 
 function getFeatures(region, callback) {
     var regionQuery = {
-      start: {$gte: region.start, $lte: region.end},
-      end: {$gte: region.start, $lte: region.end},
-      seqid: {$regex: region.chrom}
+      type: {$in: [/^SNP/, 'gene', 'five_prime_UTR', 'three_prime_UTR', 'CDS']},
+      seqid: {$regex: region.chrom},
+      start: {$gte: region.start, $lte: region.end}
     };
     Feature.find(regionQuery, callback);
 }

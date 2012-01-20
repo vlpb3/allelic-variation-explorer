@@ -1,5 +1,6 @@
 import os
 from pymongo import Connection
+import pymongo
 import progressbar as pb
 import re
 import time
@@ -74,7 +75,7 @@ def profileImport(seqdb, gffFiles):
         tList = times[chunkSize]
         speedList = []
         for (t, s) in zip (tList, fileSizes):
-            speedList.append(s/t)
+            speedList.append(s/(t*1024*1024))
         speeds.append(speedList)
     
     import matplotlib.pyplot as plt
@@ -89,18 +90,25 @@ def importGff(seqdb, gffFiles):
     """Imports to provided db connection all annotations from gff
     files provided in a list."""
 
+    chunkSize = 128
     iFile = 0
+
     for fname in gffFiles:
         fin = open(fname, 'r')
         print('processing file: %s' % fname)
         lines = fin.readlines()
         nLines = len(lines)
-        iLine= 0
+        iLine = 0
+        chunk = []
         pbar = pb.ProgressBar(widgets=[pb.Percentage(), pb.Bar()], maxval=nLines).start()
         for line in lines:
-            importGffLines(seqdb, [line])
+            chunk.append(line)
+            if len(chunk) >= chunkSize :
+                importGffLines(seqdb, chunk)
+                chunk = []
             iLine += 1
             pbar.update(iLine)
+        if len(chunk) >= 0: importGffLines(seqdb, chunk)
         pbar.finish()
         iFile += 1
 
@@ -108,10 +116,11 @@ def importGff(seqdb, gffFiles):
 
     print('finished importng gff files')
     print('Indexing features.')
-    features.create_index('start')
-    features.create_index('end')
-    features.create_index('type')
-    features.create_index('seqid')
+    seqdb.features.create_indexi([
+        ('type', pymongo.ASCENDING),
+        ('seqid', pymongo.ASCENDING),
+        ('start', pymongo.ASCENDING),
+        ('end', pymongo.ASCENDING)])
     print('Fiinished indexing features.')
 		
 def importFasta(seqdb, fastaFiles):
@@ -165,9 +174,10 @@ def importFasta(seqdb, fastaFiles):
         print('Finished %d of %d' % (iFile, len(fastaFiles)))
     print('Finished impoting fasta files.')
     print('Indexing reference seq.')
-    refseqdb.create_index('starts')
-    refseqdb.create_index('ends')
-    refseqdb.create_index('chrom')
+    refseqdb.create_index(
+            [('chrom', pymongo.ASCENDING),
+            ('starts', pymongo.ASCENDING),
+            ('ends', pymongo.ASCENDING)])
     print('Finished indexing ref seq.')
 
 def main():
@@ -186,9 +196,9 @@ def main():
     con = Connection()
     seqdb = con.seqdb
 
-    # importFasta(seqdb, fastaFiles)
+    importFasta(seqdb, fastaFiles)
     # importGff(seqdb, gffFiles)
-    profileImport(seqdb, gffFiles)
+    # profileImport(seqdb, gffFiles)
     print('Finished whole import')
 
 if __name__ == '__main__':

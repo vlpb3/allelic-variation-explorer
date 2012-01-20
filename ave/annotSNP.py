@@ -22,9 +22,9 @@ def main():
 
         print("Annotating SNPs at: %s from: %d to %d" % (seqid, start, end))
         snpQuery = {
-                'start': {'$gte': start, '$lte': end},
+                'type': {'$regex': '^SNP'}
                 'seqid': seqid,
-                'type': {'$regex': 'SNP'}
+                'start': {'$gte': start, '$lte': end},
                 }
         dbh.features.update(snpQuery, {'$set': {'attributes.coding': 'true'}},
            multi=True, safe=True)

@@ -22,7 +22,7 @@ def main():
 
         print("Annotating SNPs at: %s from: %d to %d" % (seqid, start, end))
         snpQuery = {
-                'type': {'$regex': '^SNP'}
+                'type': {'$regex': '^SNP'},
                 'seqid': seqid,
                 'start': {'$gte': start, '$lte': end},
                 }

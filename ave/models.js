@@ -4,11 +4,11 @@ mongoose.connect('mongodb://localhost/seqdb');
     var Schema = mongoose.Schema;
 
     var FeatureSchema = new Schema({
-        seqid: { type: String, index: true},
-        source: {type: String, index: true},
-        type: {type: String, index: true},
-        start: {type: Number, index: true},
-        end: {type: Number, index: true},
+        seqid: { type: String },
+        source: {type: String},
+        type: {type: String},
+        start: {type: Number},
+        end: {type: Number},
         score: String,
         strand: {type: String},
         phase: {type: String},
@@ -38,9 +38,9 @@ mongoose.connect('mongodb://localhost/seqdb');
     mongoose.model('DbFile', DbFileSchema);
 
     var RefSeqSchema = new Schema({
-        chrom: {type: String, index: true},
-        starts: {type: Number, index: true},
-        ends: {type: Number, index: true},
+        chrom: {type: String},
+        starts: {type: Number},
+        ends: {type: Number},
         sequence: String
     });
     mongoose.model('RefSeq', RefSeqSchema);

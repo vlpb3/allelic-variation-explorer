@@ -927,6 +927,11 @@
         return memo;
       }, []);
 
+      if (!this.leaves) {
+        this.svg.selectAll('.SNP').remove();
+        this.svg.selectAll('.hap').remove();
+        return;
+      }
       // draw haplotypes
       var haplotypeBars = this.svg.selectAll('.hap').data(this.leaves);
       haplotypeBars.attr('y', function(d) { return d.x + freePos - trackH/2;});
@@ -1036,52 +1041,55 @@
        var top = this.top + topTranslation;
 
        this.svgTree
-        .attr("transform", "translate(" + this.left + "," + top + ")");
+         .attr("transform", "translate(" + this.left + "," + top + ")");
 
        var displayData = this.model.get("displayData");
        var haplotypes = displayData.haplotypes;
        var clusters = displayData.clusters;
        var height = _.size(haplotypes) * this.trackH;
 
-      var cluster = d3.layout.cluster()
-        .size([height, this.width + this.left]);
-      cluster.separation(function(a, b) { return 1; });
-      cluster.children(function(d) {
-          if (d) return (d.children = _.compact([d.left , d.right]));
-        });
+       var cluster = d3.layout.cluster()
+         .size([height, this.width + this.left]);
+       cluster.separation(function(a, b) { return 1; });
+       cluster.children(function(d) {
+         if (d) return (d.children = _.compact([d.left , d.right]));
+       });
 
-      var diagonal = d3.svg.diagonal()
-          .projection(function(d) {return [d.y, d.x]; });
+       var diagonal = d3.svg.diagonal()
+         .projection(function(d) {return [d.y, d.x]; });
 
-      var nodes = cluster.nodes(clusters);
+       var nodes = cluster.nodes(clusters);
 
-      var link = this.svgTree.selectAll("path.link")
-          .data(cluster.links(nodes));
+       var link = this.svgTree.selectAll("path.link")
+         .data(cluster.links(nodes));
 
-      link.attr("d", diagonal);
-      link.enter().append("svg:path")
-          .attr("class", "link")
-          .attr("d", diagonal);
-      link.exit().remove();
+       link.attr("d", diagonal);
+       link.enter().append("svg:path")
+         .attr("class", "link")
+         .attr("d", diagonal);
+       link.exit().remove();
 
-      var node = this.svgTree.selectAll("g.node").data(nodes);
-      node.attr("transform", function(d) {
-        return "translate(" + d.y + ", " + d.x + ")";
-      });
-      node.enter().append("svg:g")
-          .attr("class", "node")
-          .attr("transform", function(d) {
-            return "translate(" + d.y + ", " + d.x + ")";
-          });
-      node.append("svg:circle")
-        .attr("class", "nodeCircle")
-        .attr("r", this.glyphH/2 - 1.5);
-      node.exit().remove();
+       var node = this.svgTree.selectAll("g.node").data(nodes);
+       node.attr("transform", function(d) {
+         return "translate(" + d.y + ", " + d.x + ")";
+       });
+       node.enter().append("svg:g")
+         .attr("class", "node")
+         .attr("transform", function(d) {
+           return "translate(" + d.y + ", " + d.x + ")";
+         });
+       node.append("svg:circle")
+         .attr("class", "nodeCircle")
+         .attr("r", this.glyphH/2 - 1.5);
+       node.exit().remove();
 
-      // save leaf nodes so that haplotypes can be arranged acordingly
-      // to clustering by d3
-      var leaves = _.select(nodes, this.isLeaf);
-      this.leaves = _.map(leaves, this.leaf2haplotype);
+       // save leaf nodes so that haplotypes can be arranged acordingly
+       // to clustering by d3
+       var leaves = _.select(nodes, this.isLeaf);
+       console.log(leaves);
+       if (_.size(leaves) > 1) {
+         this.leaves = _.map(leaves, this.leaf2haplotype);
+       }
      },
 
      onSNPmouseOver: function(d, i) {
@@ -1096,7 +1104,6 @@
             .duration(200)
             .attr("r", this.glyphH/2);
 
-       console.log(d3.event);
        // show the position of the SNP
        var g = d3.select(d3.event.target.parentNode);
        g.append("svg:text")

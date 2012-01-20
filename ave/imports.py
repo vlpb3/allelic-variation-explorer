@@ -89,7 +89,6 @@ def profileImport(seqdb, gffFiles):
 def importGff(seqdb, gffFiles):
     """Imports to provided db connection all annotations from gff
     files provided in a list."""
-
     chunkSize = 128
     iFile = 0
 
@@ -116,7 +115,7 @@ def importGff(seqdb, gffFiles):
 
     print('finished importng gff files')
     print('Indexing features.')
-    seqdb.features.create_indexi([
+    seqdb.features.create_index([
         ('type', pymongo.ASCENDING),
         ('seqid', pymongo.ASCENDING),
         ('start', pymongo.ASCENDING),
@@ -197,7 +196,7 @@ def main():
     seqdb = con.seqdb
 
     importFasta(seqdb, fastaFiles)
-    # importGff(seqdb, gffFiles)
+    importGff(seqdb, gffFiles)
     # profileImport(seqdb, gffFiles)
     print('Finished whole import')
 

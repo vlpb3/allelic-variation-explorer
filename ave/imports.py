@@ -120,6 +120,7 @@ def importGff(seqdb, gffFiles):
         ('seqid', pymongo.ASCENDING),
         ('start', pymongo.ASCENDING),
         ('end', pymongo.ASCENDING)])
+    seqdb.features.create_index('attributes.Name')
     print('Fiinished indexing features.')
 		
 def importFasta(seqdb, fastaFiles):

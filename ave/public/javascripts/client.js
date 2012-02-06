@@ -1171,7 +1171,7 @@
        _.each(d.snps, function(snp, pos){
          snpStr += pos + ": " + snp + ", ";
        });
-       var posStr = "Chr" + pos.chrom + ":" + pos.starts + ".." + pos.ends;
+       var posStr = pos.chrom + ":" + pos.starts + ".." + pos.ends;
 
        var haplDialog = $("#haplDialog").clone().dialog({
          title: 'Haplotype for ' + posStr,

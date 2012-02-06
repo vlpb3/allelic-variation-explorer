@@ -1,5 +1,7 @@
 (function ($) {
 
+  var appAddress = "http://localhost"
+
   // router stuff
   var AppRouter = Backbone.Router.extend({
 
@@ -361,7 +363,7 @@
   var DataModel = Backbone.Model.extend({
 
     defaults: {
-      "socket": io.connect("http://localhost"),
+      "socket": io.connect(appAddress),
       "rangeLimit": 20000,
       "rangeExceeded": false,
       "bufferX": 5,

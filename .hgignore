@@ -5,11 +5,10 @@ syntax: glob
 *.swo
 
 # data files
-viewer/data/**
-ave/data/**
+data/**
 *.gff
 
 # node modules and stuff
-ave/node_modules/**
+node_modules/**
 npm-debug.log
 .monitor

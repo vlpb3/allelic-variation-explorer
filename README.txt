@@ -22,7 +22,7 @@ download ave app and go into ave directory
 to install needed node packages run:
 npm install
 
-download data files and put thems into ave/data/imports
+download data files 
 
 make sure mongodb is running
 you can run "mongo",if you get a mongo console, that means db is running
@@ -33,7 +33,7 @@ also install python modules:
 pymongo and progressbar
 
 ipmort data:
-python imports.py
+python imports.py /path/to/data
 
 run application:
 node app.js

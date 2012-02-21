@@ -370,7 +370,7 @@
       "pos": {
         "chrom": "Chr1",
         "starts": 3500,
-        "ends": 6000
+        "ends": 9000
       },
       "bufferData": {
           starts: 0,

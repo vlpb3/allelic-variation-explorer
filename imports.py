@@ -1,4 +1,5 @@
 import os
+import sys
 from pymongo import Connection
 import pymongo
 import progressbar as pb
@@ -181,7 +182,7 @@ def importFasta(seqdb, fastaFiles):
     print('Finished indexing ref seq.')
 
 def main():
-    importsDir = './data/imports'
+    importsDir = os.path.abspath(sys.argv[1])
     # get list of all gff files in directory
     dirList = os.listdir(importsDir)
     

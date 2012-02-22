@@ -1,6 +1,6 @@
 (function ($) {
 
-  var appAddress = "http://localhost"
+  var appAddress = "http://localhost";
 
   // router stuff
   var AppRouter = Backbone.Router.extend({
@@ -11,7 +11,7 @@
 
       // this.navigateTo();
       // when model changes, navigate to new place
-      this.model.bind("change:pos", this.navigateTo);
+      this.model.on("change:pos", this.navigateTo);
     },
 
     routes: {
@@ -42,7 +42,7 @@
     initialize: function() {
 
       _.bindAll(this, "render", "updateModel", "goToFeature",
-        "onFeatureNotFound");
+      "onFeatureNotFound");
 
       this.render();
       // get values form the model
@@ -53,7 +53,7 @@
       $("#end").val(pos.ends);
 
       this.model.get("socket")
-        .on("featureNotFound", this.onFeatureNotFound);
+      .on("featureNotFound", this.onFeatureNotFound);
     },
 
     events: {
@@ -112,11 +112,11 @@
 
     initialize: function() {
       _.bindAll(this, "render", "updateString",
-        "goLeft", "zoomOut", "zoomIn", "goRight");
+      "goLeft", "zoomOut", "zoomIn", "goRight");
       this.step = 5;
       this.render();
       this.updateString();
-      this.model.bind("change:pos", this.updateString);
+      this.model.on("change:pos", this.updateString);
     },
 
     render: function() {
@@ -210,7 +210,7 @@
     initialize: function() {
       _.bindAll(this, "render", "openFilterDialog",
         "renderStrainList", "renderSNPList", "updateLists",
-        "applyFilters", "removeSelected", "addSelected");
+      "applyFilters", "removeSelected", "addSelected");
 
       this.render();
     },
@@ -228,7 +228,7 @@
 
       $("#filterRadio").buttonset();
       $("#applyFilters button").button()
-        .click(this.applyFilters);
+      .click(this.applyFilters);
 
       // hide the lists
       $("#exclStrains").hide();
@@ -241,9 +241,9 @@
       $("#radioSNPs").click(this.renderSNPList);
 
       $("#addButton").button()
-        .click(this.addSelected);
+      .click(this.addSelected);
       $("#removeButton").button()
-        .click(this.removeSelected);
+      .click(this.removeSelected);
 
       $("#included ul").selectable({
         stop: function() {
@@ -373,13 +373,13 @@
         "ends": 9000
       },
       "bufferData": {
-          starts: 0,
-          ends: 0,
-          chrom: "",
-          SNPs: {},
-          loci: {},
-          refseq: ""
-          },
+        starts: 0,
+        ends: 0,
+        chrom: "",
+        SNPs: {},
+        loci: {},
+        refseq: ""
+      },
       "displayData": {
         waiting: true,
         loci: [],
@@ -397,19 +397,19 @@
             excl: []
           }
         }
-        }
+      }
     },
 
     initialize: function() {
       _.bindAll(this, "updatePosition", "updateDisplayData",
         "waitForData", "updateBufferData", "importData",
         "isLocusInRegion", "isFeatureInRegion", "calcHaplotypes",
-        "goToFeature", "goToFeatureRegion",  "cluster");
+      "goToFeature", "goToFeatureRegion",  "cluster");
 
       this.updateBufferData();
 
       // update the model when position chnages
-      this.bind("change:pos", function() {
+      this.on("change:pos", function() {
         this.updatePosition();
       });
       // when data come back
@@ -430,11 +430,10 @@
         bufferData.refseq = data.refseq;
       }
       bufferData.features = data.features;
-
       this.set({"bufferData": bufferData});
       if (this.get("displayData").waiting) {
-         this.updateDisplayData();
-         this.waitForData(false); // check if it works properly
+        this.updateDisplayData();
+        this.waitForData(false); // check if it works properly
       }
     },
 
@@ -475,7 +474,7 @@
 
       // check if there is a need for fetching new buffer
       var startToClose = (bufferData.starts > 0) &&
-        (bufferData.starts > (pos.starts - span));
+      (bufferData.starts > (pos.starts - span));
       var endToClose = (pos.ends + span) > bufferData.ends;
       var otherChromosome = pos.chrom !== bufferData.chrom;
       // if there is fetch
@@ -490,7 +489,7 @@
       if (startInBuffer && endInBuffer && !otherChromosome) {
         this.updateDisplayData();
       }
-      else this.waitForData(true);
+      else {this.waitForData(true);}
     },
 
     updateBufferData: function() {
@@ -501,7 +500,6 @@
       newBufferStart = start >= 0 ? start : 1;
       newBufferEnd = pos.ends + flank;
       var region = {chrom: pos.chrom, start: newBufferStart, end: newBufferEnd};
-      console.log(this.get("rangeExceeded"))
       if (this.get("rangeExceeded")) {
         this.get("socket").emit("getGeneModels", region);
       } else {
@@ -538,12 +536,12 @@
       var strainList = _.pluck(snpAttr, "Strain").sort();
       strainList = _.uniq(strainList, true);
       var newStrainIncl = _.difference(strainList,
-        displayData.filters.strains.excl);
+      displayData.filters.strains.excl);
       displayData.filters.strains.incl = newStrainIncl;
       // and SNPs
       var snpIDList = _.pluck(snpAttr, "ID");
       var newSNPIncl = _.difference(snpIDList,
-        displayData.filters.SNPs.excl);
+      displayData.filters.SNPs.excl);
 
 
       // set them in the model
@@ -551,42 +549,42 @@
       displayData.filters.SNPs.incl = newSNPIncl.sort(
         function(a, b) {return a - b;});
 
-      // select SNPs again according to strain and SNP ID restictions
-      displayData.SNPs = _.select(SNPs, function(snp) {
-        return (_.include(newStrainIncl, snp.attributes.Strain) &&
+        // select SNPs again according to strain and SNP ID restictions
+        displayData.SNPs = _.select(SNPs, function(snp) {
+          return (_.include(newStrainIncl, snp.attributes.Strain) &&
           _.include(newSNPIncl, snp.attributes.ID));
-      });
+        });
 
-      // get refseq fragment
-      var refseq = bufferData.refseq;
-      var sliceStart = pos.starts - bufferData.starts;
-      var sliceEnd = pos.ends - bufferData.starts + 1;
-      refseq = refseq.slice(sliceStart, sliceEnd);
+        // get refseq fragment
+        var refseq = bufferData.refseq;
+        var sliceStart = pos.starts - bufferData.starts;
+        var sliceEnd = pos.ends - bufferData.starts + 1;
+        refseq = refseq.slice(sliceStart, sliceEnd);
 
-      displayData.refseq = refseq;
+        displayData.refseq = refseq;
 
-      // set obtained data to the model
-      this.set({"displayData": displayData});
+        // set obtained data to the model
+        this.set({"displayData": displayData});
 
-      // calculate haplotypes from SNPs in the region
-      this.calcHaplotypes();
+        // calculate haplotypes from SNPs in the region
+        this.calcHaplotypes();
 
-      // cluster haplotypes
-      this.cluster();
+        // cluster haplotypes
+        this.cluster();
     },
 
     isLocusInRegion: function(locus) {
       var pos = this.get("pos");
       if(locus.gene.start <= pos.ends && locus.gene.end >= pos.starts) {
         return true;
-      } else return false;
+      } else {return false;}
     },
 
     isFeatureInRegion: function(feature) {
       var pos = this.get("pos");
       if(feature.start <= pos.ends && feature.end >= pos.starts) {
         return true;
-      } else return false;
+      } else {return false;}
     },
 
     calcHaplotypes: function() {
@@ -629,7 +627,7 @@
         var dist = _.reduce(snpDiff, function(memo, idx) {
           if (snps1[idx] === snps2[idx]) {
             return memo;
-          } else return (memo += score*score);
+          } else {return (memo += score*score);}
         }, 0);
         dist = Math.sqrt(dist);
         return dist;
@@ -649,17 +647,17 @@
 
       var clusters = {};
       if (_.size(haplotypes) > 1) {
-      clusters = clusterfck.hcluster(haplotypes, metric,
-            clusterfck.AVERAGE_LINKAGE)[0];
+        clusters = clusterfck.hcluster(haplotypes, metric,
+        clusterfck.AVERAGE_LINKAGE)[0];
       }
 
-     // put clusters into the model
-     var displayData = this.get("displayData");
-     // displayData.haplotypes = haplotypes;
-     displayData.clusters = clusters;
-     this.set({displayData: displayData});
+      // put clusters into the model
+      var displayData = this.get("displayData");
+      // displayData.haplotypes = haplotypes;
+      displayData.clusters = clusters;
+      this.set({displayData: displayData});
 
-     this.trigger("change:displayData:clusters");
+      this.trigger("change:displayData:clusters");
     }
 
   });
@@ -668,10 +666,10 @@
 
     initialize: function() {
       _.bindAll(this, "render", "draw", "drawGeneModels", "drawHaplotpes",
-                "drawScaleBars", "drawTree", "turnOffHaplotypes", "isLeaf",
-                "leaf2haplotype", "turnOnHaplotypes",
-                "onSNPmouseOver", "onSNPmouseOut", "onHaplCLick",
-                "showCodingSNPs", "showNonCodingSNPs", "showAllSNPs");
+        "drawScaleBars", "drawTree", "turnOffHaplotypes", "isLeaf",
+        "leaf2haplotype", "turnOnHaplotypes",
+        "onSNPmouseOver", "onSNPmouseOut", "onHaplCLick",
+      "showCodingSNPs", "showNonCodingSNPs", "showAllSNPs");
 
       this.trackH = 20;
       this.glyphH = 12;
@@ -683,7 +681,7 @@
       this.top = 20;
       this.bottom = 4;
 
-      this.model.bind('change:displayData:clusters', this.draw);
+      this.model.on('change:displayData:clusters', this.draw);
       // this.model.bind('change:rangeExceeded', this.draw);
 
       this.render();
@@ -699,19 +697,19 @@
 
       // browser div
       this.svg = d3.select("#chart").append("svg:svg")
-          .attr("class", "chart")
-          .attr("width", this.left + this.width + this.right)
-          .attr("height", this.top + this.height + this.bottom)
-        .append("svg:g")
-          .attr("transform", "translate(" + this.left + "," + this.top + ")");
+      .attr("class", "chart")
+      .attr("width", this.left + this.width + this.right)
+      .attr("height", this.top + this.height + this.bottom)
+      .append("svg:g")
+      .attr("transform", "translate(" + this.left + "," + this.top + ")");
 
-          // tree div
+      // tree div
       this.svgTree = d3.select("#tree").append("svg:svg")
-          .attr("class", "tree")
-          .attr("width", this.left + this.width + this.right)
-          .attr("height", this.top + this.height + this.bottom)
-        .append("svg:g")
-          .attr("transform", "translate(" + this.left + "," + this.top + ")");
+      .attr("class", "tree")
+      .attr("width", this.left + this.width + this.right)
+      .attr("height", this.top + this.height + this.bottom)
+      .append("svg:g")
+      .attr("transform", "translate(" + this.left + "," + this.top + ")");
 
       $("#codingRadio").buttonset();
       $("#radioCoding").click(this.showCodingSNPs);
@@ -730,11 +728,11 @@
       });
       var codingPos = _.pluck(codingSNPs, "start");
       var SNPCircles = this.svg.selectAll('.SNP')
-        .transition().duration(200)
-        .style("opacity", function(d) {
-          if (_.include(codingPos, d.x)) return 0.6;
-          else return 0.1;
-        });
+      .transition().duration(200)
+      .style("opacity", function(d) {
+        if (_.include(codingPos, d.x)) {return 0.6;}
+        else {return 0.1;}
+      });
     },
 
     showNonCodingSNPs: function() {
@@ -745,11 +743,11 @@
       });
       var codingPos = _.pluck(codingSNPs, "start");
       var SNPCircles = this.svg.selectAll('.SNP')
-        .transition().duration(200)
-        .style("opacity", function(d) {
-          if (_.include(codingPos, d.x)) return 0.1;
-          else return 0.6;
-        });
+      .transition().duration(200)
+      .style("opacity", function(d) {
+        if (_.include(codingPos, d.x)) {return 0.1;}
+        else {return 0.6;}
+      });
     },
     showAllSNPs: function() {
       //fetch all coding snp
@@ -759,20 +757,20 @@
       });
       var codingPos = _.pluck(codingSNPs, "start");
       var SNPCircles = this.svg.selectAll('.SNP')
-        .transition().duration(200)
-        .style("opacity", function(d) {
-          return 0.6;
-        });
+      .transition().duration(200)
+      .style("opacity", function(d) {
+        return 0.6;
+      });
     },
 
-     draw: function() {
+    draw: function() {
       var pos = this.model.get("pos");
       var rangeExceeded = this.model.get("rangeExceeded");
       var width = this.width;
 
       // recalculate scale for new region
       this.x = d3.scale.linear().domain([pos.starts, pos.ends])
-                                .range([0, width]);
+      .range([0, width]);
 
       var displayData = this.model.get("displayData");
       this.svg.selectAll('.message').remove();
@@ -785,9 +783,9 @@
         this.turnOffHaplotypes();
       }
       this.drawScaleBars();
-     },
+    },
 
-     drawGeneModels: function(displayData) {
+    drawGeneModels: function(displayData) {
       var x = this.x;
 
       // draw loci
@@ -803,33 +801,33 @@
 
       var geneRect = this.svg.selectAll('.gene').data(genes);
       geneRect.attr("x", function(d) { return x(d.start); })
-              .attr("width", function(d) { return x(d.end) - x(d.start); });
+      .attr("width", function(d) { return x(d.end) - x(d.start); });
       geneRect.enter().append("svg:rect")
-              .attr("class", "gene")
-              .attr("height", glyphH)
-              .attr("x", function(d) { return x(d.start); })
-              .attr("y", freePos)
-              .attr("width", function(d) { return x(d.end) - x(d.start); })
-              .attr("fill", "chartreuse");
+      .attr("class", "gene")
+      .attr("height", glyphH)
+      .attr("x", function(d) { return x(d.start); })
+      .attr("y", freePos)
+      .attr("width", function(d) { return x(d.end) - x(d.start); })
+      .attr("fill", "chartreuse");
       geneRect.exit().remove();
 
       // draw gene labels
       var geneLabel = this.svg.selectAll(".geneLabel").data(genes);
       geneLabel.attr("x", function(d) {
-                  // display label even when gene starts before region
-                  return (x(d.start) > 5) ? x(d.start) : 5;
-                })
-                .text(function(d) { return d.attributes.Name; });
+        // display label even when gene starts before region
+        return (x(d.start) > 5) ? x(d.start) : 5;
+      })
+      .text(function(d) { return d.attributes.Name; });
       geneLabel.enter().append("svg:text")
-                .attr("class", "geneLabel")
-                .attr("x", function(d) {
-                  // display label even when gene starts before region
-                  return (x(d.start) > 3) ? x(d.start) : 3;
-                })
-                .attr("y", freePos)
-                .attr("dy", "1.075em")
-                .attr("dx", "0.5em")
-                .text(function(d) { return d.attributes.Name; });
+      .attr("class", "geneLabel")
+      .attr("x", function(d) {
+        // display label even when gene starts before region
+        return (x(d.start) > 3) ? x(d.start) : 3;
+      })
+      .attr("y", freePos)
+      .attr("dy", "1.075em")
+      .attr("dx", "0.5em")
+      .text(function(d) { return d.attributes.Name; });
       geneLabel.exit().remove();
 
       // update free position
@@ -855,41 +853,41 @@
       // draw gene models
       var UTR5Rect = this.svg.selectAll('.UTR5').data(UTR5s);
       UTR5Rect.attr("x", function(d) { return x(d.start); })
-              .attr("y", yPos)
-              .attr("width", function(d) { return x(d.end) - x(d.start); });
+      .attr("y", yPos)
+      .attr("width", function(d) { return x(d.end) - x(d.start); });
       UTR5Rect.enter().append("svg:rect")
-              .attr("class", "UTR5")
-              .attr("height", glyphH)
-              .attr("x", function(d) { return x(d.start); })
-              .attr("y", yPos)
-              .attr("width", function(d) { return x(d.end) - x(d.start); })
-              .attr("fill", "slateblue");
+      .attr("class", "UTR5")
+      .attr("height", glyphH)
+      .attr("x", function(d) { return x(d.start); })
+      .attr("y", yPos)
+      .attr("width", function(d) { return x(d.end) - x(d.start); })
+      .attr("fill", "slateblue");
       UTR5Rect.exit().remove();
 
       var UTR3Rect = this.svg.selectAll('.UTR3').data(UTR3s);
       UTR3Rect.attr("x", function(d) { return x(d.start); })
-              .attr("y", yPos)
-              .attr("width", function(d) { return x(d.end) - x(d.start); });
+      .attr("y", yPos)
+      .attr("width", function(d) { return x(d.end) - x(d.start); });
       UTR3Rect.enter().append("svg:rect")
-              .attr("class", "UTR3")
-              .attr("height", glyphH)
-              .attr("x", function(d) { return x(d.start); })
-              .attr("y", yPos)
-              .attr("width", function(d) { return x(d.end) - x(d.start); })
-              .attr("fill", "teal");
+      .attr("class", "UTR3")
+      .attr("height", glyphH)
+      .attr("x", function(d) { return x(d.start); })
+      .attr("y", yPos)
+      .attr("width", function(d) { return x(d.end) - x(d.start); })
+      .attr("fill", "teal");
       UTR3Rect.exit().remove();
 
       var CDSRect = this.svg.selectAll('.CDS').data(CDSs);
       CDSRect.attr("x", function(d) { return x(d.start); })
-              .attr("y", yPos)
-              .attr("width", function(d) { return x(d.end) - x(d.start); });
+      .attr("y", yPos)
+      .attr("width", function(d) { return x(d.end) - x(d.start); });
       CDSRect.enter().append("svg:rect")
-              .attr("class", "CDS")
-              .attr("height", glyphH)
-              .attr("x", function(d) { return x(d.start); })
-              .attr("y", yPos)
-              .attr("width", function(d) { return x(d.end) - x(d.start); })
-              .attr("fill", "steelblue");
+      .attr("class", "CDS")
+      .attr("height", glyphH)
+      .attr("x", function(d) { return x(d.start); })
+      .attr("y", yPos)
+      .attr("width", function(d) { return x(d.end) - x(d.start); })
+      .attr("fill", "steelblue");
       CDSRect.exit().remove();
 
       // calculate new freePos by calculating the max number of gene models per locus
@@ -905,7 +903,7 @@
 
       // update free pos
       this.freePos = freePos;
-     },
+    },
 
     drawHaplotpes: function() {
       var pos = this.model.get("pos");
@@ -919,12 +917,12 @@
       // get SNPs with haplotype indexes
       this.hapSNPs = _.reduce(this.leaves, function(memo, leaf) {
         _.each(leaf.snps, function(base, pos) {
-         var snp = {
-           x: pos,
-           y: leaf.x,
-           base: base
-         };
-         memo.push(snp);
+          var snp = {
+            x: pos,
+            y: leaf.x,
+            base: base
+          };
+          memo.push(snp);
         });
         return memo;
       }, []);
@@ -938,39 +936,39 @@
       var haplotypeBars = this.svg.selectAll('.hap').data(this.leaves);
       haplotypeBars.attr('y', function(d) { return d.x + freePos - trackH/2;});
       haplotypeBars.enter().append('svg:rect')
-              .attr('class', 'hap')
-              .attr('height', glyphH)
-              .attr('width', width)
-              .attr('x', x(pos.starts))
-              .attr('y', function(d) { return d.x + freePos - trackH/2;})
-              .on('click', this.onHaplCLick);
+      .attr('class', 'hap')
+      .attr('height', glyphH)
+      .attr('width', width)
+      .attr('x', x(pos.starts))
+      .attr('y', function(d) { return d.x + freePos - trackH/2;})
+      .on('click', this.onHaplCLick);
       haplotypeBars.exit().remove();
 
       // draw SNPs
       var SNPCircles = this.svg.selectAll('.SNP').data(this.hapSNPs);
       SNPCircles.attr('cx', function(d) { return x(d.x); })
-                .attr('cy', function(d) {
-                  return d.y + freePos - glyphT;
-                  })
-                .attr('fill', this.baseColor)
-                .attr('opacity', 0.6);
+      .attr('cy', function(d) {
+        return d.y + freePos - glyphT;
+      })
+      .attr('fill', this.baseColor)
+      .attr('opacity', 0.6);
       SNPCircles.enter().append('svg:circle')
-                .attr('class', 'SNP')
-                .attr('r', glyphH/4)
-                .attr('cx', function(d) { return x(d.x); })
-                .attr('cy', function(d) {
-                    return d.y + freePos - glyphT;
-                  })
-                .attr('fill', this.baseColor)
-                .on("mouseover", this.onSNPmouseOver)
-                .on("mouseout", this.onSNPmouseOut);
+      .attr('class', 'SNP')
+      .attr('r', glyphH/4)
+      .attr('cx', function(d) { return x(d.x); })
+      .attr('cy', function(d) {
+        return d.y + freePos - glyphT;
+      })
+      .attr('fill', this.baseColor)
+      .on("mouseover", this.onSNPmouseOver)
+      .on("mouseout", this.onSNPmouseOut);
       SNPCircles.exit().remove();
 
       // fade in/out snps according to whats chosen on toggles
       var activeToggle = $("#codingRadio .ui-state-active").attr("for");
-      if (activeToggle === "radioNonCoding") this.showNonCodingSNPs();
-      else if (activeToggle === "radioCoding") this.showCodingSNPs();
-      else this.showAllSNPs();
+      if (activeToggle === "radioNonCoding") {this.showNonCodingSNPs();}
+      else if (activeToggle === "radioCoding") {this.showCodingSNPs();}
+      else {this.showAllSNPs();}
 
       //update free position
       var haplotypes = this.model.get("displayData").haplotypes;
@@ -985,31 +983,31 @@
       var width = this.width;
 
       this.x = d3.scale.linear().domain([pos.starts, pos.ends])
-                                .range([0, width]);
+      .range([0, width]);
       var x = this.x;
 
       var rules = this.svg.selectAll('g.rule')
-          .data(x.ticks(10), String);
+      .data(x.ticks(10), String);
       this.svg.selectAll('.ruleLine')
-          .attr("y2", height);
+      .attr("y2", height);
 
       rules.attr('transform', function(d) {return 'translate(' + x(d) + ',0)';});
       var newRules = rules.enter().append('svg:g')
-          .attr('class', 'rule')
-          .attr('transform', function(d) {return 'translate(' + x(d) + ',0)';});
+      .attr('class', 'rule')
+      .attr('transform', function(d) {return 'translate(' + x(d) + ',0)';});
       newRules.append('svg:line')
-          .attr("class", "ruleLine")
-          .attr('y1', 0)
-          .attr('y2', height);
+      .attr("class", "ruleLine")
+      .attr('y1', 0)
+      .attr('y2', height);
       newRules.append("svg:text")
-          .attr('y', -10)
-          .attr('dy', '.71em')
-          .attr('text-anchor', 'middle')
-          .text(x.tickFormat(10));
+      .attr('y', -10)
+      .attr('dy', '.71em')
+      .attr('text-anchor', 'middle')
+      .text(x.tickFormat(10));
       rules.exit().remove();
     },
 
-     turnOffHaplotypes: function() {
+    turnOffHaplotypes: function() {
       // remove all haplotype specific stuff
       this.svg.selectAll('.hap').remove();
       this.svg.selectAll('.SNP').remove();
@@ -1022,208 +1020,209 @@
       var message = "Displayed region exceeds " +
         this.model.get("rangeLimit")/1000 + " kb and haplotype clustering has been turned off.";
       this.svg.append("svg:text")
-        .attr('class', 'message')
-        .attr('anchor', 'middle')
-        .attr('y', this.freePos + this.trackH)
-        .text(message);
-     },
+      .attr('class', 'message')
+      .attr('anchor', 'middle')
+      .attr('y', this.freePos + this.trackH)
+      .text(message);
+    },
 
-     turnOnHaplotypes: function() {
-       var winWidth = $(window).width();
-       this.width = winWidth/2 - 20;
+    turnOnHaplotypes: function() {
+      var winWidth = $(window).width();
+      this.width = winWidth/2 - 20;
 
-       $("#chart").css("width", winWidth/2 - 5);
-       $(".chart").attr("width", this.left + this.width + this.right);
-       $("#tree").show();
-     },
+      $("#chart").css("width", winWidth/2 - 5);
+      $(".chart").attr("width", this.left + this.width + this.right);
+      $("#tree").show();
+    },
 
-     drawTree: function() {
+    drawTree: function() {
 
-       var topTranslation = (this.maxModels + 1) * this.trackH;
-       var top = this.top + topTranslation;
+      var topTranslation = (this.maxModels + 1) * this.trackH;
+      var top = this.top + topTranslation;
 
-       this.svgTree
-         .attr("transform", "translate(" + this.left + "," + top + ")");
+      this.svgTree
+      .attr("transform", "translate(" + this.left + "," + top + ")");
 
-       var displayData = this.model.get("displayData");
-       var haplotypes = displayData.haplotypes;
-       var clusters = displayData.clusters;
-       var height = _.size(haplotypes) * this.trackH;
+      var displayData = this.model.get("displayData");
+      var haplotypes = displayData.haplotypes;
+      var clusters = displayData.clusters;
+      var height = _.size(haplotypes) * this.trackH;
 
-       var cluster = d3.layout.cluster()
-         .size([height, this.width + this.left]);
-       cluster.separation(function(a, b) { return 1; });
-       cluster.children(function(d) {
-         if (d) return (d.children = _.compact([d.left , d.right]));
-       });
+      var cluster = d3.layout.cluster()
+      .size([height, this.width + this.left]);
+      cluster.separation(function(a, b) { return 1; });
+      cluster.children(function(d) {
+        if (d) {
+          return (d.children = _.compact([d.left , d.right]));
+        }
+      });
 
-       var diagonal = d3.svg.diagonal()
-         .projection(function(d) {return [d.y, d.x]; });
+      var diagonal = d3.svg.diagonal()
+      .projection(function(d) {return [d.y, d.x]; });
 
-       var nodes = cluster.nodes(clusters);
+      var nodes = cluster.nodes(clusters);
 
-       var link = this.svgTree.selectAll("path.link")
-         .data(cluster.links(nodes));
+      var link = this.svgTree.selectAll("path.link")
+      .data(cluster.links(nodes));
 
-       link.attr("d", diagonal);
-       link.enter().append("svg:path")
-         .attr("class", "link")
-         .attr("d", diagonal);
-       link.exit().remove();
+      link.attr("d", diagonal);
+      link.enter().append("svg:path")
+      .attr("class", "link")
+      .attr("d", diagonal);
+      link.exit().remove();
 
-       var node = this.svgTree.selectAll("g.node").data(nodes);
-       node.attr("transform", function(d) {
-         return "translate(" + d.y + ", " + d.x + ")";
-       });
-       node.enter().append("svg:g")
-         .attr("class", "node")
-         .attr("transform", function(d) {
-           return "translate(" + d.y + ", " + d.x + ")";
-         });
-       node.append("svg:circle")
-         .attr("class", "nodeCircle")
-         .attr("r", this.glyphH/2 - 1.5);
-       node.exit().remove();
+      var node = this.svgTree.selectAll("g.node").data(nodes);
+      node.attr("transform", function(d) {
+        return "translate(" + d.y + ", " + d.x + ")";
+      });
+      node.enter().append("svg:g")
+      .attr("class", "node")
+      .attr("transform", function(d) {
+        return "translate(" + d.y + ", " + d.x + ")";
+      });
+      node.append("svg:circle")
+      .attr("class", "nodeCircle")
+      .attr("r", this.glyphH/2 - 1.5);
+      node.exit().remove();
 
-       // save leaf nodes so that haplotypes can be arranged acordingly
-       // to clustering by d3
-       var leaves = _.select(nodes, this.isLeaf);
-       console.log(leaves);
-       if (_.size(leaves) > 1) {
-         this.leaves = _.map(leaves, this.leaf2haplotype);
-       }
-     },
+      // save leaf nodes so that haplotypes can be arranged acordingly
+      // to clustering by d3
+      var leaves = _.select(nodes, this.isLeaf);
+      if (_.size(leaves) > 1) {
+        this.leaves = _.map(leaves, this.leaf2haplotype);
+      }
+    },
 
-     onSNPmouseOver: function(d, i) {
-       var freePos = this.freePos;
-       var pos_x = d.x;
-       var tx = this.x(d.x);
-       var ty = d.y + freePos - this.glyphH*0.75;
+    onSNPmouseOver: function(d, i) {
+      var freePos = this.freePos;
+      var pos_x = d.x;
+      var tx = this.x(d.x);
+      var ty = d.y + freePos - this.glyphH*0.75;
 
-       //make circle bigger
-       d3.select(d3.event.target)
-          .transition()
-            .duration(200)
-            .attr("r", this.glyphH/2);
+      //make circle bigger
+      d3.select(d3.event.target)
+      .transition()
+      .duration(200)
+      .attr("r", this.glyphH/2);
 
-       // show the position of the SNP
-       var g = d3.select(d3.event.target.parentNode);
-       g.append("svg:text")
-         .attr("class", "snpTip")
-         .attr("x", tx)
-         .attr("y", ty)
-         .attr('text-anchor', 'middle')
-         .text(pos_x);
+      // show the position of the SNP
+      var g = d3.select(d3.event.target.parentNode);
+      g.append("svg:text")
+      .attr("class", "snpTip")
+      .attr("x", tx)
+      .attr("y", ty)
+      .attr('text-anchor', 'middle')
+      .text(pos_x);
 
-       // fade out the haplotypes that do not have this SNP
-       var posWithSNP =   _.reduce(this.hapSNPs, function(memo, snp) {
-           if (snp.x === pos_x) memo.push(snp.y);
-           return memo;
-         }, []);
+      // fade out the haplotypes that do not have this SNP
+      var posWithSNP =   _.reduce(this.hapSNPs, function(memo, snp) {
+        if (snp.x === pos_x) {memo.push(snp.y);}
+        return memo;
+      }, []);
 
-       d3.selectAll(".hap")
-       .transition()
-        .duration(200)
-        .style("opacity", function(d) {
-         if (_.include(posWithSNP, d.x)) return 0.2;
-         else return 0.1;
-       });
+      d3.selectAll(".hap")
+      .transition()
+      .duration(200)
+      .style("opacity", function(d) {
+        if (_.include(posWithSNP, d.x)) {return 0.2;}
+        else {return 0.1;}
+      });
 
-       d3.selectAll(".nodeCircle")
-        .transition()
-          .duration(200)
-          .style("fill", function(d) {
-            if ((_.size(d.children) === 0) && _.include(posWithSNP, d.x)) {
-              return "steelblue";
-            }
-            else return "#fff";
-          });
-      },
+      d3.selectAll(".nodeCircle")
+      .transition()
+      .duration(200)
+      .style("fill", function(d) {
+        if ((_.size(d.children) === 0) && _.include(posWithSNP, d.x)) {
+          return "steelblue";
+        }
+        else {return "#fff";}
+      });
+    },
 
-     onSNPmouseOut: function(d, i) {
-       var g = d3.select(d3.event.target.parentNode);
+    onSNPmouseOut: function(d, i) {
+      var g = d3.select(d3.event.target.parentNode);
 
-       // make circle smaller
-       d3.select(d3.event.target)
-          .transition()
-            .duration(200).attr("r", this.glyphH/4);
+      // make circle smaller
+      d3.select(d3.event.target)
+      .transition()
+      .duration(200).attr("r", this.glyphH/4);
 
-       // remove the SNP tip
-       g.selectAll(".snpTip").remove();
-       // fade to the original state
-       d3.selectAll(".hap")
-        .transition()
-          .duration(200)
-          .style("opacity", 0.2);
-       d3.selectAll(".nodeCircle")
-        .transition()
-          .duration(200)
-          .style("fill", "#fff");
-     },
+      // remove the SNP tip
+      g.selectAll(".snpTip").remove();
+      // fade to the original state
+      d3.selectAll(".hap")
+      .transition()
+      .duration(200)
+      .style("opacity", 0.2);
+      d3.selectAll(".nodeCircle")
+      .transition()
+      .duration(200)
+      .style("fill", "#fff");
+    },
 
-     onHaplCLick: function(d, i) {
-       // when haplotype bar is clicked open the dialog with the
-       // details about the haplotype
-       // all dialogs use the clone of the same div
+    onHaplCLick: function(d, i) {
+      // when haplotype bar is clicked open the dialog with the
+      // details about the haplotype
+      // all dialogs use the clone of the same div
 
-       var pos = this.model.get("pos");
-       var snpStr = "";
-       _.each(d.snps, function(snp, pos){
-         snpStr += pos + ": " + snp + ", ";
-       });
-       var posStr = pos.chrom + ":" + pos.starts + ".." + pos.ends;
+      var pos = this.model.get("pos");
+      var snpStr = "";
+      _.each(d.snps, function(snp, pos){
+        snpStr += pos + ": " + snp + ", ";
+      });
+      var posStr = pos.chrom + ":" + pos.starts + ".." + pos.ends;
 
-       var haplDialog = $("#haplDialog").clone().dialog({
-         title: 'Haplotype for ' + posStr,
-         close: function(ev, ui) {
-           $(this).remove();
-         }
-       });
+      var haplDialog = $("#haplDialog").clone().dialog({
+        title: 'Haplotype for ' + posStr,
+        close: function(ev, ui) {
+          $(this).remove();
+        }
+      });
 
-       $(haplDialog).find("p:first").append("</br> " + d.strains);
-       $(haplDialog).find("p:eq(1)").append("</br> " + snpStr);
-       var refseq = this.model.get("displayData").refseq;
-       var fastaStr = ">" + posStr + "\n";
-       _.each(refseq.split(""), function(base, idx, seq){
-         var idxPos = pos.starts + idx;
-         if (_.include(_.keys(d.snps), idxPos.toString())) {
-           var variant = d.snps[idxPos];
-           base = "[" + base + "/" + variant + "]";
-         }
-         if ((idx+1) % 60 === 0) base += "\n";
-         fastaStr += base;
-       });
+      $(haplDialog).find("p:first").append("</br> " + d.strains);
+      $(haplDialog).find("p:eq(1)").append("</br> " + snpStr);
+      var refseq = this.model.get("displayData").refseq;
+      var fastaStr = ">" + posStr + "\n";
+      _.each(refseq.split(""), function(base, idx, seq){
+        var idxPos = pos.starts + idx;
+        if (_.include(_.keys(d.snps), idxPos.toString())) {
+          var variant = d.snps[idxPos];
+          base = "[" + base + "/" + variant + "]";
+        }
+        if ((idx+1) % 60 === 0) {base += "\n";}
+        fastaStr += base;
+      });
 
-       $(haplDialog).find("textarea").val(fastaStr);
-       $(haplDialog).find("#saveFasta").click(function() {
-         var bb = new BlobBuilder();
-         bb.append(fastaStr);
-         var fname = $(haplDialog).find("#fastaFileName").val() + ".fas";
-         saveAs(bb.getBlob("text/plain;charset=utf-8"), fname);
-       });
-     },
+      $(haplDialog).find("textarea").val(fastaStr);
+      $(haplDialog).find("#saveFasta").click(function() {
+        var bb = new BlobBuilder();
+        bb.append(fastaStr);
+        var fname = $(haplDialog).find("#fastaFileName").val() + ".fas";
+        saveAs(bb.getBlob("text/plain;charset=utf-8"), fname);
+      });
+    },
 
-     isLeaf: function(node) {
-       if (_.size(node.children) === 0) return true;
-       else return false;
-     },
+    isLeaf: function(node) {
+      if (_.size(node.children) === 0) {return true;}
+      else {return false;}
+    },
 
-     leaf2haplotype: function(leaf) {
-       leaf.snps = leaf.canonical.snps;
-       leaf.strains = leaf.canonical.strains;
-       delete leaf.canonical;
-       return leaf;
-     },
+    leaf2haplotype: function(leaf) {
+      leaf.snps = leaf.canonical.snps;
+      leaf.strains = leaf.canonical.strains;
+      delete leaf.canonical;
+      return leaf;
+    },
 
-     baseColor: function(d) {
-       var baseColors = {
-         'A': 'red',
-         'C': 'green',
-         'G': 'blue',
-         'T': 'orange'
-       };
-       return baseColors[d.base];
-     }
+    baseColor: function(d) {
+      var baseColors = {
+        'A': 'red',
+        'C': 'green',
+        'G': 'blue',
+        'T': 'orange'
+      };
+      return baseColors[d.base];
+    }
 
   });
 
@@ -1260,5 +1259,4 @@
 
   });
 
-}
-)(jQuery);
+}(jQuery));

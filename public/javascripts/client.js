@@ -668,7 +668,7 @@
       _.bindAll(this, "render", "draw", "drawGeneModels", "drawHaplotpes",
         "drawScaleBars", "drawTree", "turnOffHaplotypes", "isLeaf",
         "leaf2haplotype", "turnOnHaplotypes",
-        "onSNPmouseOver", "onSNPmouseOut", "onHaplCLick",
+        "onSNPmouseOver", "onSNPmouseOut", "onSNPClick", "onHaplCLick",
       "showCodingSNPs", "showNonCodingSNPs", "showAllSNPs");
 
       this.trackH = 20;
@@ -933,6 +933,7 @@
         return;
       }
       // draw haplotypes
+      console.log(this.leaves);
       var haplotypeBars = this.svg.selectAll('.hap').data(this.leaves);
       haplotypeBars.attr('y', function(d) { return d.x + freePos - trackH/2;});
       haplotypeBars.enter().append('svg:rect')
@@ -961,7 +962,8 @@
       })
       .attr('fill', this.baseColor)
       .on("mouseover", this.onSNPmouseOver)
-      .on("mouseout", this.onSNPmouseOut);
+      .on("mouseout", this.onSNPmouseOut)
+      .on('click', this.onSNPClick);
       SNPCircles.exit().remove();
 
       // fade in/out snps according to whats chosen on toggles
@@ -1094,35 +1096,22 @@
     },
 
     onSNPmouseOver: function(d, i) {
-      var freePos = this.freePos;
-      var pos_x = d.x;
-      var tx = this.x(d.x);
-      var ty = d.y + freePos - this.glyphH*0.75;
 
       //make circle bigger
       d3.select(d3.event.target)
       .transition()
-      .duration(200)
+      .duration(400)
       .attr("r", this.glyphH/2);
-
-      // show the position of the SNP
-      var g = d3.select(d3.event.target.parentNode);
-      g.append("svg:text")
-      .attr("class", "snpTip")
-      .attr("x", tx)
-      .attr("y", ty)
-      .attr('text-anchor', 'middle')
-      .text(pos_x);
-
+        
       // fade out the haplotypes that do not have this SNP
       var posWithSNP =   _.reduce(this.hapSNPs, function(memo, snp) {
-        if (snp.x === pos_x) {memo.push(snp.y);}
+        if (snp.x === d.x) {memo.push(snp.y);}
         return memo;
       }, []);
 
       d3.selectAll(".hap")
       .transition()
-      .duration(200)
+      .duration(400)
       .style("opacity", function(d) {
         if (_.include(posWithSNP, d.x)) {return 0.2;}
         else {return 0.1;}
@@ -1130,7 +1119,7 @@
 
       d3.selectAll(".nodeCircle")
       .transition()
-      .duration(200)
+      .duration(400)
       .style("fill", function(d) {
         if ((_.size(d.children) === 0) && _.include(posWithSNP, d.x)) {
           return "steelblue";
@@ -1145,19 +1134,29 @@
       // make circle smaller
       d3.select(d3.event.target)
       .transition()
-      .duration(200).attr("r", this.glyphH/4);
+      .duration(400).attr("r", this.glyphH/4);
 
-      // remove the SNP tip
-      g.selectAll(".snpTip").remove();
       // fade to the original state
       d3.selectAll(".hap")
       .transition()
-      .duration(200)
+      .duration(400)
       .style("opacity", 0.2);
       d3.selectAll(".nodeCircle")
       .transition()
-      .duration(200)
+      .duration(400)
       .style("fill", "#fff");
+    },
+
+    onSNPClick: function(d, i) {
+      // open a dialog for dipalying info about the SNP
+      var SNPDialog = $('#SNPDialog').clone().dialog({
+         title: "Single Nucleotide Polymorphism",
+         close: function(ev, ui) {
+          $(this).remove(); 
+         }
+      });
+      var SNPString = "Base: " + d.base + " at position: " + d.x
+      $(SNPDialog).find("p:first").append("</br> " + SNPString);
     },
 
     onHaplCLick: function(d, i) {

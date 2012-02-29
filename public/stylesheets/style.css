@@ -121,6 +121,10 @@ h1 {
   fill: #4682b4;
   opacity: 0.2;
 }
+.refHap {
+  fill: #ffa500;
+  opacity: 0.2;
+}
 .ruleLine {
   stroke: #000;
   stroke-opacity: 0.1;

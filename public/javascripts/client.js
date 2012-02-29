@@ -591,17 +591,23 @@
 
       var displayData = this.get("displayData");
       var SNPs = displayData.SNPs;
-
+      
       // create strains object
       var strains = _.reduce(SNPs, function(memo, snp) {
         var strain = snp.attributes.Strain;
         var idx = snp.start;
         var variant = snp.attributes.Change.split(":")[1];
+        var refBase = snp.attributes.Change.split(":")[0];
         var variantArr = (memo[strain] || []);
+        var refArr = (memo["refStrain"] || [])
         variantArr[idx] = variant;
+        refArr[idx] = refBase;
         memo[strain] = variantArr;
+        memo["refStrain"] = refArr;
         return memo;
       }, {});
+      console.log(strains);
+
 
       // group strains by snps
       var haplotypes = {};
@@ -611,7 +617,6 @@
         haplotype.push({name: strainName, snps: strainSNPs});
         haplotypes[haplID] = haplotype;
       });
-
       displayData.haplotypes = haplotypes;
       this.set({"displayData": displayData});
       this.trigger('change:displayData');
@@ -656,7 +661,7 @@
       // displayData.haplotypes = haplotypes;
       displayData.clusters = clusters;
       this.set({displayData: displayData});
-
+      console.log(clusters);
       this.trigger("change:displayData:clusters");
     }
 
@@ -934,10 +939,17 @@
       }
       // draw haplotypes
       console.log(this.leaves);
-      var haplotypeBars = this.svg.selectAll('.hap').data(this.leaves);
-      haplotypeBars.attr('y', function(d) { return d.x + freePos - trackH/2;});
+      var haplotypeBars = this.svg.selectAll('.hap, .refHap').data(this.leaves);
+      haplotypeBars.attr('y', function(d) { return d.x + freePos - trackH/2;})
+        .attr('class', function(d) {
+          if (d.strains[0] == "refStrain" ) {
+            return 'refHap';}
+          else return 'hap'});
       haplotypeBars.enter().append('svg:rect')
-      .attr('class', 'hap')
+      .attr('class', function(d) {
+          if (d.strains[0] == "refStrain" ) {
+            return 'refHap';}
+          else return 'hap'})
       .attr('height', glyphH)
       .attr('width', width)
       .attr('x', x(pos.starts))

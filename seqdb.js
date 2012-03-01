@@ -7,6 +7,7 @@ var models = require('./models');
 var Feature = models.Feature;
 var DbFile = models.DbFile;
 var RefSeq = models.RefSeq;
+var Strain = models.Strain;
 
 function getRefRegion(region, callback) {
     async.waterfall([
@@ -44,6 +45,22 @@ function getRefRegion(region, callback) {
     ]);
 }
 
+function getFeatureRegion(name, flank, callback) {
+    Feature.find({
+        'attributes.Name' : name
+    }, function(err, doc) {
+        if (err) {callback(err);}
+        else if (doc.length === 0) {callback(null, {});}
+        else {
+            var start = doc[0].start - flank;
+            start = start > 0 ? start : 0;
+            var end = doc[0].end + flank;
+            var chrom = doc[0].seqid;
+            callback(null, {start: start, end: end, chrom: chrom});
+        }
+    });
+}
+
 function getFeatures(region, callback) {
     var regionQuery = {
       type: {$in: [/^SNP/, 'gene', 'five_prime_UTR', 'three_prime_UTR', 'CDS']},
@@ -72,7 +89,17 @@ function getRegion(region, callback) {
     });
 }
 
+function getAllStrains(callback) {
+  Strain.find({}, function(err, data) {
+    if (err) {throw err;}
+    callback(data[0].strainList);
+    })
+  // callback(null, data)  
+}
+
 ////////////////////
 exports.Feature = Feature;
 exports.getRegion = getRegion;
 exports.getFeatures = getFeatures;
+exports.getFeatureRegion = getFeatureRegion;
+exports.getAllStrains = getAllStrains;

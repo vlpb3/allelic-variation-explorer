@@ -51,6 +51,24 @@ io.sockets.on('connection', function(socket) {
             }
         });
     });
+    
+    socket.on('getFeatureRegion', function(req) {
+        var name = req.name;
+        var flank = req.flank;
+        seqdb.getFeatureRegion(name, flank, function(err, reg) {
+            if (err) console.log(err);
+            if (reg.start === undefined) {
+                socket.emit('featureNotFound',
+                "Feature has not been found");
+            } else socket.emit('featureRegion', reg);
+        });
+    });
+
+    socket.on('getStrains', function() {
+      seqdb.getAllStrains(function(data) {
+        socket.emit('strains', data);  
+      })  
+    })
 
 });
 

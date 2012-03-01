@@ -8,7 +8,9 @@ import time
 
 def importGffLines(seqdb, lines):
     features = seqdb.features
+    strains = seqdb.strains
     featureList = []
+    strainList = []
     for line in lines:
         params = line.strip().split('\t')
         if (len(params) != 9) : continue
@@ -30,7 +32,14 @@ def importGffLines(seqdb, lines):
             attributes[attr[0]] = attr[1]
         if feature['type'].startswith('SNP'): attributes['coding'] = ''
         feature['attributes'] = attributes
-        featureList.append(feature) 
+        featureList.append(feature)
+        try:
+            strain = feature['attributes']["Strain"]
+            if strain not in strainList:
+                strainList.append(strain)
+        except:
+            pass
+    strains.update({}, {"$addToSet": {"strainList": {"$each": strainList}}})
     if len(featureList) <= 0 : print(lines)
     if len(featureList) > 0 : features.insert(featureList, safe=True)
 
@@ -196,7 +205,8 @@ def main():
     # connect to mongodb
     con = Connection()
     seqdb = con.seqdb
-
+    # create strainslist doc
+    seqdb.strains.insert({"strainList": []})
     importFasta(seqdb, fastaFiles)
     importGff(seqdb, gffFiles)
     # profileImport(seqdb, gffFiles)

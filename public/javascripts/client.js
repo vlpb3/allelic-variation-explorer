@@ -372,6 +372,7 @@
         "starts": 3500,
         "ends": 9000
       },
+      "strains": [],
       "bufferData": {
         starts: 0,
         ends: 0,
@@ -404,9 +405,11 @@
       _.bindAll(this, "updatePosition", "updateDisplayData",
         "waitForData", "updateBufferData", "importData",
         "isLocusInRegion", "isFeatureInRegion", "calcHaplotypes",
-      "goToFeature", "goToFeatureRegion",  "cluster");
+      "goToFeature", "goToFeatureRegion",  "cluster", "importStrains",
+      "getStrains");
 
       this.updateBufferData();
+      this.getStrains();
 
       // update the model when position chnages
       this.on("change:pos", function() {
@@ -416,6 +419,7 @@
       this.get("socket").on("data", this.importData);
       this.get("socket").on("featureRegion", this.goToFeatureRegion);
       this.get("socket").on("geneModels", this.importData);
+      this.get("socket").on("strains", this.importStrains);
     },
 
     importData: function(data) {
@@ -437,6 +441,10 @@
       }
     },
 
+    importStrains: function(data) {
+      this.set({"strains": data})
+    },
+
     goToFeature: function(name, flank) {
       this.waitForData(true);
       this.get("socket").emit("getFeatureRegion", {"name": name, "flank": flank});
@@ -455,6 +463,10 @@
       var displayData = this.get("displayData");
       displayData.waiting = ifwait;
       this.set(displayData);
+    },
+
+    getStrains: function() {
+      this.get("socket").emit("getStrains");  
     },
 
     updatePosition: function(){
@@ -606,8 +618,6 @@
         memo["refStrain"] = refArr;
         return memo;
       }, {});
-      console.log(strains);
-
 
       // group strains by snps
       var haplotypes = {};
@@ -661,7 +671,6 @@
       // displayData.haplotypes = haplotypes;
       displayData.clusters = clusters;
       this.set({displayData: displayData});
-      console.log(clusters);
       this.trigger("change:displayData:clusters");
     }
 
@@ -938,7 +947,6 @@
         return;
       }
       // draw haplotypes
-      console.log(this.leaves);
       var haplotypeBars = this.svg.selectAll('.hap, .refHap').data(this.leaves);
       haplotypeBars.attr('y', function(d) { return d.x + freePos - trackH/2;})
         .attr('class', function(d) {

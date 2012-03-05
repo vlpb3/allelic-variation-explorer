@@ -125,6 +125,9 @@ h1 {
   fill: #ffa500;
   opacity: 0.2;
 }
+.strainFrac {
+  text-color: #4682b4;
+}
 .ruleLine {
   stroke: #000;
   stroke-opacity: 0.1;

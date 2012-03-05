@@ -442,7 +442,7 @@
     },
 
     importStrains: function(data) {
-      this.set({"strains": data})
+      this.set({"strains": data});
     },
 
     goToFeature: function(name, flank) {
@@ -611,11 +611,11 @@
         var variant = snp.attributes.Change.split(":")[1];
         var refBase = snp.attributes.Change.split(":")[0];
         var variantArr = (memo[strain] || []);
-        var refArr = (memo["refStrain"] || [])
+        var refArr = (memo.refStrain || []);
         variantArr[idx] = variant;
         refArr[idx] = refBase;
         memo[strain] = variantArr;
-        memo["refStrain"] = refArr;
+        memo.refStrain = refArr;
         return memo;
       }, {});
 
@@ -627,6 +627,11 @@
         haplotype.push({name: strainName, snps: strainSNPs});
         haplotypes[haplID] = haplotype;
       });
+      // make an array of ref-like strains
+      var allStrains = this.get('strains')
+      var nonRef = _.keys(strains)
+      var refLike = _.difference(allStrains, nonRef)
+    
       displayData.haplotypes = haplotypes;
       this.set({"displayData": displayData});
       this.trigger('change:displayData');
@@ -921,6 +926,7 @@
 
     drawHaplotpes: function() {
       var pos = this.model.get("pos");
+      var allStrains = this.model.get("strains");
       var width = this.width;
       var freePos = this.freePos;
       var glyphH = this.glyphH;
@@ -950,20 +956,43 @@
       var haplotypeBars = this.svg.selectAll('.hap, .refHap').data(this.leaves);
       haplotypeBars.attr('y', function(d) { return d.x + freePos - trackH/2;})
         .attr('class', function(d) {
-          if (d.strains[0] == "refStrain" ) {
-            return 'refHap';}
-          else return 'hap'});
+          if (d.strains[0] === "refStrain" ) {
+            return 'refHap';
+          } else {return 'hap';}
+        });
       haplotypeBars.enter().append('svg:rect')
       .attr('class', function(d) {
-          if (d.strains[0] == "refStrain" ) {
-            return 'refHap';}
-          else return 'hap'})
+          if (d.strains[0] === "refStrain" ) {
+            return 'refHap';
+          } else {return 'hap';}
+        })
       .attr('height', glyphH)
       .attr('width', width)
       .attr('x', x(pos.starts))
       .attr('y', function(d) { return d.x + freePos - trackH/2;})
       .on('click', this.onHaplCLick);
+
       haplotypeBars.exit().remove();
+
+      // draw number of strains representing haplotype
+      var strainFracs = this.svg.selectAll('.strainFrac').data(this.leaves);
+      strainFracs
+        .attr('x', x(pos.starts) - 5)
+        .attr('y', function(d) { return d.x + freePos;})
+        .text(function(d) {
+          return _.size(d.strains);  
+        });
+
+      strainFracs.enter().append("text")
+        .attr("class", "strainFrac")
+        .attr('x', x(pos.starts) - 5)
+        .attr('y', function(d) { return d.x + freePos;})
+        .text(function(d) {
+          return _.size(d.strains);  
+        })
+        .attr('fill', 'steelblue');
+
+      strainFracs.exit().remove();
 
       // draw SNPs
       var SNPCircles = this.svg.selectAll('.SNP').data(this.hapSNPs);
@@ -1175,7 +1204,7 @@
           $(this).remove(); 
          }
       });
-      var SNPString = "Base: " + d.base + " at position: " + d.x
+      var SNPString = "Base: " + d.base + " at position: " + d.x;
       $(SNPDialog).find("p:first").append("</br> " + SNPString);
     },
 

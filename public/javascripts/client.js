@@ -619,6 +619,16 @@
         return memo;
       }, {});
 
+      var allStrains = this.get('strains');
+      var nonRef = _.keys(strains);
+      var refLike = _.without(allStrains, nonRef);
+      var refStrainSNPs = strains.refStrain;
+      console.log(refStrainSNPs); 
+      _.each(refLike, function(rfs) {
+        strains[rfs] = refStrainSNPs;
+      });
+      console.log(strains);
+
       // group strains by snps
       var haplotypes = {};
       _.each(strains, function(strainSNPs, strainName, strains) {
@@ -628,10 +638,8 @@
         haplotypes[haplID] = haplotype;
       });
       // make an array of ref-like strains
-      var allStrains = this.get('strains')
-      var nonRef = _.keys(strains)
-      var refLike = _.difference(allStrains, nonRef)
-    
+     console.log(haplotypes);
+
       displayData.haplotypes = haplotypes;
       this.set({"displayData": displayData});
       this.trigger('change:displayData');
@@ -1226,7 +1234,6 @@
           $(this).remove();
         }
       });
-
       $(haplDialog).find("p:first").append("</br> " + d.strains);
       $(haplDialog).find("p:eq(1)").append("</br> " + snpStr);
       var refseq = this.model.get("displayData").refseq;

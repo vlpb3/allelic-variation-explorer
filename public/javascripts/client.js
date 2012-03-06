@@ -627,7 +627,6 @@
       _.each(refLike, function(rfs) {
         strains[rfs] = refStrainSNPs;
       });
-      console.log(strains);
 
       // group strains by snps
       var haplotypes = {};
@@ -703,7 +702,7 @@
       this.glyphT = 4;
       this.width = $(window).width()/2 - 20;
       this.height = 10000;
-      this.left = 5;
+      this.left = 7;
       this.right = 5;
       this.top = 20;
       this.bottom = 4;
@@ -985,7 +984,7 @@
       // draw number of strains representing haplotype
       var strainFracs = this.svg.selectAll('.strainFrac').data(this.leaves);
       strainFracs
-        .attr('x', x(pos.starts) - 5)
+        .attr('x', x(pos.starts) - 7.5)
         .attr('y', function(d) { return d.x + freePos;})
         .text(function(d) {
           return _.size(d.strains);  
@@ -993,7 +992,7 @@
 
       strainFracs.enter().append("text")
         .attr("class", "strainFrac")
-        .attr('x', x(pos.starts) - 5)
+        .attr('x', x(pos.starts) - 7.5)
         .attr('y', function(d) { return d.x + freePos;})
         .text(function(d) {
           return _.size(d.strains);  

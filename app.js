@@ -9,8 +9,6 @@ var seqdb = require('./seqdb');
 var app = module.exports = express.createServer();
 var io = require('socket.io').listen(app);
 
-var stalker = require('stalker');
-
 // Configuration
 
 app.configure(function(){

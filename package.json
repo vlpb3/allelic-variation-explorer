@@ -10,7 +10,6 @@
     "jade": ">= 0.20.0",
     "mongoose": ">= 2.4.8",
     "socket.io": ">= 0.8.7",
-    "stalker": ">= 0.0.15",
     "stylus": ">= 0.20.0"
   },
   "engine": {

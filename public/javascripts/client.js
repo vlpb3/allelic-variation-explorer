@@ -700,10 +700,10 @@
       this.trackH = 20;
       this.glyphH = 12;
       this.glyphT = 4;
-      this.width = $(window).width()/2 - 20;
+      this.width = $(window).width()/2 - 50;
       this.height = 10000;
-      this.left = 7;
-      this.right = 5;
+      this.left = 20;
+      this.right = 20;
       this.top = 20;
       this.bottom = 4;
 
@@ -717,9 +717,9 @@
 
       // allign properly elements
       var winWidth = $(window).width();
-      this.width = winWidth/2 - 20;
-      $("#tree").css("width", winWidth/2 - 5);
-      $("#chart").css("width", winWidth/2 - 5);
+      this.width = winWidth/2 - 50; 
+      $("#tree").css("width", winWidth/2 - 25);
+      $("#chart").css("width", winWidth/2 - 25);
 
       // browser div
       this.svg = d3.select("#chart").append("svg:svg")
@@ -984,7 +984,7 @@
       // draw number of strains representing haplotype
       var strainFracs = this.svg.selectAll('.strainFrac').data(this.leaves);
       strainFracs
-        .attr('x', x(pos.starts) - 7.5)
+        .attr('x', x(pos.starts) - this.left)
         .attr('y', function(d) { return d.x + freePos;})
         .text(function(d) {
           return _.size(d.strains);  
@@ -992,7 +992,7 @@
 
       strainFracs.enter().append("text")
         .attr("class", "strainFrac")
-        .attr('x', x(pos.starts) - 7.5)
+        .attr('x', x(pos.starts) - this.left)
         .attr('y', function(d) { return d.x + freePos;})
         .text(function(d) {
           return _.size(d.strains);  
@@ -1107,7 +1107,7 @@
       var height = _.size(haplotypes) * this.trackH;
 
       var cluster = d3.layout.cluster()
-      .size([height, this.width + this.left]);
+      .size([height, this.width - this.right*2]);
       cluster.separation(function(a, b) { return 1; });
       cluster.children(function(d) {
         if (d) {

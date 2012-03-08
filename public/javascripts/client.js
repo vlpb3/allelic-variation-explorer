@@ -623,7 +623,6 @@
       var nonRef = _.keys(strains);
       var refLike = _.without(allStrains, nonRef);
       var refStrainSNPs = strains.refStrain;
-      console.log(refStrainSNPs); 
       _.each(refLike, function(rfs) {
         strains[rfs] = refStrainSNPs;
       });
@@ -637,8 +636,6 @@
         haplotypes[haplID] = haplotype;
       });
       // make an array of ref-like strains
-     console.log(haplotypes);
-
       displayData.haplotypes = haplotypes;
       this.set({"displayData": displayData});
       this.trigger('change:displayData');
@@ -706,7 +703,6 @@
       this.right = 20;
       this.top = 20;
       this.bottom = 4;
-
       this.model.on('change:displayData:clusters', this.draw);
       // this.model.bind('change:rangeExceeded', this.draw);
 
@@ -941,13 +937,16 @@
       var trackH = this.trackH;
       var x = this.x;
 
+      this.allSNPs = this.model.get("displayData").SNPs;
       // get SNPs with haplotype indexes
       this.hapSNPs = _.reduce(this.leaves, function(memo, leaf) {
+        var strains = leaf.strains;
         _.each(leaf.snps, function(base, pos) {
           var snp = {
             x: pos,
             y: leaf.x,
-            base: base
+            base: base,
+            strains: strains
           };
           memo.push(snp);
         });
@@ -980,7 +979,6 @@
       .on('click', this.onHaplCLick);
 
       haplotypeBars.exit().remove();
-
       // draw number of strains representing haplotype
       var strainFracs = this.svg.selectAll('.strainFrac').data(this.leaves);
       strainFracs
@@ -1204,6 +1202,16 @@
     },
 
     onSNPClick: function(d, i) {
+      // find all SNPs at this position in this haplotype
+      var SNPlist = _.filter(this.allSNPs, function(snp) {
+        return _.include(d.strains, snp.attributes.Strain) && d.x === snp.start;
+      });
+      var SNPString = _.reduce(SNPlist, function(memo, snp) {
+          var a = snp.attributes;
+          memo += "ID: " + a.ID + " change: " + a.Change + " score: " + snp.score;
+          memo += " accession: " + a.Strain + "</br>";
+          return memo;
+        }, "");
       // open a dialog for dipalying info about the SNP
       var SNPDialog = $('#SNPDialog').clone().dialog({
          title: "Single Nucleotide Polymorphism",
@@ -1211,7 +1219,6 @@
           $(this).remove(); 
          }
       });
-      var SNPString = "Base: " + d.base + " at position: " + d.x;
       $(SNPDialog).find("p:first").append("</br> " + SNPString);
     },
 

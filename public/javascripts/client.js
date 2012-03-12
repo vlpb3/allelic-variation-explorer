@@ -692,7 +692,7 @@
         "drawScaleBars", "drawTree", "turnOffHaplotypes", "isLeaf",
         "leaf2haplotype", "turnOnHaplotypes",
         "onSNPmouseOver", "onSNPmouseOut", "onSNPClick", "onHaplCLick",
-      "showCodingSNPs", "showNonCodingSNPs", "showAllSNPs");
+      "showCodingSNPs", "showNonCodingSNPs", "showAllSNPs", "drawLegend");
 
       this.trackH = 20;
       this.glyphH = 12;
@@ -806,6 +806,7 @@
         this.turnOffHaplotypes();
       }
       this.drawScaleBars();
+      this.drawLegend();
     },
 
     drawGeneModels: function(displayData) {
@@ -1154,6 +1155,60 @@
       if (_.size(leaves) > 1) {
         this.leaves = _.map(leaves, this.leaf2haplotype);
       }
+    },
+
+    drawLegend: function(){
+      var glyphH = this.glyphH;
+      var circleData = [
+        [glyphH/2, "red", "A"],
+        [glyphH*5.5, "green", "C"],
+        [glyphH*10.5, "blue", "G"],
+        [glyphH*15.5, "orange", "T"]];
+
+      var rectData = [
+        [0, "chartreuse", "gene"],
+        [glyphH*5, "slateblue", "5'UTR"],
+        [glyphH*10, "teal", "3'UTR"],
+        [glyphH*15, "steelblue", "CDS"]];
+
+      var legendCircs = this.svgTree.selectAll('.legendCircs')
+        .data(circleData);
+      legendCircs.enter().append("svg:circle")
+        .attr('class', 'legendCircs')
+        .attr('r', glyphH/4)
+        .attr('cx', function(d) {return d[0];})
+        .attr('cy', 0)
+        .attr('fill', function(d) {return d[1];});
+
+      var legendRects = this.svgTree.selectAll('.legendRects')
+        .data(rectData);
+      legendRects.enter().append("svg:rect")
+        .attr('class', "legendRects")
+        .attr('height', glyphH)
+        .attr('width', glyphH)
+        .attr('y', glyphH)
+        .attr('x', function(d) {return d[0];})
+        .attr('fill', function(d) {return d[1];});
+
+      var textData = [
+        [glyphH*1.5, glyphH/4, "A"],
+        [glyphH*6.5, glyphH/4, "C"],
+        [glyphH*11.5, glyphH/4, "G"],
+        [glyphH*16.5, glyphH/4, "T"],
+        [glyphH*1.5, glyphH*1.75, "gene"],
+        [glyphH*6.5, glyphH*1.75, "5'UTR"],
+        [glyphH*11.5, glyphH*1.75, "3'UTR"],
+        [glyphH*16.5, glyphH*1.75, "CDS"]
+        ];
+
+      var legendText = this.svgTree.selectAll('.legendText')
+        .data(textData);
+      legendText.enter().append("text")
+        .attr('class', 'legendText')
+        .attr('x', function(d) {return d[0];})
+        .attr('y', function(d) {return d[1];})
+        .text(function(d) {return d[2];})
+        .attr('fill', 'royalblue');
     },
 
     onSNPmouseOver: function(d, i) {

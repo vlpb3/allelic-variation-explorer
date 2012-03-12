@@ -697,10 +697,11 @@
       this.trackH = 20;
       this.glyphH = 12;
       this.glyphT = 4;
-      this.width = $(window).width()/2 - 50;
       this.height = 10000;
-      this.left = 20;
+      this.padding = 5; 
+      this.left = 45;
       this.right = 20;
+      this.width = $(window).width()/2 - this.left - this.right - this.padding;
       this.top = 20;
       this.bottom = 4;
       this.model.on('change:displayData:clusters', this.draw);
@@ -713,9 +714,9 @@
 
       // allign properly elements
       var winWidth = $(window).width();
-      this.width = winWidth/2 - 50; 
-      $("#tree").css("width", winWidth/2 - 25);
-      $("#chart").css("width", winWidth/2 - 25);
+      this.width = winWidth/2 - this.left - this.right - this.padding;  
+      $("#tree").css("width", winWidth/2 - this.padding);
+      $("#chart").css("width", winWidth/2 - this.padding);
 
       // browser div
       this.svg = d3.select("#chart").append("svg:svg")
@@ -979,26 +980,32 @@
       .on('click', this.onHaplCLick);
 
       haplotypeBars.exit().remove();
+
       // draw number of strains representing haplotype
+      fracString = function(d) {
+        nAllStains = _.size(allStrains);
+        nHaplStrain = _.size(d.strains);
+        percentStrains = nHaplStrain*100/nAllStains;
+        return nHaplStrain + " | " + Math.floor(percentStrains)+ "%";
+      };
+
       var strainFracs = this.svg.selectAll('.strainFrac').data(this.leaves);
       strainFracs
         .attr('x', x(pos.starts) - this.left)
         .attr('y', function(d) { return d.x + freePos;})
-        .text(function(d) {
-          return _.size(d.strains);  
-        });
-
+        .text(fracString);
+      
+      console.log(allStrains);
       strainFracs.enter().append("text")
         .attr("class", "strainFrac")
         .attr('x', x(pos.starts) - this.left)
         .attr('y', function(d) { return d.x + freePos;})
-        .text(function(d) {
-          return _.size(d.strains);  
-        })
+        .text(fracString)
         .attr('fill', 'steelblue');
 
       strainFracs.exit().remove();
 
+      
       // draw SNPs
       var SNPCircles = this.svg.selectAll('.SNP').data(this.hapSNPs);
       SNPCircles.attr('cx', function(d) { return x(d.x); })
@@ -1070,8 +1077,8 @@
       $("#tree").hide();
       var winWidth = $(window).width();
       this.width = winWidth - 20;
-      $("#chart").css("width", winWidth - 5);
-      $(".chart").attr("width", this.left + this.width + this.right);
+      $("#chart").css("width", winWidth - this.padding);
+      $(".chart").attr("width", this.left + this.width + this.right - this.padding);
 
       var message = "Displayed region exceeds " +
         this.model.get("rangeLimit")/1000 + " kb and haplotype clustering has been turned off.";
@@ -1084,9 +1091,9 @@
 
     turnOnHaplotypes: function() {
       var winWidth = $(window).width();
-      this.width = winWidth/2 - 20;
+      this.width = winWidth/2 - this.left - this.right - this.padding;
 
-      $("#chart").css("width", winWidth/2 - 5);
+      $("#chart").css("width", winWidth/2 - this.padding);
       $(".chart").attr("width", this.left + this.width + this.right);
       $("#tree").show();
     },
@@ -1105,7 +1112,7 @@
       var height = _.size(haplotypes) * this.trackH;
 
       var cluster = d3.layout.cluster()
-      .size([height, this.width - this.right*2]);
+      .size([height, this.width]);
       cluster.separation(function(a, b) { return 1; });
       cluster.children(function(d) {
         if (d) {
@@ -1208,8 +1215,10 @@
       });
       var SNPString = _.reduce(SNPlist, function(memo, snp) {
           var a = snp.attributes;
-          memo += "ID: " + a.ID + " change: " + a.Change + " score: " + snp.score;
-          memo += " accession: " + a.Strain + "</br>";
+          console.log(snp);
+          memo += "ID: " + a.ID + "; change: " + a.Change + "; at: " + snp.seqid;
+          memo += "; position: " + snp.start + "; score: " + snp.score;
+          memo += "; accession: " + a.Strain + "</br>";
           return memo;
         }, "");
       // open a dialog for dipalying info about the SNP

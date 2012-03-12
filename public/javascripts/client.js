@@ -987,7 +987,7 @@
         nAllStains = _.size(allStrains);
         nHaplStrain = _.size(d.strains);
         percentStrains = nHaplStrain*100/nAllStains;
-        return nHaplStrain + " | " + Math.floor(percentStrains)+ "%";
+        return nHaplStrain + " - " + Math.floor(percentStrains)+ "%";
       };
 
       var strainFracs = this.svg.selectAll('.strainFrac').data(this.leaves);

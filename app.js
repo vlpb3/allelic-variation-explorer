@@ -43,9 +43,14 @@ io.sockets.on('connection', function(socket) {
 
     socket.on('getData', function(region) {
         seqdb.getRegion(region, function(err, data){
-            if (err) throw err;
-            else {
-                socket.emit('data', data);
+            console.log(data);
+            if (err) {throw err;}
+            if (data.refseq === "") {
+              console.log("empty");
+              socket.emit('featureNotFound',
+              "region out of range!");
+            } else {
+              socket.emit('data', data);
             }
         });
     });

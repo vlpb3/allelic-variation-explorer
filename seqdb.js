@@ -36,6 +36,9 @@ function getRefRegion(region, callback) {
             });
         },
         function(data, wfCbk) {
+            if (!data.fragments.length) {
+              return callback(null, "");  
+            }
             var fragStart = data.fragments[0].starts;
             var sliceStart = region.start - fragStart;
             var sliceEnd = region.end - fragStart + 1;

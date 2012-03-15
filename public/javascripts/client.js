@@ -69,6 +69,7 @@
           "ends": parseInt($("#end").val(), 10)
         }
       };
+      $("#searchMessage").text("");
       this.model.set(update);
     },
 

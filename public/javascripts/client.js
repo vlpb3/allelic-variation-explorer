@@ -988,7 +988,7 @@
         nAllStains = _.size(allStrains);
         nHaplStrain = _.size(d.strains);
         percentStrains = nHaplStrain*100/nAllStains;
-        return nHaplStrain + " - " + Math.floor(percentStrains)+ "%";
+        return nHaplStrain + " (" + Math.floor(percentStrains)+ "%)";
       };
 
       var strainFracs = this.svg.selectAll('.strainFrac').data(this.leaves);
@@ -997,7 +997,6 @@
         .attr('y', function(d) { return d.x + freePos;})
         .text(fracString);
       
-      console.log(allStrains);
       strainFracs.enter().append("text")
         .attr("class", "strainFrac")
         .attr('x', x(pos.starts) - this.left)
@@ -1269,22 +1268,30 @@
       var SNPlist = _.filter(this.allSNPs, function(snp) {
         return _.include(d.strains, snp.attributes.Strain) && d.x === snp.start;
       });
+      var tableHead = "<table id='SNPtable'><thead><tr><th>ID</th><th>Change</th><th>Chrom</th><th>Pos</th><th>Score</th><th>Accession</th></tr></thead><tbody>";
       var SNPString = _.reduce(SNPlist, function(memo, snp) {
           var a = snp.attributes;
-          console.log(snp);
-          memo += "ID: " + a.ID + "; change: " + a.Change + "; at: " + snp.seqid;
-          memo += "; position: " + snp.start + "; score: " + snp.score;
-          memo += "; accession: " + a.Strain + "</br>";
+          memo += "<tr>"
+          memo += "<td>" + a.ID + "</td>";
+          memo += "<td>" + a.Change + "</td>";
+          memo += "<td>" + snp.seqid + "</td>";
+          memo += "<td>" + snp.start + "</td>";
+          memo += "<td>" + snp.score + "</td>";
+          memo += "<td>" + a.Strain + "</td>";
+          memo += "</tr>";
           return memo;
-        }, "");
+        }, tableHead);
+      SNPString += "</tbody></table>"
       // open a dialog for dipalying info about the SNP
       var SNPDialog = $('#SNPDialog').clone().dialog({
          title: "Single Nucleotide Polymorphism",
+         minWidth: 540,
          close: function(ev, ui) {
           $(this).remove(); 
          }
       });
       $(SNPDialog).find("p:first").append("</br> " + SNPString);
+      $('#SNPtable').dataTable();
     },
 
     onHaplCLick: function(d, i) {

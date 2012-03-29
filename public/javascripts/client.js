@@ -689,7 +689,7 @@
   var VisView = Backbone.View.extend({
 
     initialize: function() {
-      _.bindAll(this, "render", "draw", "drawGeneModels", "drawHaplotpes",
+      _.bindAll(this, "render", "draw", "drawTraits", "drawGeneModels", "drawHaplotpes",
         "drawScaleBars", "drawTree", "turnOffHaplotypes", "isLeaf",
         "leaf2haplotype", "turnOnHaplotypes",
         "onSNPmouseOver", "onSNPmouseOut", "onSNPClick", "onHaplCLick",
@@ -798,6 +798,8 @@
 
       var displayData = this.model.get("displayData");
       this.svg.selectAll('.message').remove();
+
+      this.drawTraits(displayData);
       this.drawGeneModels(displayData);
       if (!rangeExceeded) {
         this.turnOnHaplotypes();
@@ -809,6 +811,53 @@
       this.drawScaleBars();
       this.drawLegend();
     },
+    
+    drawTraits: function(displayData) {
+      var traits = _.filter(displayData.features, function(feature) {
+        return feature.type === "trait";    
+      });
+      
+      var x = this.x;
+      var freePos = this.glyphT;
+      var glyphH = this.glyphH;
+      var trackH = this.trackH;
+      var traitRect = this.svg.selectAll('.trait').data(traits);
+      traitRect.attr("x", function(d) { return x(d.start); })
+      .attr("width", function(d) { return x(d.end) - x(d.start); });
+      traitRect.enter().append("svg:rect")
+      .attr("class", "trait")
+      .attr("height", glyphH)
+      .attr("x", function(d) { return x(d.start); })
+      .attr("y", freePos)
+      .attr("width", function(d) { return x(d.end) - x(d.start); })
+      .attr("fill", "palegreen");
+      traitRect.exit().remove();
+
+      // draw gene labels
+      var traitLabel = this.svg.selectAll(".traitLabel").data(traits);
+      traitLabel.attr("x", function(d) {
+        // display label even when gene starts before region
+        return (x(d.start) > 5) ? x(d.start) : 5;
+      })
+      .text(function(d) { return d.attributes.Trait; });
+      traitLabel.enter().append("svg:text")
+      .attr("class", "traitLabel")
+      .attr("x", function(d) {
+        // display label even when gene starts before region
+        return (x(d.start) > 3) ? x(d.start) : 3;
+      })
+      .attr("y", freePos)
+      .attr("dy", "1.075em")
+      .attr("dx", "0.5em")
+      .text(function(d) { return d.attributes.Trait; });
+      traitLabel.exit().remove();
+
+      // update free position
+      if (_.size(traits) > 0) {
+        freePos += this.trackH;
+      }
+      this.freePos = freePos;
+    },
 
     drawGeneModels: function(displayData) {
       var x = this.x;
@@ -819,13 +868,13 @@
       var genes = _.select(displayData.features, function(feature) {
         return feature.type === "gene";
       });
-
-      var freePos = this.glyphT;
+      var freePos = this.freePos;
       var glyphH = this.glyphH;
       var trackH = this.trackH;
 
       var geneRect = this.svg.selectAll('.gene').data(genes);
       geneRect.attr("x", function(d) { return x(d.start); })
+      .attr("y", freePos)
       .attr("width", function(d) { return x(d.end) - x(d.start); });
       geneRect.enter().append("svg:rect")
       .attr("class", "gene")
@@ -842,6 +891,7 @@
         // display label even when gene starts before region
         return (x(d.start) > 5) ? x(d.start) : 5;
       })
+      .attr("y", freePos)
       .text(function(d) { return d.attributes.Name; });
       geneLabel.enter().append("svg:text")
       .attr("class", "geneLabel")
@@ -1101,7 +1151,8 @@
 
     drawTree: function() {
 
-      var topTranslation = (this.maxModels + 1) * this.trackH;
+      var freePos = this.freePos;
+      var topTranslation = freePos;
       var top = this.top + topTranslation;
 
       this.svgTree
@@ -1268,10 +1319,10 @@
       var SNPlist = _.filter(this.allSNPs, function(snp) {
         return _.include(d.strains, snp.attributes.Strain) && d.x === snp.start;
       });
-      var tableHead = "<table id='SNPtable'><thead><tr><th>ID</th><th>Change</th><th>Chrom</th><th>Pos</th><th>Score</th><th>Accession</th></tr></thead><tbody>";
+      var tableHead = "<table class='SNPtable'><thead><tr><th>ID</th><th>Change</th><th>Chrom</th><th>Pos</th><th>Score</th><th>Accession</th></tr></thead><tbody>";
       var SNPString = _.reduce(SNPlist, function(memo, snp) {
           var a = snp.attributes;
-          memo += "<tr>"
+          memo += "<tr>";
           memo += "<td>" + a.ID + "</td>";
           memo += "<td>" + a.Change + "</td>";
           memo += "<td>" + snp.seqid + "</td>";
@@ -1281,7 +1332,7 @@
           memo += "</tr>";
           return memo;
         }, tableHead);
-      SNPString += "</tbody></table>"
+      SNPString += "</tbody></table>";
       // open a dialog for dipalying info about the SNP
       var SNPDialog = $('#SNPDialog').clone().dialog({
          title: "Single Nucleotide Polymorphism",
@@ -1291,7 +1342,10 @@
          }
       });
       $(SNPDialog).find("p:first").append("</br> " + SNPString);
-      $('#SNPtable').dataTable();
+      $('.SNPtable tr').click( function() {
+          $(this).toggleClass('rselect');
+        });
+      $('.SNPtable').dataTable();
     },
 
     onHaplCLick: function(d, i) {

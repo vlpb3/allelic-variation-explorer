@@ -136,6 +136,9 @@ h1 {
   font-size: 15px;
   stroke: #ff4500;
 }
+.rselect {
+  color: #4169e1;
+}
 .mini_icon {
   float: left;
   display: block;

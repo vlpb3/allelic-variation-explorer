@@ -66,7 +66,7 @@ function getFeatureRegion(name, flank, callback) {
 
 function getFeatures(region, callback) {
     var regionQuery = {
-      type: {$in: [/^SNP/, 'gene', 'five_prime_UTR', 'three_prime_UTR', 'CDS']},
+      type: {$in: [/^SNP/, 'gene', 'five_prime_UTR', 'three_prime_UTR', 'CDS', 'trait']},
       seqid: {$regex: region.chrom},
       start: {$gte: region.start, $lte: region.end}
     };

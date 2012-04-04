@@ -59,7 +59,9 @@ p
 
     p
       div#regionSearch
-        | chromosome
+        | ref.gen.
+        input#refgen()
+        |  chromosome
         input#chrom(type="string")
         |  from
         input#start(type="number")

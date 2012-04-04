@@ -1,5 +1,6 @@
 var fs = require('fs');
 var async = require('async');
+var mongoose = require('mongoose');
 
 var models = require('./models');
 
@@ -8,6 +9,7 @@ var Feature = models.Feature;
 var DbFile = models.DbFile;
 var RefSeq = models.RefSeq;
 var Strain = models.Strain;
+var RefList = models.RefList;
 
 function getRefRegion(region, callback) {
     async.waterfall([
@@ -100,9 +102,21 @@ function getAllStrains(callback) {
   // callback(null, data)  
 }
 
+function getRefList(callback) {
+  RefList.find({}, function(err, data) {
+    if (err) {throw err;}
+    callback(data[0].list);
+  })
+}
+
+function switchDb(dbName) {
+ mongoose.connect('mongodb://localhost/' + dbName);
+}
+
 ////////////////////
 exports.Feature = Feature;
 exports.getRegion = getRegion;
 exports.getFeatures = getFeatures;
 exports.getFeatureRegion = getFeatureRegion;
 exports.getAllStrains = getAllStrains;
+exports.getRefList = getRefList;

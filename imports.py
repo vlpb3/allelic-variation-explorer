@@ -190,11 +190,30 @@ def importFasta(seqdb, fastaFiles):
             ('ends', pymongo.ASCENDING)])
     print('Finished indexing ref seq.')
 
+def updateRefList(con, refName):
+    # put reference name to the db
+    db = con.meta
+    if (db.reflists.find_one({})):
+        db.reflists.update({}, {'$addToSet': {"list": refName}})
+    else:
+        db.reflists.insert({'list': [refName]})
+
 def main():
+
+    # make connection with db
+    con = Connection()
+
+
+    # get name of the reference for this dataset
+    refName = sys.argv[2]
+    updateRefList(con, refName)
+
+    # get path to data
     importsDir = os.path.abspath(sys.argv[1])
+
     # get list of all gff files in directory
     dirList = os.listdir(importsDir)
-    
+
     # construct proper paths
     dirList = map(lambda fname: os.path.join(importsDir, fname), dirList)
     # extract gff files
@@ -203,8 +222,7 @@ def main():
     fastaFiles = filter(lambda fname: fname.endswith('.fas'), dirList)
 
     # connect to mongodb
-    con = Connection()
-    seqdb = con.seqdb
+    seqdb = con[refName]
     # create strainslist doc
     seqdb.strains.insert({"strainList": []})
     importFasta(seqdb, fastaFiles)

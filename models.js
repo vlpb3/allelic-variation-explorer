@@ -1,5 +1,8 @@
 var mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/seqdb');
+
+var defaultRef = 'TAIR10';
+var defCon = mongoose.createConnection('mongodb://localhost/' + defaultRef);
+var metaCon = mongoose.createConnection('mongodb://localhost/meta');
 
 var Schema = mongoose.Schema;
 
@@ -14,8 +17,7 @@ var FeatureSchema = new Schema({
   phase: {type: String},
   attributes: {}
 });
-
-mongoose.model('Feature', FeatureSchema);
+defCon.model('Feature', FeatureSchema);
 
 var RefSeqSchema = new Schema({
   chrom: {type: String},
@@ -23,17 +25,25 @@ var RefSeqSchema = new Schema({
   ends: {type: Number},
   sequence: String
 });
-mongoose.model('RefSeq', RefSeqSchema);
+defCon.model('RefSeq', RefSeqSchema);
 
 var StrainSchema = new Schema({
   strainList: []  
 });
-mongoose.model('Strain', StrainSchema);
+defCon.model('Strain', StrainSchema);
 
-var Feature = mongoose.model('Feature');
-var RefSeq = mongoose.model('RefSeq');
-var Strain = mongoose.model('Strain');
+
+var RefListSchema = new Schema({
+  list: []
+});
+metaCon.model('RefList', RefListSchema);
+
+var Feature = defCon.model('Feature');
+var RefSeq = defCon.model('RefSeq');
+var Strain = defCon.model('Strain');
+var RefList = metaCon.model('RefList');
 
 exports.Feature = Feature;
 exports.RefSeq = RefSeq;
 exports.Strain = Strain;
+exports.RefList = RefList;

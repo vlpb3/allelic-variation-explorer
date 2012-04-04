@@ -42,7 +42,7 @@
     initialize: function() {
 
       _.bindAll(this, "render", "updateModel", "goToFeature",
-      "onFeatureNotFound");
+      "onFeatureNotFound", "setRefList");
 
       this.render();
       // get values form the model
@@ -51,9 +51,11 @@
       $("#chrom").val(pos.chrom);
       $("#start").val(pos.starts);
       $("#end").val(pos.ends);
-
-      this.model.get("socket")
-      .on("featureNotFound", this.onFeatureNotFound);
+      
+      var socket = this.model.get("socket");
+      socket.on("featureNotFound", this.onFeatureNotFound);
+      socket.on("refList", this.setRefList);
+      socket.emit("getRefList");
     },
 
     events: {
@@ -82,6 +84,12 @@
       var name = $("#name").val();
       var flank = parseInt($("#flank").val(), 10);
       this.model.goToFeature(name, flank);
+    },
+    
+    setRefList: function(refList) {
+      $('#refgen').autocomplete({
+        source: refList  
+      });
     },
 
     render: function() {

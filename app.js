@@ -42,9 +42,12 @@ io.set('log level', 1);
 io.sockets.on('connection', function(socket) {
 
     socket.on('getData', function(region) {
+        console.log(region);
         seqdb.getRegion(region, function(err, data){
             if (err) {throw err;}
             if (data.refseq === "") {
+ 
+              console.log(data)
               console.log("empty");
               socket.emit('featureNotFound',
               "region out of range!");
@@ -70,14 +73,17 @@ io.sockets.on('connection', function(socket) {
       seqdb.getAllStrains(function(data) {
         socket.emit('strains', data);  
       })  
-    })
+    });
 
     socket.on('getRefList', function() {
-      // socket.emit('refList', ['TAIR10', 'TAIR9'])
       seqdb.getRefList(function(data) {
         socket.emit('refList', data);  
       })    
-    })
+    });
+
+    socket.on('switchReference', function(refgen) {
+      seqdb.switchDb(refgen);
+    });
 
 });
 

@@ -6,10 +6,10 @@ var models = require('./models');
 
 
 var Feature = models.Feature;
-var DbFile = models.DbFile;
 var RefSeq = models.RefSeq;
 var Strain = models.Strain;
 var RefList = models.RefList;
+var registerModels = models.registerModels;
 
 function getRefRegion(region, callback) {
     async.waterfall([
@@ -105,13 +105,23 @@ function getAllStrains(callback) {
 function getRefList(callback) {
   RefList.find({}, function(err, data) {
     if (err) {throw err;}
-    callback(data[0].list);
-  })
+    var reflist = data[0].list;
+    // register models for each reference genome
+    registerModels(reflist, function (err) {
+      if (err) {throw err;} 
+    });
+    callback(reflist);
+  });
 }
 
 function switchDb(dbName) {
- mongoose.connect('mongodb://localhost/' + dbName);
+  console.log("switching db");
+  connection = mongoose.createConnection('mongodb://localhost/' + dbName);
+  Feature = connection.model('Feature');
+  RefSeq = connection.model('RefSeq');
+  Strain = connection.model('Strain');
 }
+
 
 ////////////////////
 exports.Feature = Feature;
@@ -120,3 +130,4 @@ exports.getFeatures = getFeatures;
 exports.getFeatureRegion = getFeatureRegion;
 exports.getAllStrains = getAllStrains;
 exports.getRefList = getRefList;
+exports.switchDb = switchDb;

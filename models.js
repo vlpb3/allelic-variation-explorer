@@ -1,6 +1,7 @@
+var async = require('async');
 var mongoose = require('mongoose');
 
-var defaultRef = 'TAIR10';
+var defaultRef = 'TAIR9';
 var defCon = mongoose.createConnection('mongodb://localhost/' + defaultRef);
 var metaCon = mongoose.createConnection('mongodb://localhost/meta');
 
@@ -38,6 +39,15 @@ var RefListSchema = new Schema({
 });
 metaCon.model('RefList', RefListSchema);
 
+function registerModels(reflist, clbk){
+  async.forEach(reflist, function (refname) {
+    var connection = mongoose.createConnection('mongodb://localhost/' + refname);
+    connection.model('Feature', FeatureSchema);
+    connection.model('RefSeq', RefSeqSchema);
+    connection.model('Strain', StrainSchema);
+  }, clbk);
+}
+
 var Feature = defCon.model('Feature');
 var RefSeq = defCon.model('RefSeq');
 var Strain = defCon.model('Strain');
@@ -47,3 +57,4 @@ exports.Feature = Feature;
 exports.RefSeq = RefSeq;
 exports.Strain = Strain;
 exports.RefList = RefList;
+exports.registerModels = registerModels;

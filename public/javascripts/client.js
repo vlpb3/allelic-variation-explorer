@@ -42,7 +42,7 @@
     initialize: function() {
 
       _.bindAll(this, "render", "updateModel", "goToFeature",
-      "onFeatureNotFound", "setRefList");
+      "onFeatureNotFound", "setRefList", "switchReference");
 
       this.render();
       // get values form the model
@@ -60,7 +60,15 @@
 
     events: {
       "click #go" : "updateModel",
-      "click #search": "goToFeature"
+      "click #search": "goToFeature",
+      "change #refgen": "switchReference"
+    },
+
+    switchReference: function(event) {
+      var refgen = $("#refgen").val()
+      var socket = this.model.get("socket");
+      socket.emit("switchReference", refgen);
+      this.model.reloadData();
     },
 
     updateModel: function() {
@@ -90,6 +98,7 @@
       $('#refgen').autocomplete({
         source: refList  
       });
+      $('#refgen').val(refList[0]);
     },
 
     render: function() {
@@ -415,7 +424,7 @@
         "waitForData", "updateBufferData", "importData",
         "isLocusInRegion", "isFeatureInRegion", "calcHaplotypes",
       "goToFeature", "goToFeatureRegion",  "cluster", "importStrains",
-      "getStrains");
+      "getStrains", 'reloadData');
 
       this.updateBufferData();
       this.getStrains();
@@ -592,6 +601,14 @@
 
         // cluster haplotypes
         this.cluster();
+    },
+
+    reloadData: function() {
+      this.waitForData(true);
+      var pos = this.get('pos');
+      var region = {"chrom": pos.chrom, "start": pos.starts, "end": pos.ends};
+      this.get("socket").emit("getStrains");
+      this.get("socket").emit("getData", region);
     },
 
     isLocusInRegion: function(locus) {

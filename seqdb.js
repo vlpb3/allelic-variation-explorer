@@ -103,6 +103,7 @@ function getAllStrains(callback) {
 }
 
 function getRefList(callback) {
+  console.log(RefList);
   RefList.find({}, function(err, data) {
     if (err) {throw err;}
     var reflist = data[0].list;

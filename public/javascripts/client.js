@@ -55,7 +55,6 @@
       var socket = this.model.get("socket");
       socket.on("featureNotFound", this.onFeatureNotFound);
       socket.on("refList", this.setRefList);
-      socket.emit("getRefList");
     },
 
     events: {
@@ -120,6 +119,8 @@
         $("#featureSearch").show();
         $("#regionSearch").hide();
       });
+      // ask for list of reference genomes
+      this.model.get("socket").emit("getRefList");
 
       return this;
     }

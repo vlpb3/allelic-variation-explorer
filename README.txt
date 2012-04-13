@@ -33,7 +33,10 @@ also install python modules:
 pymongo and progressbar
 
 ipmort data:
-python imports.py /path/to/data
+python imports.py /path/to/dataset1 refgen1
+python imports.py /path/to/dataset2 refgen2
+
+where refgen1/refgen2 is the name for the reference genome
 
 run application:
 node app.js

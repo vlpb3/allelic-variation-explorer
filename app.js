@@ -5,6 +5,7 @@
 
 var express = require('express');
 var seqdb = require('./seqdb');
+var os = require('os');
 
 var app = module.exports = express.createServer();
 var io = require('socket.io').listen(app);
@@ -29,11 +30,18 @@ app.configure('production', function(){
     app.use(express.errorHandler());
 });
 
+// fetch server ip adress
+
+var interfaces = os.networkInterfaces();
+var hostip = interfaces.eth0[0].address;
+console.log(hostip);
+
 // Routes
 
 app.get('/', function(req, res) {
     res.render('index', {
-        title: 'Allelic Variation Explorer'
+        title: 'Allelic Variation Explorer',
+        hostip: hostip
     });
 });
 

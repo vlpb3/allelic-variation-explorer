@@ -1,7 +1,4 @@
 (function ($) {
-
-  var appAddress = "http://145.100.57.68";
-
   // router stuff
   var AppRouter = Backbone.Router.extend({
 
@@ -382,7 +379,6 @@
   var DataModel = Backbone.Model.extend({
 
     defaults: {
-      "socket": io.connect(appAddress),
       "rangeLimit": 20000,
       "rangeExceeded": false,
       "bufferX": 5,
@@ -426,6 +422,9 @@
         "isLocusInRegion", "isFeatureInRegion", "calcHaplotypes",
       "goToFeature", "goToFeatureRegion",  "cluster", "importStrains",
       "getStrains", 'reloadData');
+
+      var appAddress = 'http://' + $('#hostip').val();
+      this.set({socket: io.connect(appAddress)});
 
       this.updateBufferData();
       this.getStrains();

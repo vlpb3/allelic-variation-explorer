@@ -10,7 +10,7 @@ def main():
         sys.exit(1)
     
     # get handle to a sequence db
-    dbh = c["seqdb"]
+    dbh = c["TAIR9"]
     
     cdsPos = dbh.features.find({'type': 'CDS'}, {'seqid': 1, 'start': 1, 'end': 1},
             timeout=False)

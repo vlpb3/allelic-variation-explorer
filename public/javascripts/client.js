@@ -1,6 +1,6 @@
 (function ($) {
 
-  var appAddress = "http://localhost";
+  var appAddress = "http://145.100.57.68";
 
   // router stuff
   var AppRouter = Backbone.Router.extend({

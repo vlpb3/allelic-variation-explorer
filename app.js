@@ -33,7 +33,8 @@ app.configure('production', function(){
 // fetch server ip adress
 
 var interfaces = os.networkInterfaces();
-var hostip = interfaces.eth0[0].address;
+var interface = interfaces.eth0 || interfaces.en0l;
+var hostip = interface[0].address;
 console.log(hostip);
 
 // Routes

@@ -31,10 +31,14 @@ app.configure('production', function(){
 });
 
 // fetch server ip adress
-
+var platform = os.platform();
 var interfaces = os.networkInterfaces();
-var interface = interfaces.eth0 || interfaces.en0;
-var hostip = interface[0].address;
+
+if (platform === "linux"){
+  var hostip = interfaces.eth0[0].address;
+} else if (platform == "darwin"){
+  var hostip = interfaces.en0[1].address;
+}
 console.log(hostip);
 
 // Routes

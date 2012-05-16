@@ -12,11 +12,12 @@
     },
 
     routes: {
-      "goto/:ch/start:s/end:e": "moveModel"
+      "goto/:genome/:ch/start:s/end:e": "moveModel"
     },
 
-    moveModel: function(ch, s, e) {
+    moveModel: function(genome, ch, s, e) {
       var pos = {
+        "genome": genome,
         "chrom": ch,
         "starts": parseInt(s, 10),
         "ends": parseInt(e, 10)
@@ -26,7 +27,7 @@
 
     navigateTo: function(){
       var pos = this.model.get("pos");
-      var path = "goto/" + pos.chrom + "/start" +
+      var path = "goto/" + genome + "/" + pos.chrom + "/start" +
         pos.starts + "/end" + pos.ends;
       this.navigate(path);
     }
@@ -39,12 +40,13 @@
     initialize: function() {
 
       _.bindAll(this, "render", "updateModel", "goToFeature",
-      "onFeatureNotFound", "setRefList", "switchReference");
+      "onFeatureNotFound", "setRefList");
 
       this.render();
       // get values form the model
       $("#radioRegion").click();
       var pos = this.model.get("pos");
+      $('#refgen').val(pos.genome);
       $("#chrom").val(pos.chrom);
       $("#start").val(pos.starts);
       $("#end").val(pos.ends);
@@ -56,20 +58,13 @@
 
     events: {
       "click #go" : "updateModel",
-      "click #search": "goToFeature",
-      "change #refgen": "switchReference"
-    },
-
-    switchReference: function(event) {
-      var refgen = $("#refgen").val()
-      var socket = this.model.get("socket");
-      socket.emit("switchReference", refgen);
-      this.model.reloadData();
+      "click #search": "goToFeature"
     },
 
     updateModel: function() {
       var update = {
         "pos": {
+          "genome": $('#refgen').val(),
           "chrom": $("#chrom").val(),
           "starts": parseInt($("#start").val(), 10),
           "ends": parseInt($("#end").val(), 10)

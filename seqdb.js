@@ -11,14 +11,14 @@ var models = require('./models');
 var dbConnection = models.dbConnection;
 var Feature = dbConnection.model("Feature");
 var RefSeq = dbConnection.model("RefSeq");
-var GenomeStrains = dbConnection("genomeStrains");
+var GenomeStrains = dbConnection.model("genomestrains");
 
 function getRefRegion(region, callback) {
     async.waterfall([
         function(wfCbk) {
             // get all those that start within region
             RefSeq.find({
-                'attributes.genome': region.genome,
+                genome: region.genome,
                 chrom: region.chrom,
                 $or: [
                     {starts: {'$gte': region.start, '$lte': region.end}},
@@ -53,9 +53,10 @@ function getRefRegion(region, callback) {
     ]);
 }
 
-function getFeatureRegion(name, flank, callback) {
+function getFeatureRegion(genome, name, flank, callback) {
     Feature.find({
-        'attributes.Name' : name
+        'attributes.genome': genome,
+        'attributes.Name': name
     }, function(err, doc) {
         if (err) {callback(err);}
         else if (doc.length === 0) {callback(null, {});}
@@ -103,7 +104,7 @@ function getRegion(region, callback) {
 }
 
 function getAllStrains(genome, callback) {
-  GenomeStrains.findOne({genome: genome}, function(err, data) {
+  GenomeStrains.findOne({'genome': genome}, function(err, data) {
     if (err) {throw err;}
     callback(data.strains);
     })
@@ -111,7 +112,10 @@ function getAllStrains(genome, callback) {
 }
 
 function getRefList(callback) {
-  genomeStrains.find().distinct('genome', callback);
+  GenomeStrains.find().distinct('genome', function(err, data) {
+    if (err) {throw err;}
+    callback(data);
+  });
 }
 
 ////////////////////
@@ -121,4 +125,3 @@ exports.getFeatures = getFeatures;
 exports.getFeatureRegion = getFeatureRegion;
 exports.getAllStrains = getAllStrains;
 exports.getRefList = getRefList;
-exports.switchDb = switchDb;

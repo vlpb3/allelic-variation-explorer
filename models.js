@@ -5,7 +5,7 @@ var async = require('async');
 var mongoose = require('mongoose');
 
 // open database connection
-var dbConnection = mongoose.createConnection('mongodb://localhost/variantDb');
+var dbConnection = mongoose.createConnection('mongodb://localhost/seqdb');
 var Schema = mongoose.Schema;
 
 // define schema for stiring feature data as they ar in gff3 format
@@ -39,6 +39,6 @@ var GenomeStrainsSchema = new Schema(
     genome: {type: String},
     strains: [String]
   });
-dbConnection.model('genomeStrains', GenomeStrainsSchema);
+dbConnection.model('genomestrains', GenomeStrainsSchema);
 
 exports.dbConnection = dbConnection;

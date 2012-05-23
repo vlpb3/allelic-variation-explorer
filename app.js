@@ -36,7 +36,7 @@ var interfaces = os.networkInterfaces();
 
 if (platform === "linux"){
   var hostip = interfaces.eth0[0].address;
-} else if (platform == "darwin"){
+} else if (platform === "darwin"){
   var hostip = interfaces.en0[1].address;
 }
 console.log(hostip);
@@ -55,12 +55,9 @@ io.set('log level', 1);
 io.sockets.on('connection', function(socket) {
 
     socket.on('getData', function(region) {
-        console.log(region);
         seqdb.getRegion(region, function(err, data){
             if (err) {throw err;}
             if (data.refseq === "") {
- 
-              console.log(data)
               console.log("empty");
               socket.emit('featureNotFound',
               "region out of range!");
@@ -71,9 +68,10 @@ io.sockets.on('connection', function(socket) {
     });
     
     socket.on('getFeatureRegion', function(req) {
+        var genome = req.genome;
         var name = req.name;
         var flank = req.flank;
-        seqdb.getFeatureRegion(name, flank, function(err, reg) {
+        seqdb.getFeatureRegion(genome, name, flank, function(err, reg) {
             if (err) console.log(err);
             if (reg.start === undefined) {
                 socket.emit('featureNotFound',
@@ -82,8 +80,8 @@ io.sockets.on('connection', function(socket) {
         });
     });
 
-    socket.on('getStrains', function() {
-      seqdb.getAllStrains(function(data) {
+    socket.on('getStrains', function(genome) {
+      seqdb.getAllStrains(genome, function(data) {
         socket.emit('strains', data);  
       })  
     });

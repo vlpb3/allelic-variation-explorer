@@ -27,7 +27,7 @@
 
     navigateTo: function(){
       var pos = this.model.get("pos");
-      var path = "goto/" + genome + "/" + pos.chrom + "/start" +
+      var path = "goto/" + pos.genome + "/" + pos.chrom + "/start" +
         pos.starts + "/end" + pos.ends;
       this.navigate(path);
     }
@@ -151,6 +151,7 @@
       var ends = pos.ends - step;
       var update = {
         pos: {
+          "genome": pos.genome,
           "starts": starts,
           "ends": ends,
           "chrom": pos.chrom
@@ -167,6 +168,7 @@
       var ends = pos.ends + step;
       var update = {
         pos: {
+          "genome": pos.genome,
           "starts": starts,
           "ends": ends,
           "chrom": pos.chrom
@@ -182,6 +184,7 @@
       var ends = pos.ends - step;
       var update = {
         pos: {
+          "genome": pos.genome,
           "starts": starts,
           "ends": ends,
           "chrom": pos.chrom
@@ -198,6 +201,7 @@
       var ends = pos.ends + step;
       var update = {
         pos: {
+          "genome": pos.genome,
           "starts": starts,
           "ends": ends,
           "chrom": pos.chrom
@@ -378,12 +382,14 @@
       "rangeExceeded": false,
       "bufferX": 5,
       "pos": {
+        "genome": "TAIR10",
         "chrom": "Chr1",
         "starts": 3500,
         "ends": 9000
       },
       "strains": [],
       "bufferData": {
+        genome: "",
         starts: 0,
         ends: 0,
         chrom: "",
@@ -437,6 +443,7 @@
 
     importData: function(data) {
       var bufferData = this.get("bufferData");
+      bufferData.genome = data.region.genome;
       bufferData.chrom = data.region.chrom;
       bufferData.starts = data.region.start;
       bufferData.ends = data.region.end;
@@ -459,12 +466,15 @@
     },
 
     goToFeature: function(name, flank) {
+      var pos = this.get("pos");
       this.waitForData(true);
-      this.get("socket").emit("getFeatureRegion", {"name": name, "flank": flank});
+      this.get("socket").emit("getFeatureRegion",
+        {"genome": pos.genome, "name": name, "flank": flank});
     },
 
     goToFeatureRegion: function(region) {
       var pos = this.get("pos");
+      pos.genome = region.genome;
       pos.starts = region.start;
       pos.ends = region.end;
       pos.chrom = region.chrom;
@@ -479,7 +489,8 @@
     },
 
     getStrains: function() {
-      this.get("socket").emit("getStrains");  
+      var genome = this.get('pos').genome;
+      this.get("socket").emit("getStrains", genome);  
     },
 
     updatePosition: function(){
@@ -502,8 +513,9 @@
       (bufferData.starts > (pos.starts - span));
       var endToClose = (pos.ends + span) > bufferData.ends;
       var otherChromosome = pos.chrom !== bufferData.chrom;
+      var otherGenome = pos.genome !== bufferData.genome;
       // if there is fetch
-      if (startToClose || endToClose || otherChromosome) {
+      if (startToClose || endToClose || otherChromosome || otherGenome) {
         this.updateBufferData();
       }
 
@@ -524,7 +536,10 @@
       var start = pos.starts - flank;
       newBufferStart = start >= 0 ? start : 1;
       newBufferEnd = pos.ends + flank;
-      var region = {chrom: pos.chrom, start: newBufferStart, end: newBufferEnd};
+      var region = {
+        genome: pos.genome, chrom: pos.chrom,
+        start: newBufferStart, end: newBufferEnd
+        };
       if (this.get("rangeExceeded")) {
         this.get("socket").emit("getGeneModels", region);
       } else {
@@ -624,7 +639,7 @@
 
       var displayData = this.get("displayData");
       var SNPs = displayData.SNPs;
-      
+
       // create strains object
       var strains = _.reduce(SNPs, function(memo, snp) {
         var strain = snp.attributes.Strain;
@@ -639,10 +654,9 @@
         memo.refStrain = refArr;
         return memo;
       }, {});
-
       var allStrains = this.get('strains');
       var nonRef = _.keys(strains);
-      var refLike = _.without(allStrains, nonRef);
+      var refLike = _.difference(allStrains, nonRef);
       var refStrainSNPs = strains.refStrain;
       _.each(refLike, function(rfs) {
         strains[rfs] = refStrainSNPs;
@@ -695,7 +709,6 @@
         clusters = clusterfck.hcluster(haplotypes, metric,
         clusterfck.AVERAGE_LINKAGE)[0];
       }
-
       // put clusters into the model
       var displayData = this.get("displayData");
       // displayData.haplotypes = haplotypes;
@@ -1031,6 +1044,7 @@
         this.svg.selectAll('.hap').remove();
         return;
       }
+      
       // draw haplotypes
       var haplotypeBars = this.svg.selectAll('.hap, .refHap').data(this.leaves);
       haplotypeBars.attr('y', function(d) { return d.x + freePos - trackH/2;})
@@ -1075,8 +1089,6 @@
         .attr('fill', 'steelblue');
 
       strainFracs.exit().remove();
-
-      
       // draw SNPs
       var SNPCircles = this.svg.selectAll('.SNP').data(this.hapSNPs);
       SNPCircles.attr('cx', function(d) { return x(d.x); })
@@ -1191,12 +1203,13 @@
           return (d.children = _.compact([d.left , d.right]));
         }
       });
+      
 
       var diagonal = d3.svg.diagonal()
       .projection(function(d) {return [d.y, d.x]; });
 
       var nodes = cluster.nodes(clusters);
-
+      
       var link = this.svgTree.selectAll("path.link")
       .data(cluster.links(nodes));
 

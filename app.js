@@ -24,10 +24,12 @@ app.configure(function(){
 
 app.configure('development', function(){
     app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+    app.listen(8787);
 });
 
 app.configure('production', function(){
     app.use(express.errorHandler());
+    app.listen(3000);
 });
 
 // fetch server ip adress
@@ -98,6 +100,5 @@ io.sockets.on('connection', function(socket) {
 
 });
 
-app.listen(3000);
 console.log("Express server listening on port %d in %s mode",
     app.address().port, app.settings.env);

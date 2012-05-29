@@ -133,8 +133,10 @@ def importGff(seqdb, genome, gffFiles):
         ('seqid', pymongo.ASCENDING),
         ('start', pymongo.ASCENDING),
         ('end', pymongo.ASCENDING)])
-    seqdb.features.create_index('attributes.Name')
-    print('Fiinished indexing features.')
+    seqdb.features.create_index([
+        ('attributes.genome', pymongo.ASCENDING),
+        ('attributes.Name', pymongo.ASCENDING)])
+    print('Finished indexing features.')
 		
 def importFasta(seqdb, genome, fastaFiles):
     chunkSize = 1000000

@@ -10,9 +10,10 @@ def main():
         sys.exit(1)
     
     # get handle to a sequence db
-    dbh = c["TAIR9"]
+    dbh = c["seqdb"]
     
-    cdsPos = dbh.features.find({'type': 'CDS'}, {'seqid': 1, 'start': 1, 'end': 1},
+    cdsPos = dbh.features.find({'attributes.genome': {'$in': ['TAIR10', 'TAIR9']},
+            'type': 'CDS'}, {'seqid': 1, 'start': 1, 'end': 1},
             timeout=False)
 
     for pos in cdsPos:
@@ -22,6 +23,7 @@ def main():
 
         print("Annotating SNPs at: %s from: %d to %d" % (seqid, start, end))
         snpQuery = {
+                'attributes.genome': {'$in': ["TAIR9", "TAIR10"]},
                 'type': {'$regex': '^SNP'},
                 'seqid': seqid,
                 'start': {'$gte': start, '$lte': end},

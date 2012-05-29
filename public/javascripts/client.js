@@ -717,8 +717,7 @@
       this.trigger("change:displayData:clusters");
     }
 
-  });
-
+  }); 
   var VisView = Backbone.View.extend({
 
     initialize: function() {
@@ -740,7 +739,10 @@
       this.bottom = 4;
       this.model.on('change:displayData:clusters', this.draw);
       // this.model.bind('change:rangeExceeded', this.draw);
-
+      var that = this;
+      $(window).resize(function() {
+        location.reload();
+      });
       this.render();
     },
 

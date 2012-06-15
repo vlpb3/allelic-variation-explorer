@@ -1,4 +1,5 @@
 import sys
+import argparse
 from pymongo import Connection
 from pymongo.errors import ConnectionFailure
 
@@ -62,11 +63,33 @@ def annotSNPeff(dbh):
                 print features
                 print SNPs
 
+
 def main():
     # connect to the database
     db = 'seqdb'
     dbh = connect(db)
-    annotSNPeff(dbh)
+
+    # parse arguments
+    parser = argparse.ArgumentParser(
+            description='Script for SNP effect annotation')
+    parser.add_argument('-g', action='store',
+            dest='genome',
+            help='reference genome')
+    parser.add_argument('-f', action='store',
+            dest='fasta_file',
+            help='fasta file with reference sequence')
+    parser.add_argument('-a', action='store',
+            dest='gff_file',
+            help='gff3 formated file with gene annotations')
+    arguments = parser.parse_args()
+    fasta_file = arguments.fasta_file
+    gff_file = arguments.gff_file
+    genome = arguments.genome
+ 
+    # import sequence and annotations
+    import_annotated_sequence(fasta_file, gff_file) 
+    # annotate SNPs
+    # annotSNPeff(dbh)
 
 
 if __name__ == "__main__":

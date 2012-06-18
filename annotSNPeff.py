@@ -2,6 +2,8 @@ import sys
 import argparse
 from pymongo import Connection
 from pymongo.errors import ConnectionFailure
+from BCBio import GFF
+from Bio import SeqIO
 
 
 def connect(db):
@@ -64,6 +66,23 @@ def annotSNPeff(dbh):
                 print SNPs
 
 
+def import_annotated_sequence(fasta_file, gff_file):
+    """ Return annotated sequence.
+
+    Parse fasta file with reference sequence.
+    Parse gff file and attach sequence iformation to it.
+    """
+    # import sequence as dictionary
+    seq_handle = open(fasta_file)
+    seq_dict = SeqIO.to_dict(SeqIO.parse(seq_handle, 'fasta'))
+    seq_handle.close()
+
+    # import annotations and attach seq dictionary to them
+    gff_handle = open(gff_file)
+    annotated_sequence = GFF.parse(gff_handle, base_dict=seq_dict)
+    return(annotated_sequence)
+
+
 def main():
     # connect to the database
     db = 'seqdb'
@@ -85,11 +104,12 @@ def main():
     fasta_file = arguments.fasta_file
     gff_file = arguments.gff_file
     genome = arguments.genome
- 
+
     # import sequence and annotations
-    import_annotated_sequence(fasta_file, gff_file) 
+    annotated_sequence = import_annotated_sequence(fasta_file, gff_file)
+
     # annotate SNPs
-    # annotSNPeff(dbh)
+    annotSNPeff(annotated_sequence, genome, dbh)
 
 
 if __name__ == "__main__":

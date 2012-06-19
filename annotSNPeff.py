@@ -1,9 +1,11 @@
 import sys
 import argparse
+import itertools
 from pymongo import Connection
 from pymongo.errors import ConnectionFailure
 from BCBio import GFF
 from Bio import SeqIO
+from Bio.Alphabet import IUPAC
 
 
 def connect(db):
@@ -23,47 +25,48 @@ def connect(db):
     return dbh
 
 
-def annotSNPeff(dbh):
-    """ Annotate all SNPs in the db with their effect.
+def annotSNPeff(annotated_sequence, genome, dbh):
+    """ Annotate SNP effect using gene annotations.
 
-    Use gene models annotations to determine sffect of iintroduced SNP.
+    Use annotated sequence -- an iterator over gff annotations with
+    sequence attached to them.
     """
-    # fetch list of genomes in the db
-    genomes = dbh.features.distinct('attributes.genome')
-    # for each genome fetch list of chromosomes
-    for genome in genomes:
-        chromosomes = dbh.features.find(
-                {'attributes.genome': genome, 'type': 'gene'},
-                timeout=False).distinct('seqid')
-        # for each chromosome fetch genes
-        for chrom in chromosomes:
-            genes = dbh.features.find(
-                    {'attributes.genome': genome,
-                        'type': 'gene',
-                        'seqid': chrom},
-                    timeout=False)
-            # for each gene fetch all annotations
-            for gene in genes:
-                featurelist = ['five_prime_UTR', 'three_prime_UTR', 'CDS']
-                features = dbh.features.find(
-                        {'attributes.genome': genome,
-                            'type': {'$in': featurelist},
-                            'seqid': chrom,
-                            'start': {'$gte': gene['start']},
-                            'end': {'$lte': gene['end']}},
-                        timeout=False)
-
-                # fetch all SNPs in the gene
-                SNPs = dbh.features.find(
-                        {'attiributes.genome': genome,
-                            'type': {'$regex': '^SNP'},
-                            'seqid': chrom,
-                            'start': {'$gte': gene['start']},
-                            'end': {'$lte': gene['end']}})
-
-                print gene
-                print features
-                print SNPs
+    # loop over chromosomes
+    for chrom in annotated_sequence:
+        # loop over features in a chromosome
+        genes = filter(lambda feature: feature.type == 'gene', chrom.features)
+        for gene in genes:
+            # get position of the gene
+            start = int(gene.location.start)
+            end = int(gene.location.end)
+            mRNAs = gene.sub_features
+            # flatten all the features into a single list
+            mRNAfeatures = list(itertools.chain(
+                *[mrna.sub_features for mrna in mRNAs]))
+            # fetch all SNPs in this gene
+            snp_query = {
+                   'attributes.genome': genome,
+                   'type': {'$regex': '^SNP'},
+                   'seqid': chrom.id,
+                   'start': {'$gte': start},
+                   'end': {'$lte': end}}
+            snps = dbh.features.find(snp_query)
+            # assign snp to one of the groups,
+            # depending on where the snp is located
+            # by using sets we avoid duplicates
+            regions = {
+                    'five_prime_UTR': set(),
+                    'three_prime_UTR': set(),
+                    'CDS': set()}
+            for snp in snps:
+                for feature in mRNAfeatures:
+                    if ((snp['start'] in feature)
+                            and (feature.type in regions.keys())):
+                        regions[feature.type].add(snp['_id'])
+            # annotate those in utrs
+            utr5_snps = filter(lambda snp:
+                    snp['_id'] in regions['five_prime_UTR'],
+                    snps)
 
 
 def import_annotated_sequence(fasta_file, gff_file):
@@ -74,7 +77,8 @@ def import_annotated_sequence(fasta_file, gff_file):
     """
     # import sequence as dictionary
     seq_handle = open(fasta_file)
-    seq_dict = SeqIO.to_dict(SeqIO.parse(seq_handle, 'fasta'))
+    seq_dict = SeqIO.to_dict(
+            SeqIO.parse(seq_handle, 'fasta', IUPAC.ambiguous_dna))
     seq_handle.close()
 
     # import annotations and attach seq dictionary to them

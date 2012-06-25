@@ -36,6 +36,8 @@ def annotSNPeff(annotated_sequence, genome, dbh):
         # loop over features in a chromosome
         genes = filter(lambda feature: feature.type == 'gene', chrom.features)
         for gene in genes:
+            # print out info about processed gene
+            print('processing: %s' % gene.id)
             # get position of the gene
             start = int(gene.location.start)
             end = int(gene.location.end)
@@ -64,9 +66,35 @@ def annotSNPeff(annotated_sequence, genome, dbh):
                             and (feature.type in regions.keys())):
                         regions[feature.type].add(snp['_id'])
             # annotate those in utrs
-            utr5_snps = filter(lambda snp:
-                    snp['_id'] in regions['five_prime_UTR'],
-                    snps)
+            dbh.features.update(
+                    {'_id': {'$in': list(regions['five_prime_UTR'])}},
+                    {'$set':
+                        {'attributes.variation.location': 'five_prime_UTR'}},
+                    safe=True)
+
+            dbh.features.update(
+                    {'_id': {'$in': list(regions['three_prime_UTR'])}},
+                    {'$set':
+                        {'attributes.variation.location': 'three_prime_UTR'}},
+                    safe=True)
+
+            # annotate snps in CDSs
+            dbh.features.update(
+                {'_id': {'$in': list(regions['CDS'])}},
+                {'$set':
+                    {'attributes.variation.location': 'CDS'}})
+            # annotate intronic SNPs
+            exonic = regions['CDS'].union(
+                    regions['five_prime_UTR'], regions['three_prime_UTR'])
+            intronic = []
+            snps.rewind()
+            for snp in snps:
+                if snp['_id'] not in exonic:
+                    intronic.append(snp['_id'])
+            dbh.features.update(
+                    {'_id': {'$in': intronic}},
+                    {'$set':
+                        {'attributes.variation.location': 'intronic'}})
 
 
 def import_annotated_sequence(fasta_file, gff_file):

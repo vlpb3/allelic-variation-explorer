@@ -6,6 +6,7 @@ import progressbar as pb
 import re
 import time
 
+
 def importGffLines(seqdb, genome, lines):
     features = seqdb.features
     strains = seqdb.genomestrains
@@ -13,7 +14,8 @@ def importGffLines(seqdb, genome, lines):
     strainList = []
     for line in lines:
         params = line.strip().split('\t')
-        if (len(params) != 9): continue
+        if (len(params) != 9):
+            continue
         feature = {
                 'seqid': params[0],
                 'source': params[1],
@@ -28,9 +30,11 @@ def importGffLines(seqdb, genome, lines):
         attrString = params[8].split(';')
         for attr in attrString:
             attr = attr.split('=')
-            if (len(attr) != 2): continue
+            if (len(attr) != 2):
+                continue
             attributes[attr[0]] = attr[1]
-        if feature['type'].startswith('SNP'): attributes['coding'] = ''
+        if feature['type'].startswith('SNP'):
+            attributes['coding'] = ''
         attributes['genome'] = genome
         feature['attributes'] = attributes
         featureList.append(feature)
@@ -40,10 +44,14 @@ def importGffLines(seqdb, genome, lines):
                 strainList.append(strain)
         except:
             pass
-    
-    strains.update({'genome': genome}, {"$addToSet": {"strains": {"$each": strainList}}})
-    if len(featureList) <= 0 : print(lines)
-    if len(featureList) > 0 : features.insert(featureList, safe=True)
+
+    strains.update({'genome': genome},
+            {"$addToSet": {"strains": {"$each": strainList}}})
+    if len(featureList) <= 0:
+        print(lines)
+    if len(featureList) > 0:
+        features.insert(featureList, safe=True)
+
 
 def profileImport(seqdb, gffFiles):
     """Profiles importing features in defferent chunk sizes."""
@@ -60,16 +68,18 @@ def profileImport(seqdb, gffFiles):
             lines = fin.readlines()
             iLine = 0
             nLines = len(lines)
-            pbar = pb.ProgressBar(widgets=[pb.Percentage(), pb.Bar()], maxval=nLines).start()
+            pbar = pb.ProgressBar(widgets=[pb.Percentage(), pb.Bar()],
+                    maxval=nLines).start()
             chunk = []
             for line in lines:
-                chunk.append(line)  
+                chunk.append(line)
                 if len(chunk) >= chunkSize:
                     importGffLines(seqdb, chunk)
                     chunk = []
                     iLine += chunkSize
                     pbar.update(iLine)
-            if len(chunk): importGffLines(seqdb, chunk)
+            if len(chunk):
+                importGffLines(seqdb, chunk)
             t = time.time() - t0
             times[chunkSize].append(t)
             pbar.finish()
@@ -86,10 +96,10 @@ def profileImport(seqdb, gffFiles):
     for chunkSize in chunkSizes:
         tList = times[chunkSize]
         speedList = []
-        for (t, s) in zip (tList, fileSizes):
-            speedList.append(s/(t*1024*1024))
+        for (t, s) in zip(tList, fileSizes):
+            speedList.append(s / (t * 1024 * 1024))
         speeds.append(speedList)
-    
+
     import matplotlib.pyplot as plt
 
     fig = plt.figure()
@@ -97,6 +107,7 @@ def profileImport(seqdb, gffFiles):
     plt.xticks(range(len(chunkSizes)), chunkSizes)
     ax.boxplot(speeds)
     plt.savefig('profiles.png')
+
 
 def importGff(seqdb, genome, gffFiles):
     """Imports to provided db connection all annotations from gff
@@ -111,15 +122,17 @@ def importGff(seqdb, genome, gffFiles):
         nLines = len(lines)
         iLine = 0
         chunk = []
-        pbar = pb.ProgressBar(widgets=[pb.Percentage(), pb.Bar()], maxval=nLines).start()
+        pbar = pb.ProgressBar(widgets=[pb.Percentage(),
+            pb.Bar()], maxval=nLines).start()
         for line in lines:
             chunk.append(line)
-            if len(chunk) >= chunkSize :
+            if len(chunk) >= chunkSize:
                 importGffLines(seqdb, genome, chunk)
                 chunk = []
             iLine += 1
             pbar.update(iLine)
-        if len(chunk) >= 0: importGffLines(seqdb, genome, chunk)
+        if len(chunk) >= 0:
+            importGffLines(seqdb, genome, chunk)
         pbar.finish()
         iFile += 1
 
@@ -137,7 +150,8 @@ def importGff(seqdb, genome, gffFiles):
         ('attributes.genome', pymongo.ASCENDING),
         ('attributes.Name', pymongo.ASCENDING)])
     print('Finished indexing features.')
-		
+
+
 def importFasta(seqdb, genome, fastaFiles):
     chunkSize = 1000000
     iFile = 0
@@ -148,7 +162,8 @@ def importFasta(seqdb, genome, fastaFiles):
         print('processing file: %s' % fname)
         iLine = 0
         nLines = len(lines)
-        pbar = pb.ProgressBar(widgets=[pb.Percentage(), pb.Bar()], maxval=nLines).start()
+        pbar = pb.ProgressBar(widgets=[pb.Percentage(),
+            pb.Bar()], maxval=nLines).start()
         fullChromMatch = '^>(Chr\w+)'
         posInChromMatch = '^>(Chr\w+):(\d+)\.\.(\d+)'
         chunk = ''
@@ -160,7 +175,7 @@ def importFasta(seqdb, genome, fastaFiles):
                 refseq['genome'] = genome
                 refseq['chrom'] = match.groups()[0]
                 lastEnd = 0
-                chrom = refseq['chrom'] 
+                chrom = refseq['chrom']
                 # check if it's whole chromosome
                 match = re.search(posInChromMatch, line)
                 if match:
@@ -168,22 +183,24 @@ def importFasta(seqdb, genome, fastaFiles):
             else:
                 refseq['starts'] = lastEnd + 1
                 chunk += line.strip()
-                if len(chunk) >= chunkSize :
+                if len(chunk) >= chunkSize:
+                    refseq['genome'] = genome
                     refseq['chrom'] = chrom
                     refseq['sequence'] = chunk[:chunkSize]
                     chunk = chunk[chunkSize:]
-                    refseq['ends'] = refseq['starts'] + chunkSize -1
+                    refseq['ends'] = refseq['starts'] + chunkSize - 1
                     lastEnd = refseq['ends']
-                    refseqdb.insert(refseq, safe=True)         
+                    refseqdb.insert(refseq, safe=True)
                     refseq = {}
             iLine += 1
             pbar.update(iLine)
         if len(chunk):
+            refseq['genome'] = genome
             refseq['chrom'] = chrom
             refseq['starts'] = lastEnd + 1
             refseq['sequence'] = chunk
             refseq['ends'] = lastEnd + len(chunk)
-            refseqdb.insert(refseq) 
+            refseqdb.insert(refseq)
 
         pbar.finish()
         iFile += 1
@@ -196,6 +213,7 @@ def importFasta(seqdb, genome, fastaFiles):
             ('ends', pymongo.ASCENDING)])
     print('Finished indexing ref seq.')
 
+
 def updateRefList(con, refName):
     # put reference name to the db
     db = con.meta
@@ -204,11 +222,11 @@ def updateRefList(con, refName):
     else:
         db.reflists.insert({'list': [refName]})
 
+
 def main():
 
     # make connection with db
     con = Connection()
-
 
     # get name of the reference for this dataset
     genome = sys.argv[2]

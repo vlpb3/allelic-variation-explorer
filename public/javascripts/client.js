@@ -639,7 +639,7 @@
 
       var displayData = this.get("displayData");
       var SNPs = displayData.SNPs;
-
+      
       // create strains object
       var strains = _.reduce(SNPs, function(memo, snp) {
         var strain = snp.attributes.Strain;

@@ -98,11 +98,18 @@ div(id='mobile-menu-plus')
         span(class='icon')
           | "
 
-  div(id='controls')
+  div(id='navi')
     span(class='icon')
       br
       h1
-        < A @ =
+        span(id='goLeft')
+          | <
+        span(id='zoomOut')
+          |  A
+        span(id='zoomIn')
+          |  @
+        span(id='goRight')
+          |  =
 
 span#old
   p
@@ -221,17 +228,6 @@ span#old
       div#applyFilters
         button(type="button")
           | Apply Changes
-
-
-  br
-
-  p
-    div#navigate
-      span#goLeft(class="mini_icon icon_left")
-      span#zoomOut(class="mini_icon icon_minus")
-      span#zoomIn(class="mini_icon icon_plus")
-      span#goRight(class="mini_icon icon_right")
-      span#positionText
 
 
 div#graphs

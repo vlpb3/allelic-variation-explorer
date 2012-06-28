@@ -122,18 +122,15 @@
   var NavigateView = Backbone.View.extend({
 
     initialize: function() {
-      _.bindAll(this, "render", "updateString",
+      _.bindAll(this, "render",
       "goLeft", "zoomOut", "zoomIn", "goRight");
       this.step = 5;
       this.render();
-      this.updateString();
       this.model.on("change:pos", this.updateString);
     },
 
     render: function() {
-      var winWidth = $(window).width();
-      $("#navigate").css("left", winWidth/2 - 95);
-      $("#navigate").css("width", winWidth/2);
+      // $('#goLeft').button()
     },
 
     events: {
@@ -209,15 +206,6 @@
       };
       this.model.set(update);
     },
-
-    updateString: function() {
-      var pos = this.model.get("pos");
-      var positionStr = pos.chrom + ":" +
-        pos.starts + ".." + pos.ends;
-      var strech = pos.ends - pos.starts;
-      positionStr += " fragment: " + strech + "bp";
-      $("#positionText").html(positionStr);
-    }
   });
 
   var ControlsView = Backbone.View.extend({
@@ -1461,7 +1449,7 @@
     });
 
     var navigateView = new NavigateView({
-      el: $("#navigate"),
+      el: $("#navi"),
       model: dataModel
     });
 

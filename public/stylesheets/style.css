@@ -1,33 +1,8 @@
-/* body */
-/*   font-family "Helvetica Neue", "Lucida Grande", "Arial" */
-/*   font-size 13px */
-/*   text-stroke 1px rgba(255, 255, 255, 0.1) */
-/*   color #555 */
-h1,
-h2 {
-  margin: 0;
-  font-size: 22px;
-  color: #343434;
-}
-h1 {
-  text-align: center;
-  text-shadow: 1px 2px 2px #ddd;
-  font-size: 30px;
-}
-#settings {
-  position: relative;
-  left: 200px;
-}
-#locationChoice {
-  float: left;
-  text-align: left;
-/* border-bottom solid 2px gainsboro */
+body {
+  background-image: url("../images/grid_noise.png");
 }
 #controls {
-  float: right;
-}
-#codingRadio {
-  float: right;
+  text-align: center;
 }
 #graphs {
   position: absolute;
@@ -38,56 +13,17 @@ h1 {
   float: left;
   padding: 40;
 }
-#navigate {
-  position: absolute;
-  top: 140px;
+svg {
+  font: 10px sans-serif;
 }
-#positionText {
-  align: right;
+circle {
+  opacity: 0.6;
 }
-#included,
-#excluded {
-  height: 25em;
-  padding: 2%;
-  float: left;
-  width: 33%;
-  text-align: center;
+rect {
+  opacity: 0.6;
 }
-#included ul,
-#excluded ul {
-  background: #f5fffa;
-  list-style-type: none;
-  padding-left: 0;
-  margin-left: 1em;
-  height: 20em;
-  overflow: -moz-scrollbars-vertical;
-  overflow-y: auto;
-  text-align: center;
-}
-#shuffling {
-  margin-top: 5em;
-  float: left;
-  width: 25%;
-  text-align: center;
-}
-#applyFilters {
-  clear: top;
-  text-align: right;
-}
-#haplDialog {
-  display: none;
-}
-#fastaSeqArea {
-  width: 95%;
-  height: 10em;
-  font-family: "Andale Mono", "Fixed", "monospace";
-}
-#fastaFileName {
-  width: 9em;
-}
-#searchMessage {
-  color: #f00;
-  font-weight: boldera;
+div#hjaf {
+  outline: 1px dashed #f00;
 }
 .geneLabel {
   font: 9px sans-serif;
@@ -137,43 +73,4 @@ h1 {
 }
 .rselect {
   color: #4169e1;
-}
-.mini_icon {
-  float: left;
-  display: block;
-  width: 16px;
-  height: 16px;
-  background: url("../images/icons.png");
-  margin-left: 25px;
-  margin-bottom: 25px;
-}
-.icon_settings {
-  background-position: -352px -66px;
-}
-.icon_left {
-  background-position: -185px -66px;
-}
-.icon_right {
-  background-position: -227px -66px;
-}
-.icon_plus {
-  background-position: -227px -151px;
-}
-.icon_minus {
-  background-position: -268px -151px;
-}
-.icon_search {
-  background-position: -268px -24px;
-}
-svg {
-  font: 10px sans-serif;
-}
-circle {
-  opacity: 0.6;
-}
-rect {
-  opacity: 0.6;
-}
-div#hjaf {
-  outline: 1px dashed #f00;
 }

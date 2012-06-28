@@ -5,8 +5,9 @@ html(lang='en')
 //script(src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js")
 //script(src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js")
 script(type="text/javascript", src="javascripts/jquery-1.7.2.min.js")
-script(type="text/javascript", src="javascripts/jquery-ui-1.8.21.min.js")
-
+script(type="text/javascript", src="javascripts/jquery-ui-1.8.21.custom.min.js")
+//script(type="text/javascript", src="http://ajax.aspnetcdn.com/ajax/jquery/jquery-1.7.1.min.js")
+//script(type="text/javascript", src="http://ajax.aspnetcdn.com/ajax/jquery.ui/1.8.17/jquery-ui.min.js")
 
 // underscore and backbone
 //script(src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.1.7/underscore-min.js")
@@ -29,158 +30,221 @@ script(type="text/javascript", src="javascripts/clusterfck-0.1.js")
 script(type="text/javascript", src="javascripts/BlobBuilder.js")
 script(type="text/javascript", src="javascripts/FileSaver.js")
 
-// flexigrid
-link(rel="stylesheet", type="text/css", href="stylesheets/jquery.dataTables.css")
-script(type="text/javascript", src="javascripts/jquery.dataTables.min.js")
+// datatables
+//link(rel="stylesheet", type="text/css", href="stylesheets/jquery.dataTables.css")
+//script(type="text/javascript", src="jquery.dataTables.min.js")
 
 // application scripts
 script(type="text/javascript", src="javascripts/client.js")
 
 // wijmo
 // Wijmo Widgets CSS
-script(type="text/css", href="http://cdn.wijmo.com/jquery.wijmo-complete.all.2.1.0.min.css", rel="stylesheet")
-//Wijmo Widgets JavaScript
-script(src="http://cdn.wijmo.com/jquery.wijmo-open.all.2.1.0.min.js", type="text/javascript")
-script(src="http://cdn.wijmo.com/jquery.wijmo-complete.all.2.1.0.min.js", type="text/javascript")
-script(type='text/javascript', src='javascripts/jquery.wijmo-open.all.2.1.0.min.js') 
+link(type="text/css", href="stylesheets/jquery.wijmo-open.2.1.3.css", rel="stylesheet")
 
-//bootstrap ui
-link(type="text/css", href="stylesheets/bootstrap/bootstrap.css", rel="stylesheet")
-link(type="text/css", href="stylesheets/bootstrap/jquery-ui-1.8.16.custom.css", rel="stylesheet")
+//Wijmo Widgets JavaScript
+script(src="javascripts/jquery.wijmo-open.all.2.1.3.min.js", type="text/javascript")
+
+// bootstrap ui
+link(type="text/css", href="bootstrap/bootstrap.css", rel="stylesheet")
+link(type="text/css", href="stylesheets/custom-theme/jquery-ui-1.8.16.custom.css", rel="stylesheet")
+
+// raphael font icons
+link(rel="stylesheet", type="text/css", href="stylesheets/raphaelicons/raphaelicons.css")
 
 // hidden variable with ip adress of server
 input(type="hidden"
   id="hostip"
   value=hostip)
 
-p
-  div#locationChoice
-    div#radio
-      input(type="radio"
-        id="radioRegion"
-        name="radio"
-        class="ui-corner-left")
-      label(for="radioRegion")
-        | go to region
-      input(type="radio"
-        id="radioFeature"
-        name="radio"
-        class="ui-corner-right")
-      label(for="radioFeature")
-        | go to feature
+div(id='mobile-menu-plus')
+  ul(id='menu')
+    li
+      h3
+        a
+          | Allelic variation Explorer
+    li
+      a
+        img(class='logo', src='images/ajax-loader.gif')
+    li
+      input(type='text', placeholder='Genome')
+    li
+      input(type='text', placeholder='chrom')
+    li
+      input(type='text', placeholder='from')
+    li
+      input(type='text', placeholder='to')
+    li
+      a
+          span(class='icon')
+            | Ã 
+    li
+      a
+        | Go to feature
+    li
+      a
+        | Filter
+    li
+      a
+        | Highlight
+    li
+      a
+        | Bookmarks
+    li
+      a
+        span(class='icon')
+          | I
+    li
+      a
+        span(class='icon')
+          | "
 
-    p
-      div#regionSearch
-        | ref.gen.
-        input#refgen()
-        |  chromosome
-        input#chrom(type="string")
-        |  from
-        input#start(type="number")
-        |  to
-        input#end(type="number")
-        input#go(type="submit", value="Go")
+  div(id='controls')
+    span(class='icon')
+      br
+      h1
+        < A @ =
 
-      div#featureSearch
-        | feature
-        input#name(type="string")
-        |  with flanking region
-        input#flank(type="number")
-        input#search(type="submit", value="Search")
-    
-    span#searchMessage
-
-div#codingRadio
-  input(type="radio"
-    id="radioAllSNPs"
-    name="codingRadio"
-    class="ui-corner-left")
-  label(for="radioAllSNPs")
-    | All SNPs
-  input(type="radio"
-    id="radioNonCoding"
-    name="codingRadio")
-  label(for="radioNonCoding")
-    | Non-Coding
-  input(type="radio"
-    id="radioCoding"
-    name="codingRadio"
-    class="ui-corner-right")
-  label(for="radioCoding")
-    | Coding
-
-div#controls
-  input#filterButton(type="button", value="filter")
-
-div#haplDialog
+span#old
   p
-    b Strains:
-  p
-    b SNPs:
-  p
-    b Sequnce:
-  p
-    textarea#fastaSeqArea
-  p
-    | filename:
-    input#fastaFileName(type="string")
-    | .fas
-    input#saveFasta(type="submit", value="save")
+    div#locationChoice
+      div#radio
+        input(type="radio"
+          id="radioRegion"
+          name="radio"
+          class="ui-corner-left")
+        label(for="radioRegion")
+          | go to region
+        input(type="radio"
+          id="radioFeature"
+          name="radio"
+          class="ui-corner-right")
+        label(for="radioFeature")
+          | go to feature
 
-div#SNPDialog
-    p
+      p
+        div#regionSearch
+          | ref.gen.
+          input#refgen()
+          |  chromosome
+          input#chrom(type="string")
+          |  from
+          input#start(type="number")
+          |  to
+          input#end(type="number")
+          input#go(type="submit", value="Go")
 
-div#filterDialog
-  div#filterRadio
+        div#featureSearch
+          | feature
+          input#name(type="string")
+          |  with flanking region
+          input#flank(type="number")
+          input#search(type="submit", value="Search")
+      
+      span#searchMessage
+
+  div#codingRadio
     input(type="radio"
-      id="radioStrains"
-      name="filterRadio"
+      id="radioAllSNPs"
+      name="codingRadio"
       class="ui-corner-left")
-    label(for="radioStrains")
-      | Strains
+    label(for="radioAllSNPs")
+      | All SNPs
     input(type="radio"
-      id="radioSNPs"
-      name="filterRadio"
+      id="radioNonCoding"
+      name="codingRadio")
+    label(for="radioNonCoding")
+      | Non-Coding
+    input(type="radio"
+      id="radioCoding"
+      name="codingRadio"
       class="ui-corner-right")
-    label(for="radioSNPs")
-      | SNPs
+    label(for="radioCoding")
+      | Coding
+
+  div#controls
+    input#filterButton(type="button", value="filter")
+
+  div#haplDialog
+    p
+      b Strains:
+    p
+      b SNPs:
+    p
+      b Sequnce:
+    p
+      textarea#fastaSeqArea
+    p
+      | filename:
+      input#fastaFileName(type="string")
+      | .fas
+      input#saveFasta(type="submit", value="save")
+
+  div#SNPDialog
+      p
+
+  div#filterDialog
+    div#filterRadio
+      input(type="radio"
+        id="radioStrains"
+        name="filterRadio"
+        class="ui-corner-left")
+      label(for="radioStrains")
+        | Strains
+      input(type="radio"
+        id="radioSNPs"
+        name="filterRadio"
+        class="ui-corner-right")
+      label(for="radioSNPs")
+        | SNPs
+    p
+      div
+        div#excluded
+          b
+            | Excluded:
+          div#exclSNPs
+            ul
+          div#exclStrains
+            ul
+        div#shuffling
+          button#removeButton(type="button")
+            | < Remove
+          button#addButton(type="button")
+            | Add >
+        div#included
+          b
+            | Included:
+          div#inclSNPs
+            ul
+          div#inclStrains
+            ul
+    p
+      div#applyFilters
+        button(type="button")
+          | Apply Changes
+
+
+  br
+
   p
-    div
-      div#excluded
-        b
-          | Excluded:
-        div#exclSNPs
-          ul
-        div#exclStrains
-          ul
-      div#shuffling
-        button#removeButton(type="button")
-          | < Remove
-        button#addButton(type="button")
-          | Add >
-      div#included
-        b
-          | Included:
-        div#inclSNPs
-          ul
-        div#inclStrains
-          ul
-  p
-    div#applyFilters
-      button(type="button")
-        | Apply Changes
+    div#navigate
+      span#goLeft(class="mini_icon icon_left")
+      span#zoomOut(class="mini_icon icon_minus")
+      span#zoomIn(class="mini_icon icon_plus")
+      span#goRight(class="mini_icon icon_right")
+      span#positionText
 
 
-br
+div#graphs
+  div#tree
+  div#chart
 
-p
-  div#navigate
-    span#goLeft(class="mini_icon icon_left")
-    span#zoomOut(class="mini_icon icon_minus")
-    span#zoomIn(class="mini_icon icon_plus")
-    span#goRight(class="mini_icon icon_right")
-    span#positionText
-
-  div#graphs
-    div#tree
-    div#chart
+// temporary disable old interface
+script
+  $(document).ready(function() {
+    $('#old').hide();
+    $('#menu').wijmenu()
+     $(window).scroll(function() {
+       $('#mobile-menu-plus').css({'position': 'fixed', 'z-index': 2,
+       'top': 0, 'left': 0, 'right': 0})
+    });
+  })  

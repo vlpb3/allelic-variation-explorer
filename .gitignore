@@ -1,0 +1,14 @@
+syntax: glob
+# vim temp files
+*.swp
+*.DS_Store
+*.swo
+
+# data files
+data/**
+*.gff
+
+# node modules and stuff
+node_modules/**
+npm-debug.log
+.monitor

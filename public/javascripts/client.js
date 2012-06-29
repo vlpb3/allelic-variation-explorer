@@ -126,11 +126,9 @@
       "goLeft", "zoomOut", "zoomIn", "goRight");
       this.step = 5;
       this.render();
-      this.model.on("change:pos", this.updateString);
     },
 
     render: function() {
-      // $('#goLeft').button()
     },
 
     events: {

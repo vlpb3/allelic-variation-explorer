@@ -12,7 +12,7 @@ script(type="text/javascript", src="javascripts/jquery-ui-1.8.21.custom.min.js")
 // underscore and backbone
 //script(src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.1.7/underscore-min.js")
 //script(src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.5.3/backbone-min.js")
-script(type="text/javascript", src="javascripts/underscore.js")
+script(type="text/javascript", src="javascripts/underscore-min.js")
 script(type="text/javascript", src="javascripts/backbone-min.js")
 
 // d3.js stuff
@@ -64,15 +64,15 @@ div(id='mobile-menu-plus')
           | Allelic variation Explorer
     li
       a
-        img(class='logo', src='images/ajax-loader.gif')
+        img(id="loading-spinner", class='logo', src='images/ajax-loader.gif')
     li
-      input(type='text', placeholder='Genome')
+      input(id="loc-genome", type='text', placeholder='Genome')
     li
-      input(type='text', placeholder='chrom')
+      input(id="loc-chrom", type='text', placeholder='chromosome')
     li
-      input(type='text', placeholder='from')
+      input(id="loc-start", type='text', placeholder='start')
     li
-      input(type='text', placeholder='to')
+      input(id="loc-end", type='text', placeholder='end')
     li
       a
           span(class='icon')
@@ -105,7 +105,7 @@ div(id='mobile-menu-plus')
         span(id='goLeft')
           | <
         span(id='zoomOut')
-          |  A
+          |  A 
         span(id='zoomIn')
           |  @
         span(id='goRight')
@@ -134,9 +134,9 @@ span#old
           input#refgen()
           |  chromosome
           input#chrom(type="string")
-          |  from
+          |  start
           input#start(type="number")
-          |  to
+          |  end
           input#end(type="number")
           input#go(type="submit", value="Go")
 
@@ -238,9 +238,4 @@ div#graphs
 script
   $(document).ready(function() {
     $('#old').hide();
-    $('#menu').wijmenu()
-     $(window).scroll(function() {
-       $('#mobile-menu-plus').css({'position': 'fixed', 'z-index': 2,
-       'top': 0, 'left': 0, 'right': 0})
-    });
   })  

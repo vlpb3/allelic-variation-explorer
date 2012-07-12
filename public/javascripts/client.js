@@ -119,6 +119,32 @@
 
   });
 
+  var MenuView = Backbone.View.extend({
+    initialize: function(){
+      _.bindAll(this, "render", "setRefGen");
+      this.render();
+    },
+
+    render: function(){
+      $('#menu').wijmenu();
+
+      $(window).scroll(function(){
+        $('#mobile-menu-plus').css({'position': 'fixed', 'z-index': 2,
+        'top': 0, 'left': 0, 'right': 0});
+      });
+
+      var socket = this.model.get("socket");
+      socket.emit("getRefList");
+      socket.on("refList", this.setRefGen);
+    },
+
+    setRefGen: function(refList){
+      $('#loc-genome').autocomplete({
+        source: refList});       
+    }
+
+  });
+
   var NavigateView = Backbone.View.extend({
 
     initialize: function() {
@@ -1434,13 +1460,17 @@
 
   });
 
-
   $(document).ready(function(){
 
     // initialize models
     var dataModel = new DataModel();
 
     // initialize views
+
+    var menuView = new MenuView({
+      el: $("#menu"),
+      model: dataModel
+    });
     var goRegionView = new choiceView({
       el: $("#locationChoice"),
       model: dataModel

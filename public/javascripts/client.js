@@ -1,21 +1,29 @@
-(function ($) {
+(function ($, Backbone, window, _, io, clusterfck, BlobBuilder, location, d3,
+          saveAs, document, localStorage) {
+  'use strict';
+  // all vars
+  var AppRouter, ChoiceView, MenuView, NavigateView;
   // router stuff
-  var AppRouter = Backbone.Router.extend({
 
-    initialize: function(options) {
-      _.bindAll(this, "moveModel", "navigateTo");
+  AppRouter = Backbone.Router.extend({
+
+    initialize: function (options) {
+      _.bindAll(this, "moveModel", "navigateTo", "navigateToInitial");
       this.model = options.model;
 
       // this.navigateTo();
       // when model changes, navigate to new place
       this.model.on("change:pos", this.navigateTo);
+
+      // setup initial location
+      this.navigateToInitial();
     },
 
     routes: {
       "goto/:genome/:ch/start:s/end:e": "moveModel"
     },
 
-    moveModel: function(genome, ch, s, e) {
+    moveModel: function (genome, ch, s, e) {
       var pos = {
         "genome": genome,
         "chrom": ch,
@@ -25,33 +33,39 @@
       this.model.set({"pos": pos});
     },
 
-    navigateTo: function(){
-      var pos = this.model.get("pos");
-      var path = "goto/" + pos.genome + "/" + pos.chrom + "/start" +
+    navigateTo: function () {
+      var pos, path;
+      pos = this.model.get("pos");
+      path = "goto/" + pos.genome + "/" + pos.chrom + "/start" +
         pos.starts + "/end" + pos.ends;
       this.navigate(path);
+    },
+
+    navigateToInitial: function() {
+      // this.navigateTo();
     }
   });
 
   // Views
   // view for choosing the region to display
-  var choiceView = Backbone.View.extend({
+  ChoiceView = Backbone.View.extend({
 
-    initialize: function() {
+    initialize: function () {
 
+      var pos, socket;
       _.bindAll(this, "render", "updateModel", "goToFeature",
-      "onFeatureNotFound", "setRefList");
+        "onFeatureNotFound", "setRefList");
 
       this.render();
       // get values form the model
       $("#radioRegion").click();
-      var pos = this.model.get("pos");
+      pos = this.model.get("pos");
       $('#refgen').val(pos.genome);
       $("#chrom").val(pos.chrom);
       $("#start").val(pos.starts);
       $("#end").val(pos.ends);
       
-      var socket = this.model.get("socket");
+      socket = this.model.get("socket");
       socket.on("featureNotFound", this.onFeatureNotFound);
       socket.on("refList", this.setRefList);
     },
@@ -61,7 +75,7 @@
       "click #search": "goToFeature"
     },
 
-    updateModel: function() {
+    updateModel: function () {
       var update = {
         "pos": {
           "genome": $('#refgen').val(),
@@ -74,25 +88,24 @@
       this.model.set(update);
     },
 
-    onFeatureNotFound: function(info){
+    onFeatureNotFound: function (info) {
       $("#searchMessage").text("\t " + info);
     },
 
-    goToFeature: function() {
+    goToFeature: function () {
+      var name, flank;
       $("#searchMessage").text("");
-      var name = $("#name").val();
-      var flank = parseInt($("#flank").val(), 10);
+      name = $("#name").val();
+      flank = parseInt($("#flank").val(), 10);
       this.model.goToFeature(name, flank);
     },
     
-    setRefList: function(refList) {
-      $('#refgen').autocomplete({
-        source: refList  
-      });
+    setRefList: function (refList) {
+      $('#refgen').autocomplete({source: refList});
       $('#refgen').val(refList[0]);
     },
 
-    render: function() {
+    render: function () {
 
       // get buttons displayed properly
       $("#radio").buttonset();
@@ -102,12 +115,12 @@
       $("#featureSearch").hide();
 
       // bind actions to these button sets
-      $("#radioRegion").click(function(){
+      $("#radioRegion").click(function () {
         $("#regionSearch").show();
         $("#featureSearch").hide();
       });
 
-      $("#radioFeature").click(function(){
+      $("#radioFeature").click(function () {
         $("#featureSearch").show();
         $("#regionSearch").hide();
       });
@@ -119,33 +132,66 @@
 
   });
 
-  var MenuView = Backbone.View.extend({
-    initialize: function(){
-      _.bindAll(this, "render", "setRefGen");
+  MenuView = Backbone.View.extend({
+    initialize: function () {
+      _.bindAll(this, "render", "setRefGen", "toggleSpinner", "setLocation",
+                "go");
+
+      this.model.on("change:displayData", this.toggleSpinner);
+      this.model.on("change:pos", this.setLocation);
       this.render();
     },
 
-    render: function(){
+    render: function () {
       $('#menu').wijmenu();
 
-      $(window).scroll(function(){
+      $(window).scroll(function () {
         $('#mobile-menu-plus').css({'position': 'fixed', 'z-index': 2,
-        'top': 0, 'left': 0, 'right': 0});
+          'top': 0, 'left': 0, 'right': 0});
       });
 
+      $("#go").click(this.go);
+
+      this.setLocation();
       var socket = this.model.get("socket");
       socket.emit("getRefList");
       socket.on("refList", this.setRefGen);
     },
 
-    setRefGen: function(refList){
-      $('#loc-genome').autocomplete({
-        source: refList});       
+    go: function() {
+      var pos = {};
+      pos.genome = $("#loc-genome").val();
+      pos.chrom =  $("#loc-chrom").val();
+      pos.starts =  parseInt($("#loc-start").val(), 10);
+      pos.ends = parseInt($("#loc-end").val(), 10);
+      console.log(pos);
+      this.model.set({"pos": pos});
+    },
+
+    setLocation: function() {
+      var pos = this.model.get("pos");  
+      $("#loc-genome").val(pos.genome);
+      $("#loc-chrom").val(pos.chrom);
+      $("#loc-start").val(pos.starts);
+      $("#loc-end").val(pos.ends);
+    },
+
+    setRefGen: function (refList) {
+      $('#loc-genome').autocomplete({source: refList});
+    },
+
+    toggleSpinner: function () {
+      var displayData = this.model.get("displayData");
+      if (displayData.waiting === true) {
+        $("#loading-spinner").show();
+      } else {
+        $("#loading-spinner").hide();
+      }
     }
 
   });
 
-  var NavigateView = Backbone.View.extend({
+  NavigateView = Backbone.View.extend({
 
     initialize: function() {
       _.bindAll(this, "render",
@@ -229,7 +275,7 @@
         }
       };
       this.model.set(update);
-    },
+    }
   });
 
   var ControlsView = Backbone.View.extend({
@@ -394,10 +440,10 @@
       "rangeExceeded": false,
       "bufferX": 5,
       "pos": {
-        "genome": "TAIR10",
-        "chrom": "Chr1",
-        "starts": 3500,
-        "ends": 9000
+        "genome": "",
+        "chrom": "",
+        "starts": 0,
+        "ends": 0,
       },
       "strains": [],
       "bufferData": {
@@ -434,7 +480,9 @@
         "waitForData", "updateBufferData", "importData",
         "isLocusInRegion", "isFeatureInRegion", "calcHaplotypes",
       "goToFeature", "goToFeatureRegion",  "cluster", "importStrains",
-      "getStrains", 'reloadData');
+      "getStrains", 'reloadData', 'savePosition', "loadLocation");
+
+      this.loadLocation();      
 
       var appAddress = 'http://' + $('#hostip').val();
       this.set({socket: io.connect(appAddress)});
@@ -445,12 +493,28 @@
       // update the model when position chnages
       this.on("change:pos", function() {
         this.updatePosition();
+        this.savePosition();
       });
       // when data come back
       this.get("socket").on("data", this.importData);
       this.get("socket").on("featureRegion", this.goToFeatureRegion);
       this.get("socket").on("geneModels", this.importData);
       this.get("socket").on("strains", this.importStrains);
+    },
+
+    loadLocation: function() {
+      var pos = {};
+        pos.genome = localStorage.getItem("genome");
+        pos.chrom = localStorage.getItem("chrom");
+        pos.starts = parseInt(localStorage.getItem("starts"), 10);
+        pos.ends = parseInt(localStorage.getItem("ends"), 10);
+        if (!pos.genome) {
+        pos.genome = "TAIR10";
+        pos.chrom = "Chr1";
+        pos.starts = 10000;
+        pos.ends = 15000;
+      }
+      this.set({"pos": pos});
     },
 
     importData: function(data) {
@@ -541,11 +605,20 @@
       else {this.waitForData(true);}
     },
 
-    updateBufferData: function() {
+    savePosition: function() {
       var pos = this.get("pos");
-      var span = pos.ends - pos.starts;
-      var flank = (this.get("bufferX") - 1) * span/2;
-      var start = pos.starts - flank;
+      localStorage.setItem("genome", pos.genome);
+      localStorage.setItem("chrom", pos.chrom);
+      localStorage.setItem("starts", pos.starts);
+      localStorage.setItem("ends", pos.ends);
+    },
+
+    updateBufferData: function() {
+      var pos, span, flank, start, newBufferStart, newBufferEnd;
+      pos = this.get("pos");
+      span = pos.ends - pos.starts;
+      flank = (this.get("bufferX") - 1) * span/2;
+      start = pos.starts - flank;
       newBufferStart = start >= 0 ? start : 1;
       newBufferEnd = pos.ends + flank;
       var region = {
@@ -637,14 +710,16 @@
       var pos = this.get("pos");
       if(locus.gene.start <= pos.ends && locus.gene.end >= pos.starts) {
         return true;
-      } else {return false;}
+      }
+      return false;
     },
 
     isFeatureInRegion: function(feature) {
       var pos = this.get("pos");
       if(feature.start <= pos.ends && feature.end >= pos.starts) {
         return true;
-      } else {return false;}
+      }
+      return false;
     },
 
     calcHaplotypes: function() {
@@ -698,7 +773,8 @@
         var dist = _.reduce(snpDiff, function(memo, idx) {
           if (snps1[idx] === snps2[idx]) {
             return memo;
-          } else {return (memo += score*score);}
+          }
+          return (memo += score*score);
         }, 0);
         dist = Math.sqrt(dist);
         return dist;
@@ -802,7 +878,7 @@
       .transition().duration(200)
       .style("opacity", function(d) {
         if (_.include(codingPos, d.x)) {return 0.6;}
-        else {return 0.1;}
+        return 0.1;
       });
     },
 
@@ -817,7 +893,7 @@
       .transition().duration(200)
       .style("opacity", function(d) {
         if (_.include(codingPos, d.x)) {return 0.1;}
-        else {return 0.6;}
+        return 0.6;
       });
     },
     showAllSNPs: function() {
@@ -1065,13 +1141,15 @@
         .attr('class', function(d) {
           if (d.strains[0] === "refStrain" ) {
             return 'refHap';
-          } else {return 'hap';}
+          }
+          return 'hap';
         });
       haplotypeBars.enter().append('svg:rect')
       .attr('class', function(d) {
           if (d.strains[0] === "refStrain" ) {
             return 'refHap';
-          } else {return 'hap';}
+          }
+          return 'hap';
         })
       .attr('height', glyphH)
       .attr('width', width)
@@ -1082,10 +1160,10 @@
       haplotypeBars.exit().remove();
 
       // draw number of strains representing haplotype
-      fracString = function(d) {
-        nAllStains = _.size(allStrains);
-        nHaplStrain = _.size(d.strains);
-        percentStrains = nHaplStrain*100/nAllStains;
+      var fracString = function(d) {
+        var nAllStains = _.size(allStrains);
+        var nHaplStrain = _.size(d.strains);
+        var percentStrains = nHaplStrain*100/nAllStains;
         return nHaplStrain + " (" + Math.floor(percentStrains)+ "%)";
       };
 
@@ -1328,7 +1406,7 @@
       .duration(400)
       .style("opacity", function(d) {
         if (_.include(posWithSNP, d.x)) {return 0.2;}
-        else {return 0.1;}
+        return 0.1;
       });
 
       d3.selectAll(".nodeCircle")
@@ -1338,7 +1416,7 @@
         if ((_.size(d.children) === 0) && _.include(posWithSNP, d.x)) {
           return "steelblue";
         }
-        else {return "#fff";}
+        return "#fff";
       });
     },
 
@@ -1438,7 +1516,7 @@
 
     isLeaf: function(node) {
       if (_.size(node.children) === 0) {return true;}
-      else {return false;}
+      return false;
     },
 
     leaf2haplotype: function(leaf) {
@@ -1471,7 +1549,7 @@
       el: $("#menu"),
       model: dataModel
     });
-    var goRegionView = new choiceView({
+    var goRegionView = new ChoiceView({
       el: $("#locationChoice"),
       model: dataModel
     });
@@ -1497,4 +1575,5 @@
 
   });
 
-}(jQuery));
+}(jQuery, Backbone, window, _, io, clusterfck, BlobBuilder, location, d3,
+  saveAs, document, localStorage));

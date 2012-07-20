@@ -8,7 +8,8 @@ body {
 #goLeft,
 #zoomOut,
 #zoomIn,
-#goRight {
+#goRight,
+#go {
   cursor: pointer;
 }
 #graphs {

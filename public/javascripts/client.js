@@ -164,7 +164,6 @@
       pos.chrom =  $("#loc-chrom").val();
       pos.starts =  parseInt($("#loc-start").val(), 10);
       pos.ends = parseInt($("#loc-end").val(), 10);
-      console.log(pos);
       this.model.set({"pos": pos});
     },
 
@@ -828,8 +827,10 @@
       this.model.on('change:displayData:clusters', this.draw);
       // this.model.bind('change:rangeExceeded', this.draw);
       var that = this;
-      $(window).resize(function() {
-        location.reload();
+      $(window).resize(function(ev) {
+        if(ev.target === window) {
+          location.reload();
+        }
       });
       this.render();
     },
@@ -1512,7 +1513,8 @@
         var fname = $(haplDialog).find("#fastaFileName").val() + ".fas";
         saveAs(bb.getBlob("text/plain;charset=utf-8"), fname);
       });
-    },
+     },
+    
 
     isLeaf: function(node) {
       if (_.size(node.children) === 0) {return true;}

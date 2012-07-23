@@ -114,66 +114,6 @@ div(id='mobile-menu-plus')
         span(id='goRight')
           |  =
 
-span#old
-  p
-    div#locationChoice
-      div#radio
-        input(type="radio"
-          id="radioRegion"
-          name="radio"
-          class="ui-corner-left")
-        label(for="radioRegion")
-          | go to region
-        input(type="radio"
-          id="radioFeature"
-          name="radio"
-          class="ui-corner-right")
-        label(for="radioFeature")
-          | go to feature
-
-      p
-        div#regionSearch
-          | ref.gen.
-          input#refgen()
-          |  chromosome
-          input#chrom(type="string")
-          |  start
-          input#start(type="number")
-          |  end
-          input#end(type="number")
-          input#go(type="submit", value="Go")
-
-        div#featureSearch
-          | feature
-          input#name(type="string")
-          |  with flanking region
-          input#flank(type="number")
-          input#search(type="submit", value="Search")
-      
-      span#searchMessage
-
-  div#codingRadio
-    input(type="radio"
-      id="radioAllSNPs"
-      name="codingRadio"
-      class="ui-corner-left")
-    label(for="radioAllSNPs")
-      | All SNPs
-    input(type="radio"
-      id="radioNonCoding"
-      name="codingRadio")
-    label(for="radioNonCoding")
-      | Non-Coding
-    input(type="radio"
-      id="radioCoding"
-      name="codingRadio"
-      class="ui-corner-right")
-    label(for="radioCoding")
-      | Coding
-
-  div#controls
-    input#filterButton(type="button", value="filter")
-
   div#haplDialog
     p
       b Strains:
@@ -189,56 +129,8 @@ span#old
       | .fas
       input#saveFasta(type="submit", value="save")
 
-  div#SNPDialog
-      p
-
-  div#filterDialog
-    div#filterRadio
-      input(type="radio"
-        id="radioStrains"
-        name="filterRadio"
-        class="ui-corner-left")
-      label(for="radioStrains")
-        | Strains
-      input(type="radio"
-        id="radioSNPs"
-        name="filterRadio"
-        class="ui-corner-right")
-      label(for="radioSNPs")
-        | SNPs
-    p
-      div
-        div#excluded
-          b
-            | Excluded:
-          div#exclSNPs
-            ul
-          div#exclStrains
-            ul
-        div#shuffling
-          button#removeButton(type="button")
-            | < Remove
-          button#addButton(type="button")
-            | Add >
-        div#included
-          b
-            | Included:
-          div#inclSNPs
-            ul
-          div#inclStrains
-            ul
-    p
-      div#applyFilters
-        button(type="button")
-          | Apply Changes
-
-
 div#graphs
   div#tree
   div#chart
 
-// temporary disable old interface
-script
-  $(document).ready(function() {
-    $('#old').hide();
-  })  
+

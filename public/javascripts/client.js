@@ -193,160 +193,6 @@
     }
   });
 
-  var ControlsView = Backbone.View.extend({
-
-    initialize: function() {
-      _.bindAll(this, "render", "openFilterDialog",
-        "renderStrainList", "renderSNPList", "updateLists",
-      "applyFilters", "removeSelected", "addSelected");
-
-      this.render();
-    },
-
-    render: function() {
-      $("#filterDialog").hide();
-      $("#filterButton").button();
-
-      // filter dialog stuff
-      this.filterDialog = $("#filterDialog").dialog({
-        autoOpen: false,
-        title: "Exclude/Include SNPs/strains",
-        width: 450
-      });
-
-      $("#filterRadio").buttonset();
-      $("#applyFilters button").button()
-      .click(this.applyFilters);
-
-      // hide the lists
-      $("#exclStrains").hide();
-      $("#inclStrains").hide();
-      $("#exclSNPs").hide();
-      $("#inclSNPs").hide();
-
-      // connect list rendering to toggle buttons
-      $("#radioStrains").click(this.renderStrainList);
-      $("#radioSNPs").click(this.renderSNPList);
-
-      $("#addButton").button()
-      .click(this.addSelected);
-      $("#removeButton").button()
-      .click(this.removeSelected);
-
-      $("#included ul").selectable({
-        stop: function() {
-          $("#addButton").removeClass("ui-state-active");
-          $("#removeButton").addClass("ui-state-active");
-        }
-      });
-      $("#excluded ul").selectable({
-        stop: function() {
-          $("#removeButton").removeClass("ui-state-active");
-          $("#addButton").addClass("ui-state-active");
-        }
-      });
-    },
-
-    events: {
-      "click #filterButton": "openFilterDialog"
-    },
-
-    openFilterDialog: function() {
-      $("#filterDialog").dialog('open');
-
-      // fill lists in
-      this.updateLists();
-      this.renderStrainList();
-    },
-
-    updateLists: function() {
-      var filters = this.model.get("displayData").filters;
-      var SNPsIncl = filters.SNPs.incl;
-      var SNPsExcl = filters.SNPs.excl;
-      var strainsIncl = filters.strains.incl;
-      var strainsExcl = filters.strains.excl;
-
-      // append lists
-      var inclSNPsAnchor = $("#inclSNPs ul");
-      inclSNPsAnchor.empty();
-      _.each(SNPsIncl, function(snpID, i) {
-        inclSNPsAnchor.append("<li>" + snpID + "</li>");
-      });
-      var inclStrainsAnchor = $("#inclStrains ul");
-      inclStrainsAnchor.empty();
-      _.each(strainsIncl, function(strain, i) {
-        inclStrainsAnchor.append("<li>" + strain + "</li>");
-      });
-      var exclSNPsAnchor = $("#exclSNPs ul");
-      exclSNPsAnchor.empty();
-      _.each(SNPsExcl, function(snpID, i) {
-        exclSNPsAnchor.append("<li>" + snpID + "</li>");
-      });
-      var exclStrainsAnchor = $("#exclStrains ul");
-      exclStrainsAnchor.empty();
-      _.each(strainsExcl, function(strain, i) {
-        exclStrainsAnchor.append("<li>" + strain + "</li>");
-      });
-    },
-
-    // strains list rendering
-    renderStrainList: function() {
-      $("#exclStrains").show();
-      $("#inclStrains").show();
-      $("#exclSNPs").hide();
-      $("#inclSNPs").hide();
-    },
-
-    // SNPs list rendering
-    renderSNPList: function() {
-      // hide strain lists and show snp lists
-      $("#exclStrains").hide();
-      $("#inclStrains").hide();
-      $("#exclSNPs").show();
-      $("#inclSNPs").show();
-    },
-
-    addSelected: function() {
-      // add SNPs or strains depending on which toggle is on
-      var active = $("#filterRadio .ui-state-active").attr("for");
-      if (active === "radioSNPs") {
-        $("#exclSNPs ul .ui-selected").appendTo($("#inclSNPs ul"));
-      }
-      else {
-        $("#exclStrains ul .ui-selected").appendTo($("#inclStrains ul"));
-      }
-    },
-
-    removeSelected: function() {
-      // remove SNPs or strains depending on which toggle is on
-      var active = $("#filterRadio .ui-state-active").attr("for");
-      if (active === "radioSNPs") {
-        $("#inclSNPs ul .ui-selected").appendTo($("#exclSNPs ul"));
-      }
-      else {
-        $("#inclStrains ul .ui-selected").appendTo($("#exclStrains ul"));
-      }
-    },
-
-    applyFilters: function() {
-      // get excluded lists from the dialog
-      var exclStrainsLi = $("#exclStrains ul li");
-      var newExclStrains = _.map(exclStrainsLi, function(li, idx) {
-        return $(li).text();
-      });
-      var exclSNPsLi = $("#exclSNPs ul li");
-      var newExclSNPs = _.map(exclSNPsLi, function(li, idx) {
-        return $(li).text();
-      });
-      // feed them back to the model
-      var displayData = this.model.get("displayData");
-      displayData.filters.strains.excl = newExclStrains;
-      displayData.filters.SNPs.excl = newExclSNPs;
-      this.model.set({"displayData": displayData});
-      this.model.updateDisplayData();
-    }
-  });
-
   // model for all the data
   var DataModel = Backbone.Model.extend({
 
@@ -774,13 +620,10 @@
       .attr("height", this.top + this.height + this.bottom)
       .append("svg:g")
       .attr("transform", "translate(" + this.left + "," + this.top + ")");
-
-      $("#codingRadio").buttonset();
-      $("#radioCoding").click(this.showCodingSNPs);
-      $("#radioNonCoding").click(this.showNonCodingSNPs);
-      $("#radioAllSNPs").click(this.showAllSNPs);
-      $("#radioAllSNPs").click();
       // this.draw();
+
+      // hide haplotype dialog window
+      $("#haplDialog").hide();
       return this;
     },
 
@@ -1479,11 +1322,6 @@
 
     var visView = new VisView({
       el: $("#chart"),
-      model: dataModel
-    });
-
-    var controlsView = new ControlsView({
-      el: $("#controls"),
       model: dataModel
     });
 

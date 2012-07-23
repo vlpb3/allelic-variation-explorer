@@ -9,7 +9,8 @@ body {
 #zoomOut,
 #zoomIn,
 #goRight,
-#go {
+#go,
+#goToFeature {
   cursor: pointer;
 }
 #graphs {

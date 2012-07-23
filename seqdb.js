@@ -58,6 +58,7 @@ function getFeatureRegion(genome, name, flank, callback) {
         'attributes.genome': genome,
         'attributes.Name': name
     }, function(err, doc) {
+        console.log(doc);
         if (err) {callback(err);}
         else if (doc.length === 0) {callback(null, {});}
         else {
@@ -107,7 +108,7 @@ function getAllStrains(genome, callback) {
   GenomeStrains.findOne({'genome': genome}, function(err, data) {
     if (err) {throw err;}
     callback(data.strains);
-    })
+    });
   // callback(null, data)  
 }
 

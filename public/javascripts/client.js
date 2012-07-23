@@ -51,7 +51,7 @@
   MenuView = Backbone.View.extend({
     initialize: function () {
       _.bindAll(this, "render", "setRefGen", "toggleSpinner", "setLocation",
-                "go");
+               "goToFeature", "go", "findFeature");
 
       this.model.on("change:displayData", this.toggleSpinner);
       this.model.on("change:pos", this.setLocation);
@@ -66,12 +66,33 @@
           'top': 0, 'left': 0, 'right': 0});
       });
 
-      $("#go").click(this.go);
+      // hide dialogs
+      $("#goToFeatureDialog").hide();
 
       this.setLocation();
       var socket = this.model.get("socket");
       socket.emit("getRefList");
       socket.on("refList", this.setRefGen);
+    },
+
+    events: {
+      "click #go": "go",
+      "click #goToFeature": "goToFeature"
+    },
+    
+    findFeature: function() {
+      var genome = $("#feature-genome").val();
+      var name = $("#feature-name").val();
+      var flanks = parseInt($("#feature-flanks").val(), 10);
+      this.model.goToFeature(genome, name, flanks);
+    },
+
+    goToFeature: function() {
+      $("#find").button().click(this.findFeature);
+
+      $("#goToFeatureDialog").dialog(
+          {title: "Find faeture of interest."}       
+        );
     },
 
     go: function() {
@@ -302,11 +323,10 @@
       this.set({"strains": data});
     },
 
-    goToFeature: function(name, flank) {
-      var pos = this.get("pos");
+    goToFeature: function(genome, name, flanks) {
       this.waitForData(true);
       this.get("socket").emit("getFeatureRegion",
-        {"genome": pos.genome, "name": name, "flank": flank});
+        {"genome": genome, "name": name, "flank": flanks});
     },
 
     goToFeatureRegion: function(region) {

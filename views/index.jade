@@ -81,7 +81,7 @@ div(id='mobile-menu-plus')
           span(id="go", class='icon')
             | Ã 
     li
-      a
+      a#goToFeature
         | Go to feature
     li
       a
@@ -114,20 +114,38 @@ div(id='mobile-menu-plus')
         span(id='goRight')
           |  =
 
-  div#haplDialog
-    p
-      b Strains:
-    p
-      b SNPs:
-    p
-      b Sequnce:
-    p
-      textarea#fastaSeqArea
-    p
-      | filename:
-      input#fastaFileName(type="string")
-      | .fas
-      input#saveFasta(type="submit", value="save")
+div#haplDialog
+  p
+    b Strains:
+  p
+    b SNPs:
+  p
+    b Sequnce:
+  p
+    textarea#fastaSeqArea
+  p
+    | filename:
+    input#fastaFileName(type="string")
+    | .fas
+    input#saveFasta(type="submit", value="save")
+
+div#goToFeatureDialog
+  p
+    |Genome: 
+    input(id="feature-genome", type='text', placeholder='Genome')
+  p
+    |Feature name:
+    input(id="feature-name", type='text', placeholder='name')
+  p
+    |Flanking region
+    input(id="feature-flanks", type='text', placeholder='flank')
+  
+  div(class="ui-dialog-buttonset")
+    button#find(type="button", class="ui-button ui-widget ui-button-text-only",
+      role="button")
+      span(class="ui-button-text")
+        | Find
+
 
 div#graphs
   div#tree

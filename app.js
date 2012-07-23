@@ -70,15 +70,17 @@ io.sockets.on('connection', function(socket) {
     });
     
     socket.on('getFeatureRegion', function(req) {
+        console.log(req);
         var genome = req.genome;
         var name = req.name;
         var flank = req.flank;
         seqdb.getFeatureRegion(genome, name, flank, function(err, reg) {
-            if (err) console.log(err);
+          console.log(reg);
+            if (err) {console.log(err);}
             if (reg.start === undefined) {
                 socket.emit('featureNotFound',
                 "Feature has not been found");
-            } else socket.emit('featureRegion', reg);
+            } else {socket.emit('featureRegion', reg);}
         });
     });
 

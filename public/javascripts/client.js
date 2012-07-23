@@ -47,90 +47,6 @@
   });
 
   // Views
-  // view for choosing the region to display
-  ChoiceView = Backbone.View.extend({
-
-    initialize: function () {
-
-      var pos, socket;
-      _.bindAll(this, "render", "updateModel", "goToFeature",
-        "onFeatureNotFound", "setRefList");
-
-      this.render();
-      // get values form the model
-      $("#radioRegion").click();
-      pos = this.model.get("pos");
-      $('#refgen').val(pos.genome);
-      $("#chrom").val(pos.chrom);
-      $("#start").val(pos.starts);
-      $("#end").val(pos.ends);
-      
-      socket = this.model.get("socket");
-      socket.on("featureNotFound", this.onFeatureNotFound);
-      socket.on("refList", this.setRefList);
-    },
-
-    events: {
-      "click #go" : "updateModel",
-      "click #search": "goToFeature"
-    },
-
-    updateModel: function () {
-      var update = {
-        "pos": {
-          "genome": $('#refgen').val(),
-          "chrom": $("#chrom").val(),
-          "starts": parseInt($("#start").val(), 10),
-          "ends": parseInt($("#end").val(), 10)
-        }
-      };
-      $("#searchMessage").text("");
-      this.model.set(update);
-    },
-
-    onFeatureNotFound: function (info) {
-      $("#searchMessage").text("\t " + info);
-    },
-
-    goToFeature: function () {
-      var name, flank;
-      $("#searchMessage").text("");
-      name = $("#name").val();
-      flank = parseInt($("#flank").val(), 10);
-      this.model.goToFeature(name, flank);
-    },
-    
-    setRefList: function (refList) {
-      $('#refgen').autocomplete({source: refList});
-      $('#refgen').val(refList[0]);
-    },
-
-    render: function () {
-
-      // get buttons displayed properly
-      $("#radio").buttonset();
-
-      // hide both searchbox sets at the beginning
-      $("#regionSearch").hide();
-      $("#featureSearch").hide();
-
-      // bind actions to these button sets
-      $("#radioRegion").click(function () {
-        $("#regionSearch").show();
-        $("#featureSearch").hide();
-      });
-
-      $("#radioFeature").click(function () {
-        $("#featureSearch").show();
-        $("#regionSearch").hide();
-      });
-      // ask for list of reference genomes
-      this.model.get("socket").emit("getRefList");
-
-      return this;
-    }
-
-  });
 
   MenuView = Backbone.View.extend({
     initialize: function () {
@@ -1549,10 +1465,6 @@
 
     var menuView = new MenuView({
       el: $("#menu"),
-      model: dataModel
-    });
-    var goRegionView = new ChoiceView({
-      el: $("#locationChoice"),
       model: dataModel
     });
 

@@ -51,7 +51,9 @@
   MenuView = Backbone.View.extend({
     initialize: function () {
       _.bindAll(this, "render", "setRefGen", "toggleSpinner", "setLocation",
-               "goToFeature", "go", "findFeature");
+               "openGoToFeatureDialog", "go", "findFeature",
+               "openFilterDialog", "drawTable", "onExcludeSelected",
+               "onIncludeSelected", "onSelectAll");
 
       this.model.on("change:displayData", this.toggleSpinner);
       this.model.on("change:pos", this.setLocation);
@@ -68,7 +70,7 @@
 
       // hide dialogs
       $("#goToFeatureDialog").hide();
-
+      $("#filterDialog").hide();
       this.setLocation();
       var socket = this.model.get("socket");
       socket.emit("getRefList");
@@ -77,7 +79,8 @@
 
     events: {
       "click #go": "go",
-      "click #goToFeature": "goToFeature"
+      "click #goToFeature": "openGoToFeatureDialog",
+      "click #filter": "openFilterDialog"
     },
     
     findFeature: function() {
@@ -87,7 +90,7 @@
       this.model.goToFeature(genome, name, flanks);
     },
 
-    goToFeature: function() {
+    openGoToFeatureDialog: function() {
       $("#find").button().click(this.findFeature);
 
       $("#goToFeatureDialog").dialog(
@@ -102,6 +105,107 @@
       pos.starts =  parseInt($("#loc-start").val(), 10);
       pos.ends = parseInt($("#loc-end").val(), 10);
       this.model.set({"pos": pos});
+    },
+
+    openFilterDialog: function() {
+
+      $(document).on("click", "#excludeSelected", this.onExcludeSelected);
+      $(document).on("click", "#includeSelected", this.onIncludeSelected);
+
+      this.filterDialog = $("#filterDialog").clone().dialog({
+        title: "Filter input data",
+        minWidth: 600,
+        close: function(ev, ui){ $(this).remove(); }
+      });
+      
+      this.drawTable();
+    },
+
+    onExcludeSelected: function() {
+      // get IDs of selected SNPs
+      var excluded = [];
+      $(".filterTable .rselect :nth-child(7n-6)").each(
+        function() {excluded.push($(this).text());}
+      );
+      // annotate excluded SNPs
+      var displayData = this.model.get("displayData");
+      var SNPs = _.map(displayData.SNPs, function(snp) {
+        if (_.include(excluded, snp.attributes.ID)) {
+          snp.attributes.included = false;
+        }
+        return snp; 
+      });
+      // update model
+      displayData.SNPs = SNPs;
+      this.model.set("displayData", displayData);
+      this.drawTable();
+    },
+
+    onIncludeSelected: function() {
+      var included = [];
+      $(".filterTable .rselect :nth-child(7n-6)").each(
+        function() {included.push($(this).text());}
+      );
+      // annotate excluded SNPs
+      var displayData = this.model.get("displayData");
+      var SNPs = _.map(displayData.SNPs, function(snp) {
+        if (_.include(included, snp.attributes.ID)) {
+          snp.attributes.included = true;
+        }
+        return snp; 
+      });
+      // update model
+      displayData.SNPs = SNPs;
+      this.model.set("displayData", displayData);
+      this.drawTable();
+    },
+
+    onSelectAll: function() {
+      
+
+    },
+
+    drawTable: function() {
+      $('.dataTables_wrapper').remove();
+      // fetch SNP data and prepare a table
+      var displayData = this.model.get("displayData");
+      var SNPs = _.map(displayData.SNPs, function(snp) {
+        if (snp.attributes.included === undefined) {
+          snp.attributes.included = true;
+        }
+        return snp;
+      }); 
+      console.log(SNPs);
+      var tableHead = "<table class='filterTable'>";
+      tableHead += "<thead><tr><th>ID</th><th>Change</th><th>Chrom</th>";
+      tableHead += "<th>Pos</th><th>Score</th><th>Accession</th><th>included</th>";
+      tableHead += "</tr></thead><tbody>";
+      
+      var SNPString = _.reduce(SNPs, function(memo, snp) {
+        var a = snp.attributes;
+        memo += "<tr>";
+        memo += "<td>" + a.ID + "</td>";
+        memo += "<td>" + a.Change + "</td>";
+        memo += "<td>" + snp.seqid + "</td>";
+        memo += "<td>" + snp.start + "</td>";
+        memo += "<td>" + snp.score + "</td>";
+        memo += "<td>" + a.Strain + "</td>";
+        // asign different classes for true and false
+        if (a.included) {memo += "<td class='included-row'>";}
+        else {memo += "<td class='excluded-row'>";}
+        memo += String(a.included) + "</td>";
+        memo += "</tr>";
+        return memo;
+      }, tableHead);
+      SNPString += "</tbody></table>"; 
+      
+      $(this.filterDialog).find("p:first").append(SNPString);
+      $('.filterTable tr').click( function() {
+        $(this).toggleClass('rselect');
+      });
+      $('.filterTable').dataTable({
+        "bJQueryUI": true,
+      "sPaginationType": "full_numbers"});
     },
 
     setLocation: function() {

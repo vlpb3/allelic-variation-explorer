@@ -10,7 +10,8 @@ body {
 #zoomIn,
 #goRight,
 #go,
-#goToFeature {
+#goToFeature,
+#filter {
   cursor: pointer;
 }
 #graphs {
@@ -21,6 +22,12 @@ body {
 #tree {
   float: left;
   padding: 40;
+}
+.included-row {
+  color: #008000;
+}
+.excluded-row {
+  color: #ff6347;
 }
 svg {
   font: 10px sans-serif;

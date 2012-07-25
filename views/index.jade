@@ -84,17 +84,17 @@ div(id='mobile-menu-plus')
       a#goToFeature
         | Go to feature
     li
-      a
+      a#filter
         | Filter
     li
-      a
+      a#higlight
         | Highlight
     li
-      a
+      a#bookmarks
         | Bookmarks
     li
       a
-        span(class='icon')
+        span#bookmarkThis(class='icon')
           | I
     li
       a
@@ -146,6 +146,20 @@ div#goToFeatureDialog
       span(class="ui-button-text")
         | Find
 
+div#filterDialog
+  p
+  p.filter-buttons
+    span#selectAll(class="ui-button ui-button-primary ui-corner-all")
+      |Select All
+    | 
+    span#excludeSelected(type="button", class="ui-button ui-button-error ui-corner-all")
+      |Exclude Selected
+    | 
+    span#includeSelected(class="ui-button ui-button-success ui-corner-all")
+      |Include Selected
+
+div#SNPDialog
+  p
 
 div#graphs
   div#tree

@@ -87,13 +87,13 @@ io.sockets.on('connection', function(socket) {
     socket.on('getStrains', function(genome) {
       seqdb.getAllStrains(genome, function(data) {
         socket.emit('strains', data);  
-      })  
+      });  
     });
 
     socket.on('getRefList', function() {
       seqdb.getRefList(function(data) {
         socket.emit('refList', data);  
-      })    
+      });    
     });
 
     socket.on('switchReference', function(refgen) {

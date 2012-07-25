@@ -111,7 +111,8 @@
 
       $(document).on("click", "#excludeSelected", this.onExcludeSelected);
       $(document).on("click", "#includeSelected", this.onIncludeSelected);
-
+      $(document).on("click", "#selectAll", this.onSelectAll);
+      
       this.filterDialog = $("#filterDialog").clone().dialog({
         title: "Filter input data",
         minWidth: 600,
@@ -123,11 +124,12 @@
 
     onExcludeSelected: function() {
       // get IDs of selected SNPs
+      var dTable = this.dTable;
       var excluded = [];
-      $(".filterTable .rselect :nth-child(7n-6)").each(
-        function() {excluded.push($(this).text());}
+      this.dTable.$(".rselect").each(
+        function() {excluded.push(dTable.fnGetData(this, 0));}
       );
-      // annotate excluded SNPs
+     // annotate excluded SNPs
       var displayData = this.model.get("displayData");
       var SNPs = _.map(displayData.SNPs, function(snp) {
         if (_.include(excluded, snp.attributes.ID)) {
@@ -142,9 +144,10 @@
     },
 
     onIncludeSelected: function() {
+      var dTable = this.dTable;
       var included = [];
-      $(".filterTable .rselect :nth-child(7n-6)").each(
-        function() {included.push($(this).text());}
+      this.dTable.$(".rselect").each(
+        function() {included.push(dTable.fnGetData(this, 0));}
       );
       // annotate excluded SNPs
       var displayData = this.model.get("displayData");
@@ -161,12 +164,12 @@
     },
 
     onSelectAll: function() {
-      
-
+      var rows = this.dTable.$('tr');
+      $(rows).addClass('rselect');
     },
 
     drawTable: function() {
-      $('.dataTables_wrapper').remove();
+      $(".dataTables_wrapper").remove(); 
       // fetch SNP data and prepare a table
       var displayData = this.model.get("displayData");
       var SNPs = _.map(displayData.SNPs, function(snp) {
@@ -175,7 +178,6 @@
         }
         return snp;
       }); 
-      console.log(SNPs);
       var tableHead = "<table class='filterTable'>";
       tableHead += "<thead><tr><th>ID</th><th>Change</th><th>Chrom</th>";
       tableHead += "<th>Pos</th><th>Score</th><th>Accession</th><th>included</th>";
@@ -203,7 +205,7 @@
       $('.filterTable tr').click( function() {
         $(this).toggleClass('rselect');
       });
-      $('.filterTable').dataTable({
+      this.dTable = $('.filterTable').dataTable({
         "bJQueryUI": true,
       "sPaginationType": "full_numbers"});
     },

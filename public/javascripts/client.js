@@ -141,6 +141,7 @@
       displayData.SNPs = SNPs;
       this.model.set("displayData", displayData);
       this.drawTable();
+      this.model.updateDisplayData();
     },
 
     onIncludeSelected: function() {
@@ -161,6 +162,7 @@
       displayData.SNPs = SNPs;
       this.model.set("displayData", displayData);
       this.drawTable();
+      this.model.updateDisplayData();
     },
 
     onSelectAll: function() {
@@ -536,53 +538,29 @@
         return;
       }
 
-      // get SNPs
+      // get SNPs in region
       var SNPs = bufferData.SNPs;
       var pos = this.get("pos");
       displayData.SNPs = _.select(SNPs, function(snp) {
         return ((snp.start >= pos.starts) && (snp.start <= pos.ends));
       });
 
-      // for filtring get list of strains and snsp
-      var snpAttr = _.pluck(displayData.SNPs, "attributes");
-      var strainList = _.pluck(snpAttr, "Strain").sort();
-      strainList = _.uniq(strainList, true);
-      var newStrainIncl = _.difference(strainList,
-      displayData.filters.strains.excl);
-      displayData.filters.strains.incl = newStrainIncl;
-      // and SNPs
-      var snpIDList = _.pluck(snpAttr, "ID");
-      var newSNPIncl = _.difference(snpIDList,
-      displayData.filters.SNPs.excl);
+      // get refseq fragment
+      var refseq = bufferData.refseq;
+      var sliceStart = pos.starts - bufferData.starts;
+      var sliceEnd = pos.ends - bufferData.starts + 1;
+      refseq = refseq.slice(sliceStart, sliceEnd);
 
+      displayData.refseq = refseq;
 
-      // set them in the model
-      displayData.filters.strains.incl = newStrainIncl;
-      displayData.filters.SNPs.incl = newSNPIncl.sort(
-        function(a, b) {return a - b;});
+      // set obtained data to the model
+      this.set({"displayData": displayData});
 
-        // select SNPs again according to strain and SNP ID restictions
-        displayData.SNPs = _.select(SNPs, function(snp) {
-          return (_.include(newStrainIncl, snp.attributes.Strain) &&
-          _.include(newSNPIncl, snp.attributes.ID));
-        });
+      // calculate haplotypes from SNPs in the region
+      this.calcHaplotypes();
 
-        // get refseq fragment
-        var refseq = bufferData.refseq;
-        var sliceStart = pos.starts - bufferData.starts;
-        var sliceEnd = pos.ends - bufferData.starts + 1;
-        refseq = refseq.slice(sliceStart, sliceEnd);
-
-        displayData.refseq = refseq;
-
-        // set obtained data to the model
-        this.set({"displayData": displayData});
-
-        // calculate haplotypes from SNPs in the region
-        this.calcHaplotypes();
-
-        // cluster haplotypes
-        this.cluster();
+      // cluster haplotypes
+      this.cluster();
     },
 
     reloadData: function() {
@@ -612,7 +590,9 @@
     calcHaplotypes: function() {
 
       var displayData = this.get("displayData");
-      var SNPs = displayData.SNPs;
+      var SNPs = _.select(displayData.SNPs, function(snp) {
+        return (snp.attributes.included || snp.attributes.included === undefined);
+      });
       
       // create strains object
       var strains = _.reduce(SNPs, function(memo, snp) {

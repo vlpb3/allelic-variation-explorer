@@ -89,6 +89,13 @@ div(id='mobile-menu-plus')
     li
       a#higlight
         | Highlight
+      ul
+        li
+          a#highlightSNPs
+            | SNPs
+        li
+          a#highlightAccessions
+            | Accessions
     li
       a#bookmarks
         | Bookmarks
@@ -151,6 +158,9 @@ div#filterDialog
   p.filter-buttons
     span#selectAll(class="ui-button ui-button-primary ui-corner-all")
       |Select All
+    | 
+    span#toggleSelection(class="ui-button ui-button-primary ui-corner-all")
+      |Toggle Selection
     | 
     span#excludeSelected(type="button", class="ui-button ui-button-error ui-corner-all")
       |Exclude Selected

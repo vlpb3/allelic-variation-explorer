@@ -1,6 +1,9 @@
 body {
   background-image: url("../images/grid_noise.png");
 }
+#filterDialog {
+  background-image: url("../images/grid_noise.png");
+}
 #info,
 #navi {
   text-align: center;

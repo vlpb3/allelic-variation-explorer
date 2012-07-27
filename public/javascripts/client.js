@@ -2,10 +2,10 @@
           saveAs, document, localStorage) {
   'use strict';
   // all vars
-  var AppRouter, ChoiceView, MenuView, NavigateView;
+  var AppRouter, ChoiceView, FilterDialog, MenuView, NavigateView;
   // router stuff
 
-  AppRouter = Backbone.Router.extend({
+   AppRouter = Backbone.Router.extend({
 
     initialize: function (options) {
       _.bindAll(this, "moveModel", "navigateTo", "navigateToInitial");
@@ -47,82 +47,33 @@
   });
 
   // Views
+  FilterDialog = Backbone.View.extend({
+   initialize: function() {
+     _.bindAll(this, "render", "open", "drawTable", "onExcludeSelected",
+               "onIncludeSelected", "onSelectAll", "onToggleSelection");
+     this.render();
+   },
 
-  MenuView = Backbone.View.extend({
-    initialize: function () {
-      _.bindAll(this, "render", "setRefGen", "toggleSpinner", "setLocation",
-               "openGoToFeatureDialog", "go", "findFeature",
-               "openFilterDialog", "drawTable", "onExcludeSelected",
-               "onIncludeSelected", "onSelectAll");
-
-      this.model.on("change:displayData", this.toggleSpinner);
-      this.model.on("change:pos", this.setLocation);
-      this.render();
-    },
-
-    render: function () {
-      $('#menu').wijmenu();
-
-      $(window).scroll(function () {
-        $('#mobile-menu-plus').css({'position': 'fixed', 'z-index': 2,
-          'top': 0, 'left': 0, 'right': 0});
-      });
-
-      // hide dialogs
-      $("#goToFeatureDialog").hide();
+   render: function() {
       $("#filterDialog").hide();
-      this.setLocation();
-      var socket = this.model.get("socket");
-      socket.emit("getRefList");
-      socket.on("refList", this.setRefGen);
-    },
-
-    events: {
-      "click #go": "go",
-      "click #goToFeature": "openGoToFeatureDialog",
-      "click #filter": "openFilterDialog"
-    },
-    
-    findFeature: function() {
-      var genome = $("#feature-genome").val();
-      var name = $("#feature-name").val();
-      var flanks = parseInt($("#feature-flanks").val(), 10);
-      this.model.goToFeature(genome, name, flanks);
-    },
-
-    openGoToFeatureDialog: function() {
-      $("#find").button().click(this.findFeature);
-
-      $("#goToFeatureDialog").dialog(
-          {title: "Find faeture of interest."}       
-        );
-    },
-
-    go: function() {
-      var pos = {};
-      pos.genome = $("#loc-genome").val();
-      pos.chrom =  $("#loc-chrom").val();
-      pos.starts =  parseInt($("#loc-start").val(), 10);
-      pos.ends = parseInt($("#loc-end").val(), 10);
-      this.model.set({"pos": pos});
-    },
-
-    openFilterDialog: function() {
-
       $(document).on("click", "#excludeSelected", this.onExcludeSelected);
       $(document).on("click", "#includeSelected", this.onIncludeSelected);
       $(document).on("click", "#selectAll", this.onSelectAll);
-      
-      this.filterDialog = $("#filterDialog").clone().dialog({
-        title: "Filter input data",
-        minWidth: 600,
-        close: function(ev, ui){ $(this).remove(); }
-      });
-      
-      this.drawTable();
-    },
+      $(document).on("click", "#toggleSelection", this.onToggleSelection);
+   },
 
-    onExcludeSelected: function() {
+   open: function() {
+     this.filterDialog = $("#filterDialog").clone().dialog({
+       title: "Filter input data",
+       minWidth: 600,
+       close: function(ev, ui){ $(this).remove(); }
+     });
+
+     this.model.on("change:pos", this.drawTable);
+     this.drawTable();
+   },
+
+   onExcludeSelected: function() {
       // get IDs of selected SNPs
       var dTable = this.dTable;
       var excluded = [];
@@ -166,8 +117,14 @@
     },
 
     onSelectAll: function() {
-      var rows = this.dTable.$('tr');
+      var rows = this.dTable.$('tr', {"filter": "applied"});
+      console.log(rows);
       $(rows).addClass('rselect');
+    },
+
+    onToggleSelection: function() {
+      var rows = this.dTable.$('tr');
+      $(rows).toggleClass('rselect');
     },
 
     drawTable: function() {
@@ -180,36 +137,115 @@
         }
         return snp;
       }); 
-      var tableHead = "<table class='filterTable'>";
-      tableHead += "<thead><tr><th>ID</th><th>Change</th><th>Chrom</th>";
-      tableHead += "<th>Pos</th><th>Score</th><th>Accession</th><th>included</th>";
-      tableHead += "</tr></thead><tbody>";
-      
-      var SNPString = _.reduce(SNPs, function(memo, snp) {
-        var a = snp.attributes;
-        memo += "<tr>";
-        memo += "<td>" + a.ID + "</td>";
-        memo += "<td>" + a.Change + "</td>";
-        memo += "<td>" + snp.seqid + "</td>";
-        memo += "<td>" + snp.start + "</td>";
-        memo += "<td>" + snp.score + "</td>";
-        memo += "<td>" + a.Strain + "</td>";
-        // asign different classes for true and false
-        if (a.included) {memo += "<td class='included-row'>";}
-        else {memo += "<td class='excluded-row'>";}
-        memo += String(a.included) + "</td>";
-        memo += "</tr>";
-        return memo;
-      }, tableHead);
-      SNPString += "</tbody></table>"; 
-      
-      $(this.filterDialog).find("p:first").append(SNPString);
-      $('.filterTable tr').click( function() {
-        $(this).toggleClass('rselect');
-      });
+
+      $(this.filterDialog).find("p:first")
+      .html("<table class='filterTable'></table>");
+
+      // create table header
       this.dTable = $('.filterTable').dataTable({
         "bJQueryUI": true,
-      "sPaginationType": "full_numbers"});
+        "sPaginationType": "full_numbers",
+        "aoColumns": [
+          {"sTitle": "ID"},
+          {"sTitle": "Change"},
+          {"sTitle": "Chrom"},
+          {"sTitle": "Pos"},
+          {"sTitle": "Score"},
+          {"sTitle": "Accession"},
+          {"sTitle": "included"}
+      ]});
+
+      // input data into a table
+      _.each(SNPs, function(snp) {
+        var includedString = "";
+        if (snp.attributes.included) {
+          includedString = "<span class=included-row>";
+          includedString += snp.attributes.included;
+          includedString += "</span>";}
+          else {
+            includedString = "<span class=excluded-row>";
+            includedString += snp.attributes.included;
+            includedString += "</snp>";}
+            var row = [
+              snp.attributes.ID,
+              snp.attributes.Change,
+              snp.seqid,
+              snp.start,
+              snp.score,
+              snp.attributes.Strain,
+              includedString
+            ];
+            this.dTable.fnAddData(row);
+      }, this);
+
+      // whn a row is clicked select/unselect it
+      this.dTable.$('tr').click( function() {
+        $(this).toggleClass('rselect');
+      });
+
+    },
+
+  });
+
+  MenuView = Backbone.View.extend({
+    initialize: function () {
+      _.bindAll(this, "render", "setRefGen", "toggleSpinner", "setLocation",
+               "openGoToFeatureDialog", "go", "findFeature");
+
+      this.model.on("change:displayData", this.toggleSpinner);
+      this.model.on("change:pos", this.setLocation);
+      this.render();
+    },
+
+    render: function () {
+      $('#menu').wijmenu();
+      this.filterDialog = new FilterDialog({
+        el: $("#filterDialog"),
+        model: this.model
+      });
+
+
+      $(window).scroll(function () {
+        $('#mobile-menu-plus').css({'position': 'fixed', 'z-index': 2,
+          'top': 0, 'left': 0, 'right': 0});
+      });
+
+      // hide dialogs
+      $("#goToFeatureDialog").hide();
+      this.setLocation();
+      var socket = this.model.get("socket");
+      socket.emit("getRefList");
+      socket.on("refList", this.setRefGen);
+    },
+
+    events: {
+      "click #go": "go",
+      "click #goToFeature": "openGoToFeatureDialog",
+      "click #filter": "openFilterDialog"
+    },
+    
+    findFeature: function() {
+      var genome = $("#feature-genome").val();
+      var name = $("#feature-name").val();
+      var flanks = parseInt($("#feature-flanks").val(), 10);
+      this.model.goToFeature(genome, name, flanks);
+    },
+
+    openGoToFeatureDialog: function() {
+      $("#find").button().click(this.findFeature);
+
+      $("#goToFeatureDialog").dialog(
+          {title: "Find faeture of interest."}       
+        );
+    },
+
+    go: function() {
+      var pos = {};
+      pos.genome = $("#loc-genome").val();
+      pos.chrom =  $("#loc-chrom").val();
+      pos.starts =  parseInt($("#loc-start").val(), 10);
+      pos.ends = parseInt($("#loc-end").val(), 10);
+      this.model.set({"pos": pos});
     },
 
     setLocation: function() {
@@ -231,6 +267,10 @@
       } else {
         $("#loading-spinner").hide();
       }
+    },
+
+    openFilterDialog: function () {
+      this.filterDialog.open();
     }
 
   });
@@ -351,17 +391,7 @@
         SNPs: [],
         features: [],
         haplotypes: [],
-        refseq: "",
-        filters: {
-          SNPs: {
-            incl: [],
-            excl: []
-          },
-          strains: {
-            incl: [],
-            excl: []
-          }
-        }
+        refseq: ""
       }
     },
 
@@ -1428,7 +1458,8 @@
 
     var visView = new VisView({
       el: $("#chart"),
-      model: dataModel
+      model: dataModel,
+      menuView: menuView
     });
 
   });

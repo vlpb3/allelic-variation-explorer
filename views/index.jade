@@ -57,14 +57,11 @@ input(type="hidden"
   value=hostip)
 
 div(id='mobile-menu-plus')
-  ul(id='menu')
+  ul(id='menu', class="unselectable")
     li
       h3
         a
           | Allelic variation Explorer
-    li
-      a
-        img(id="loading-spinner", class='logo', src='images/ajax-loader.gif')
     li
       input(id="loc-genome", type='text', placeholder='Genome')
     li
@@ -94,21 +91,23 @@ div(id='mobile-menu-plus')
           a#highlightSNPs
             | SNPs
         li
-          a#highlightAccessions
+          a#markAccessions
             | Accessions
     li
       a#bookmarks
         | Bookmarks
+      ul#bookmarkList
+        li
     li
       a
-        span#bookmarkThis(class='icon')
+        span#addBookmark(class='icon')
           | I
     li
       a
         span#info(class='icon')
           | "
 
-  div(id='navi')
+  div(id='navi', class="unselectable")
     span(class='icon')
       br
       h1
@@ -137,36 +136,76 @@ div#haplDialog
     input#saveFasta(type="submit", value="save")
 
 div#goToFeatureDialog
-  p
-    |Genome: 
-    input(id="feature-genome", type='text', placeholder='Genome')
-  p
-    |Feature name:
-    input(id="feature-name", type='text', placeholder='name')
-  p
-    |Flanking region
-    input(id="feature-flanks", type='text', placeholder='flank')
-  
-  div(class="ui-dialog-buttonset")
-    button#find(type="button", class="ui-button ui-widget ui-button-text-only",
-      role="button")
-      span(class="ui-button-text")
-        | Find
+    div(class="form-field")
+      label(for="feature-genome")
+        |Genome:
+      input(id="feature-genome", name="feature-genome", type='text', placeholder='Genome')
+    div(class="form-field")
+      label(for="feature-name")
+        |Feature name:
+      input(id="feature-name", name="feature-name", type='text', placeholder='name')
+    div(class="form-field")
+      label(for="feature-flanks")
+        |Flanking region:
+      input(id="feature-flanks", name="feature-flanks", type='text', placeholder='flank')
+    p
+      button#find(type="button", class="ui-button ui-widget ui-button-text-only",
+        role="button")
+        span(class="ui-button-text")
+          | Find
 
 div#filterDialog
   p
   p.filter-buttons
-    span#selectAll(class="ui-button ui-button-primary ui-corner-all")
+    span(class="select-all ui-button ui-button-primary ui-corner-all")
       |Select All
     | 
-    span#toggleSelection(class="ui-button ui-button-primary ui-corner-all")
+    span(class="toggle-selection ui-button ui-button-primary ui-corner-all")
       |Toggle Selection
     | 
-    span#excludeSelected(type="button", class="ui-button ui-button-error ui-corner-all")
+    span(type="button", class="exclude-selected ui-button ui-button-error ui-corner-all")
       |Exclude Selected
     | 
-    span#includeSelected(class="ui-button ui-button-success ui-corner-all")
+    span(class="include-selected ui-button ui-button-success ui-corner-all")
       |Include Selected
+
+div#highlightSNPsDialog
+  p
+  p.highlightSNPs-buttons
+    span(class="select-all ui-button ui-button-primary ui-corner-all")
+      |Select All
+    | 
+    span(class="toggle-selection ui-button ui-button-primary ui-corner-all")
+      |Toggle Selection
+    | 
+    span(type="unhighlight-selected button", class="ui-button ui-button-error ui-corner-all")
+      |Unhighlight Selected
+    | 
+    span(class="highlight-selected ui-button ui-button-success ui-corner-all")
+      |Highlight Selected
+    
+div#markAccessionsDialog
+  p
+  p.markAccessions-buttons
+    span(class="select-all ui-button ui-button-primary ui-corner-all")
+      |Select All
+    | 
+    span(class="toggle-selection ui-button ui-button-primary ui-corner-all")
+      |Toggle Selection
+    | 
+    span(class="unmark-selected ui-button ui-button-error ui-corner-all")
+      |Unmark Selected
+    | 
+    span(class="mark-selected ui-button ui-button-success ui-corner-all")
+      |Mark Selected
+
+div#bookmarkDialog
+  p
+    | 
+  p
+    input#bookmarkName(type='text', placeholder='bookmark name')
+    span#saveBookmark(type="button", class="ui-button ui-corner-all")
+      |Save
 
 div#SNPDialog
   p

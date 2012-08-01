@@ -1,13 +1,24 @@
-body {background-image:url('../images/grid_noise.png');}
-#filterDialog {background-image:url('../images/grid_noise.png');}
+body, #filterDialog, #bookmarkDialog, #goToFeatureDialog, #haplDialog,
+#SNPDialog, #highlightSNPsDialog, #markAccessionsDialog
+    background-image url('../images/grid_noise.png')
 
-#info
+
+.unselectable
+    -moz-user-select -moz-none
+    -khtml-user-select none
+    -webkit-user-select none
+    -ms-user-select none
+    user-select none
 
 #navi
     text-align center
 
-#goLeft, #zoomOut, #zoomIn, #goRight, #go, #goToFeature, #filter
+#goLeft, #zoomOut, #zoomIn, #goRight, #go, #goToFeature, #filter, #addBookmark,
+#higlight, #highlightSNPs, #markAccessions, #bookmarks
     cursor pointer
+
+#bookmarkDialog p
+  text-align center
 
 #graphs
   position absolute
@@ -17,12 +28,29 @@ body {background-image:url('../images/grid_noise.png');}
   float left
   padding 40
 
-.included-row
+.form-field
+    margin-bottom: 15px
+
+.form-field label
+    margin-top 0.75em
+    float left
+    width 120px
+
+#find
+    float right
+
+#fastaSeqArea
+    width 570px
+    height 20em
+
+.included-row, .highlighted-row
     color green
 
-.excluded-row
+.excluded-row, .unHighlighted-row
     color tomato
 
+.dimmed-snp
+    opacity 0.1
 svg
   font 10px sans-serif
 

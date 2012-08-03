@@ -51,7 +51,8 @@
   FilterDialog = Backbone.View.extend({
    initialize: function() {
      _.bindAll(this, "render", "open", "drawTable", "onExcludeSelected",
-               "onIncludeSelected", "onSelectAll", "onToggleSelection");
+               "onIncludeSelected", "onSelectAll", "onToggleSelection",
+               "updateTable");
      this.render();
    },
 
@@ -64,14 +65,62 @@
    },
 
    open: function() {
-     this.filterDialog = $("#filterDialog").clone().dialog({
+     this.filterDialog = $("#filterDialog").dialog({
        title: "Filter input data",
-       minWidth: 600,
-       close: function(ev, ui){ $(this).remove(); }
+       minWidth: 600
      });
 
-     this.model.on("change:pos", this.drawTable);
+     var updateTable = this.updateTable;
+
+     this.model.on("change:pos", function () {
+       if ( $("#filterDialog").dialog("isOpen") === true) {
+         updateTable();
+       }
+     });
      this.drawTable();
+   },
+
+   updateTable: function() {
+     var SNPs = this.model.getDisplaySNPs();
+     SNPs = _.map(SNPs, function(snp) {
+       if (snp.attributes.included === undefined) {
+         snp.attributes.included = true;
+       }
+       return snp;
+     }); 
+
+     var data = [];
+     _.each(SNPs, function(snp) {
+       var includedString = "";
+
+       if (snp.attributes.included) {
+         includedString = "<span class=included-row>";
+         includedString += snp.attributes.included;
+         includedString += "</span>";
+       }
+       else {
+         includedString = "<span class=excluded-row>";
+         includedString += snp.attributes.included;
+         includedString += "</span>";
+       }
+       var row = [
+         snp.attributes.ID,
+         snp.attributes.Change,
+         snp.seqid,
+         snp.start,
+         snp.score,
+         snp.attributes.Strain,
+         includedString
+       ];
+       data.push(row);
+     }, this);
+
+     this.dTable.fnClearTable();
+     this.dTable.fnAddData(data);
+
+     this.dTable.$('tr').click( function() {
+       $(this).toggleClass('rselect');
+     });
    },
 
    onExcludeSelected: function() {
@@ -82,17 +131,16 @@
         function() {excluded.push(dTable.fnGetData(this, 0));}
       );
      // annotate excluded SNPs
-      var displayData = this.model.get("displayData");
-      var SNPs = _.map(displayData.SNPs, function(snp) {
+      var SNPs = this.model.getDisplaySNPs();
+      SNPs = _.map(SNPs, function(snp) {
         if (_.include(excluded, snp.attributes.ID)) {
           snp.attributes.included = false;
         }
         return snp; 
       });
       // update model
-      displayData.SNPs = SNPs;
-      this.model.set("displayData", displayData);
-      this.drawTable();
+      this.model.setDisplaySNPs(SNPs);
+      this.updateTable();
       this.model.updateDisplayData();
     },
 
@@ -103,17 +151,16 @@
         function() {included.push(dTable.fnGetData(this, 0));}
       );
       // annotate excluded SNPs
-      var displayData = this.model.get("displayData");
-      var SNPs = _.map(displayData.SNPs, function(snp) {
+      var SNPs = this.model.getDisplaySNPs();
+      SNPs = _.map(SNPs, function(snp) {
         if (_.include(included, snp.attributes.ID)) {
           snp.attributes.included = true;
         }
         return snp; 
       });
       // update model
-      displayData.SNPs = SNPs;
-      this.model.set("displayData", displayData);
-      this.drawTable();
+      this.model.setDisplaySNPs(SNPs);
+      this.updateTable();
       this.model.updateDisplayData();
     },
 
@@ -128,10 +175,10 @@
     },
 
     drawTable: function() {
-      $("#filterDialog .dataTables_wrapper").remove(); 
+      // $("#filterDialog .dataTables_wrapper").remove(); 
       // fetch SNP data and prepare a table
-      var displayData = this.model.get("displayData");
-      var SNPs = _.map(displayData.SNPs, function(snp) {
+      var SNPs = this.model.getDisplaySNPs();
+      SNPs = _.map(SNPs, function(snp) {
         if (snp.attributes.included === undefined) {
           snp.attributes.included = true;
         }
@@ -156,38 +203,46 @@
       ]});
 
       // input data into a table
+      var data = [];
       _.each(SNPs, function(snp) {
         var includedString = "";
+
         if (snp.attributes.included) {
           includedString = "<span class=included-row>";
           includedString += snp.attributes.included;
-          includedString += "</span>";}
-          else {
-            includedString = "<span class=excluded-row>";
-            includedString += snp.attributes.included;
-            includedString += "</span>";}
-            var row = [
-              snp.attributes.ID,
-              snp.attributes.Change,
-              snp.seqid,
-              snp.start,
-              snp.score,
-              snp.attributes.Strain,
-              includedString
-            ];
-            this.dTable.fnAddData(row);
+          includedString += "</span>";
+        }
+        else {
+          includedString = "<span class=excluded-row>";
+          includedString += snp.attributes.included;
+          includedString += "</span>";
+        }
+        var row = [
+          snp.attributes.ID,
+          snp.attributes.Change,
+          snp.seqid,
+          snp.start,
+          snp.score,
+          snp.attributes.Strain,
+          includedString
+        ];
+        data.push(row);
       }, this);
+
+      this.dTable.fnAddData(data);
       // whn a row is clicked select/unselect it
       this.dTable.$('tr').click( function() {
         $(this).toggleClass('rselect');
       });
+
     },
   });
 
   HighlightSNPsDialog = Backbone.View.extend({
     initialize: function() {
       _.bindAll(this, "render", "open", "onHighlightSelected", "onSelectAll",
-        "onToggleSelection", "onUnHighlightSelected", "drawTable");
+        "onToggleSelection", "onUnHighlightSelected", "drawTable", "onClose",
+        "updateTable");
       this.render();
     },
 
@@ -203,13 +258,81 @@
         this.onToggleSelection); 
     },
 
-    open: function() {
-      this.highlightSNPsDialog = $("#highlightSNPsDialog").clone().dialog({
-        title: "Highlight SNPs",
-        minWidth: 600,
+    updateTable: function() {
+      var SNPs = this.model.getDisplaySNPs();
+      SNPs = _.map(SNPs, function(snp) {
+        if (snp.attributes.highlighted === undefined) {
+          snp.attributes.highlighted = false;  
+        }
+        if (snp.attributes.included === undefined) {
+          snp.attributes.included = true;
+        }
+        return snp;
       });
 
-      this.model.on("change:pos", this.drawTable);
+      this.model.setDisplaySNPs(SNPs);
+      this.model.updateDisplayData();
+
+      SNPs = _.filter(SNPs, function(snp) {
+        return snp.attributes.included;
+      });
+
+      var data = [];
+      _.each(SNPs, function(snp) {
+        var highlightedString = "";
+        if (snp.attributes.highlighted) {
+          highlightedString = "<span class=highlighted-row>";
+          highlightedString += snp.attributes.highlighted;
+          highlightedString += "</span>";
+        } else {
+          highlightedString = "<span class=unHighlighted-row>";
+          highlightedString += snp.attributes.highlighted;
+          highlightedString += "</span>";}
+        var row = [
+         snp.attributes.ID,
+         snp.attributes.Change,
+         snp.seqid,
+         snp.start,
+         snp.score,
+         snp.attributes.Strain,
+         highlightedString
+        ];
+        data.push(row);
+      }, this);
+      
+      this.dTable.fnClearTable();
+      this.dTable.fnAddData(data);
+      this.dTable.$('tr').click( function() {
+        $(this).toggleClass('rselect');
+      });
+
+    },
+
+    onClose: function() {
+      var bufferData = this.model.get("bufferData");
+      var SNPs = bufferData.SNPs;
+      SNPs = _.map(SNPs, function(snp) {
+        snp.attributes.highlighted = undefined;
+        return snp;
+      });
+      bufferData.SNPs = SNPs;
+      this.model.set("bufferData", bufferData);
+      this.model.updateDisplayData();
+    },
+
+    open: function() {
+      this.highlightSNPsDialog = $("#highlightSNPsDialog").dialog({
+        title: "Highlight SNPs",
+        minWidth: 600,
+        close: this.onClose
+      });
+     
+      var updateTable = this.updateTable;
+      this.model.on("change:pos", function() {
+        if( $('#highlightSNPsDialog').dialog("isOpen") === true) {
+          updateTable();
+        }
+      });
       this.drawTable();
     },
 
@@ -219,16 +342,15 @@
       this.dTable.$('.rselect').each(
         function() { highlighted.push(dTable.fnGetData(this, 0));}
       );
-      var displayData = this.model.get("displayData");
-      var SNPs = _.map(displayData.SNPs, function(snp) {
+      var SNPs= this.model.getDisplaySNPs();
+      SNPs = _.map(SNPs, function(snp) {
         if(_.include(highlighted, snp.attributes.ID)) {
           snp.attributes.highlighted = true;
         }
         return snp;
       });
-      displayData.SNPs = SNPs;
-      this.model.set("displayData", displayData);
-      this.drawTable();
+      this.model.setDisplaySNPs(SNPs);
+      this.updateTable();
       this.model.updateDisplayData();
     },
 
@@ -238,16 +360,15 @@
       this.dTable.$(".rselect").each(
         function() {unHighlighted.push(dTable.fnGetData(this, 0));}
       );
-      var displayData = this.model.get("displayData");
-      var SNPs = _.map(displayData.SNPs, function(snp) {
+      var SNPs= this.model.getDisplaySNPs();
+      SNPs = _.map(SNPs, function(snp) {
         if (_.include(unHighlighted, snp.attributes.ID)) {
           snp.attributes.highlighted = false;
         } 
         return snp;
       });
-      displayData.SNPs = SNPs;
-      this.model.set("displayData", displayData);
-      this.drawTable();
+      this.model.setDisplaySNPs(SNPs);
+      this.updateTable();
       this.model.updateDisplayData();
     },
 
@@ -262,9 +383,8 @@
     },
 
     drawTable: function() {
-      $("#highlightSNPsDialog .dataTables_wrapper").remove();
-      var displayData = this.model.get("displayData");
-      var SNPs = _.map(displayData.SNPs, function(snp) {
+      var SNPs = this.model.getDisplaySNPs();
+      SNPs = _.map(SNPs, function(snp) {
         if (snp.attributes.highlighted === undefined) {
           snp.attributes.highlighted = false;  
         }
@@ -273,6 +393,9 @@
         }
         return snp;
       });
+
+      this.model.setDisplaySNPs(SNPs);
+      this.model.updateDisplayData();
 
       SNPs = _.filter(SNPs, function(snp) {
         return snp.attributes.included;
@@ -295,6 +418,7 @@
         ]
       });
       
+      var data = [];
       _.each(SNPs, function(snp) {
         var highlightedString = "";
         if (snp.attributes.highlighted) {
@@ -314,8 +438,10 @@
          snp.attributes.Strain,
          highlightedString
         ];
-        this.dTable.fnAddData(row);
+        data.push(row);
       }, this);
+
+      this.dTable.fnAddData(data);
       this.dTable.$('tr').click( function() {
         $(this).toggleClass('rselect');
       });
@@ -342,12 +468,10 @@
     },
 
     open: function() {
-      this.markAccessionsDialog = $("#markAccessionsDialog")
-        .clone().dialog({
+      this.markAccessionsDialog = $("#markAccessionsDialog").dialog({
         title: "Mark Accessions",
         minWidth: 500,
       });
-
       this.drawTable();
     },
 
@@ -372,9 +496,7 @@
       );
       var displayData = this.model.get("displayData");
       var markedAccessions = displayData.markedAccessions;
-      console.log(markedAccessions);
       markedAccessions = _.difference(markedAccessions, selected);
-      console.log(markedAccessions);
       displayData.markedAccessions = markedAccessions;
       this.model.set("displayData", displayData);
       this.drawTable();
@@ -704,7 +826,8 @@
         "waitForData", "updateBufferData", "importData",
         "isLocusInRegion", "isFeatureInRegion", "calcHaplotypes",
       "goToFeature", "goToFeatureRegion",  "cluster", "importStrains",
-      "getStrains", 'reloadData', 'savePosition', "loadLocation");
+      "getStrains", 'reloadData', 'savePosition', "loadLocation",
+      "getDisplaySNPs", "setDisplaySNPs");
 
       this.loadLocation();      
 
@@ -724,6 +847,16 @@
       this.get("socket").on("featureRegion", this.goToFeatureRegion);
       this.get("socket").on("geneModels", this.importData);
       this.get("socket").on("strains", this.importStrains);
+    },
+
+    getDisplaySNPs: function(){
+      return this.get("displayData").SNPs;
+    },
+    
+    setDisplaySNPs: function(snps) {
+      var displayData = this.get("displayData");
+      displayData.SNPs = snps;
+      this.set("displayData", displayData);
     },
 
     loadLocation: function() {
@@ -860,6 +993,7 @@
       // first fetch the fragment from the buffer
       var displayData = this.get("displayData");
 
+      console.log(displayData.SNPs);
       // get features
       var features = bufferData.features;
       displayData.features = _.select(features, this.isFeatureInRegion);
@@ -875,10 +1009,12 @@
       // get SNPs in region
       var SNPs = bufferData.SNPs;
       var pos = this.get("pos");
+      console.log(displayData.SNPs);
       displayData.SNPs = _.select(SNPs, function(snp) {
         return ((snp.start >= pos.starts) && (snp.start <= pos.ends));
       });
 
+      console.log(displayData.SNPs);
       // get refseq fragment
       var refseq = bufferData.refseq;
       var sliceStart = pos.starts - bufferData.starts;
@@ -1070,20 +1206,28 @@
 
     unHighlightSNPs: function() {
       var snps = this.model.get('displayData').SNPs;
+
       var highlighted = _.filter(snps, function(snp) {
-        if (snp.attributes.highlighted === undefined 
-          || snp.attributes.highlighted) {
-          return true;  
-        }
-        return false;
+        return snp.attributes.highlighted;
       });
-      var highlightedPos = _.pluck(highlighted, "start");
+      var unhighlighted = _.filter(snps, function(snp){
+        return snp.attributes.highlighted === false;
+      });
+
       highlighted = _.reduce(highlighted, function(memo, snp) {
         var posStrains = memo[snp.start] || [];
         posStrains.push(snp.attributes.Strain);
         memo[snp.start] = posStrains;
         return memo;
-        }, {});
+      }, {});
+
+      unhighlighted = _.reduce(unhighlighted, function(memo, snp) {
+        var posStrains = memo[snp.start] || [];
+        posStrains.push(snp.attributes.Strain);
+        memo[snp.start] = posStrains;
+        return memo;
+      }, {});
+
       var SNPCir = this.svg.selectAll('.SNP')
       .transition().duration(200)
       .style("opacity", function(d) {
@@ -1091,12 +1235,20 @@
         var isInHighlightedPosition = _.include(highlightedPositions, String(d.x));
         if (isInHighlightedPosition) {
           var highlightedStrains = highlighted[String(d.x)];
-          if ((_.intersection(d.strains, highlightedStrains).length > 0)
-            || _.include(d.strains, "refStrain")){
-            return 0.6;  
-          }
+          if ( (_.intersection(d.strains, highlightedStrains).length > 0)
+            || _.include(d.strains, "refStrain") ){
+              return 0.8;  
+            }
         }
-        return 0.1;
+        var unhighlightedPositions = _.keys(unhighlighted);
+        var isInUnhighlightedPosition = _.include(unhighlightedPositions, String(d.x));
+        if (isInUnhighlightedPosition) {
+          var unhighlightedStrains = unhighlighted[String(d.x)];
+          if (_.intersection(d.strains, unhighlightedStrains).length > 0) {
+              return 0.1;  
+            }
+        }      
+        return 0.6;
       });
     },
 

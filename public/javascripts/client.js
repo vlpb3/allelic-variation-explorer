@@ -67,7 +67,7 @@
    open: function() {
      this.filterDialog = $("#filterDialog").dialog({
        title: "Filter input data",
-       minWidth: 600
+       minWidth: 700
      });
 
      var updateTable = this.updateTable;
@@ -103,6 +103,15 @@
          includedString += snp.attributes.included;
          includedString += "</span>";
        }
+
+       var location;
+       if (snp.attributes.variation === undefined) {
+         location = "unknown";
+       }
+       else {
+         location = snp.attributes.variation.location || "unknown";
+       }
+
        var row = [
          snp.attributes.ID,
          snp.attributes.Change,
@@ -110,6 +119,7 @@
          snp.start,
          snp.score,
          snp.attributes.Strain,
+         location,
          includedString
        ];
        data.push(row);
@@ -199,9 +209,9 @@
           {"sTitle": "Pos"},
           {"sTitle": "Score"},
           {"sTitle": "Accession"},
+          {"sTitle": "Location"},
           {"sTitle": "included"}
       ]});
-
       // input data into a table
       var data = [];
       _.each(SNPs, function(snp) {
@@ -217,6 +227,13 @@
           includedString += snp.attributes.included;
           includedString += "</span>";
         }
+        var location;
+        if (snp.attributes.variation === undefined) {
+          location = "unknown";
+        }
+        else {
+          location = snp.attributes.variation.location || "unknown";
+        }
         var row = [
           snp.attributes.ID,
           snp.attributes.Change,
@@ -224,6 +241,7 @@
           snp.start,
           snp.score,
           snp.attributes.Strain,
+          location,
           includedString
         ];
         data.push(row);
@@ -287,7 +305,17 @@
         } else {
           highlightedString = "<span class=unHighlighted-row>";
           highlightedString += snp.attributes.highlighted;
-          highlightedString += "</span>";}
+          highlightedString += "</span>";
+        }
+
+        var location;
+        if (snp.attributes.variation === undefined) {
+          location = "unknown";
+        }
+        else {
+          location = snp.attributes.variation.location || "unknown";
+        }
+
         var row = [
          snp.attributes.ID,
          snp.attributes.Change,
@@ -295,6 +323,7 @@
          snp.start,
          snp.score,
          snp.attributes.Strain,
+         location,
          highlightedString
         ];
         data.push(row);
@@ -323,7 +352,7 @@
     open: function() {
       this.highlightSNPsDialog = $("#highlightSNPsDialog").dialog({
         title: "Highlight SNPs",
-        minWidth: 600,
+        minWidth: 700,
         close: this.onClose
       });
      
@@ -414,6 +443,7 @@
           {"sTitle": "Pos"},
           {"sTitle": "Score"},
           {"sTitle": "Accession"},
+          {"sTitle": "Location"},
           {"sTitle": "highlighted"},
         ]
       });
@@ -429,6 +459,15 @@
           highlightedString = "<span class=unHighlighted-row>";
           highlightedString += snp.attributes.highlighted;
           highlightedString += "</span>";}
+
+        var location;
+        if (snp.attributes.variation === undefined) {
+          location = "unknown";
+        }
+        else {
+          location = snp.attributes.variation.location || "unknown";
+        }
+
         var row = [
          snp.attributes.ID,
          snp.attributes.Change,
@@ -436,6 +475,7 @@
          snp.start,
          snp.score,
          snp.attributes.Strain,
+         location,
          highlightedString
         ];
         data.push(row);
@@ -993,7 +1033,6 @@
       // first fetch the fragment from the buffer
       var displayData = this.get("displayData");
 
-      console.log(displayData.SNPs);
       // get features
       var features = bufferData.features;
       displayData.features = _.select(features, this.isFeatureInRegion);
@@ -1009,12 +1048,10 @@
       // get SNPs in region
       var SNPs = bufferData.SNPs;
       var pos = this.get("pos");
-      console.log(displayData.SNPs);
       displayData.SNPs = _.select(SNPs, function(snp) {
         return ((snp.start >= pos.starts) && (snp.start <= pos.ends));
       });
 
-      console.log(displayData.SNPs);
       // get refseq fragment
       var refseq = bufferData.refseq;
       var sliceStart = pos.starts - bufferData.starts;

@@ -5,13 +5,14 @@ html(lang='en')
 //script(src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js")
 //script(src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js")
 script(type="text/javascript", src="javascripts/jquery-1.7.2.min.js")
-script(type="text/javascript", src="javascripts/jquery-ui-1.8.16.min.js")
-
+script(type="text/javascript", src="javascripts/jquery-ui-1.8.21.custom.min.js")
+//script(type="text/javascript", src="http://ajax.aspnetcdn.com/ajax/jquery/jquery-1.7.1.min.js")
+//script(type="text/javascript", src="http://ajax.aspnetcdn.com/ajax/jquery.ui/1.8.17/jquery-ui.min.js")
 
 // underscore and backbone
 //script(src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.1.7/underscore-min.js")
 //script(src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.5.3/backbone-min.js")
-script(type="text/javascript", src="javascripts/underscore.js")
+script(type="text/javascript", src="javascripts/underscore-min.js")
 script(type="text/javascript", src="javascripts/backbone-min.js")
 
 // d3.js stuff
@@ -29,81 +30,95 @@ script(type="text/javascript", src="javascripts/clusterfck-0.1.js")
 script(type="text/javascript", src="javascripts/BlobBuilder.js")
 script(type="text/javascript", src="javascripts/FileSaver.js")
 
-// flexigrid
+// datatables
 link(rel="stylesheet", type="text/css", href="stylesheets/jquery.dataTables.css")
 script(type="text/javascript", src="javascripts/jquery.dataTables.min.js")
 
 // application scripts
 script(type="text/javascript", src="javascripts/client.js")
 
-// css
-link(type="text/css", href="stylesheets/Aristo/Aristo.css", rel="stylesheet")
+// wijmo
+// Wijmo Widgets CSS
+link(type="text/css", href="stylesheets/jquery.wijmo-open.2.1.3.css", rel="stylesheet")
 
-h1= title
+//Wijmo Widgets JavaScript
+script(src="javascripts/jquery.wijmo-open.all.2.1.3.min.js", type="text/javascript")
+
+// bootstrap ui
+link(type="text/css", href="bootstrap/bootstrap.css", rel="stylesheet")
+link(type="text/css", href="stylesheets/custom-theme/jquery-ui-1.8.16.custom.css", rel="stylesheet")
+
+// raphael font icons
+link(rel="stylesheet", type="text/css", href="stylesheets/raphaelicons/raphaelicons.css")
 
 // hidden variable with ip adress of server
 input(type="hidden"
   id="hostip"
   value=hostip)
 
-p
-  div#locationChoice
-    div#radio
-      input(type="radio"
-        id="radioRegion"
-        name="radio"
-        class="ui-corner-left")
-      label(for="radioRegion")
-        | go to region
-      input(type="radio"
-        id="radioFeature"
-        name="radio"
-        class="ui-corner-right")
-      label(for="radioFeature")
-        | go to feature
+div(id='mobile-menu-plus')
+  ul(id='menu', class="unselectable")
+    li
+      h3
+        a
+          | Allelic variation Explorer
+    li
+      input(id="loc-genome", type='text', placeholder='Genome')
+    li
+      input(id="loc-chrom", type='text', placeholder='chromosome')
+    li
+      input(id="loc-start", type='text', placeholder='start')
+    li
+      a
+        | ... 
+    li
+      input(id="loc-end", type='text', placeholder='end')
+    li
+      a
+          span(id="go", class='icon')
+            | Ã 
+    li
+      a#goToFeature
+        | Go to feature
+    li
+      a#filter
+        | Filter
+    li
+      a#higlight
+        | Highlight
+      ul
+        li
+          a#highlightSNPs
+            | SNPs
+        li
+          a#markAccessions
+            | Accessions
+    li
+      a#bookmarks
+        | Bookmarks
+      ul#bookmarkList
+        li
+    li
+      a
+        span#addBookmark(class='icon')
+          | I
+    li
+      a
+        span#info(class='icon')
+          | "
 
-    p
-      div#regionSearch
-        | ref.gen.
-        input#refgen()
-        |  chromosome
-        input#chrom(type="string")
-        |  from
-        input#start(type="number")
-        |  to
-        input#end(type="number")
-        input#go(type="submit", value="Go")
-
-      div#featureSearch
-        | feature
-        input#name(type="string")
-        |  with flanking region
-        input#flank(type="number")
-        input#search(type="submit", value="Search")
-    
-    span#searchMessage
-
-div#codingRadio
-  input(type="radio"
-    id="radioAllSNPs"
-    name="codingRadio"
-    class="ui-corner-left")
-  label(for="radioAllSNPs")
-    | All SNPs
-  input(type="radio"
-    id="radioNonCoding"
-    name="codingRadio")
-  label(for="radioNonCoding")
-    | Non-Coding
-  input(type="radio"
-    id="radioCoding"
-    name="codingRadio"
-    class="ui-corner-right")
-  label(for="radioCoding")
-    | Coding
-
-div#controls
-  input#filterButton(type="button", value="filter")
+  div(id='navi', class="unselectable")
+    span(class='icon')
+      br
+      h1
+        span(id='goLeft')
+          | <
+        span(id='zoomOut')
+          |  A 
+        span(id='zoomIn')
+          |  @
+        span(id='goRight')
+          |  =
 
 div#haplDialog
   p
@@ -120,60 +135,83 @@ div#haplDialog
     | .fas
     input#saveFasta(type="submit", value="save")
 
-div#SNPDialog
+div#goToFeatureDialog
+    div(class="form-field")
+      label(for="feature-genome")
+        |Genome:
+      input(id="feature-genome", name="feature-genome", type='text', placeholder='Genome')
+    div(class="form-field")
+      label(for="feature-name")
+        |Feature name:
+      input(id="feature-name", name="feature-name", type='text', placeholder='name')
+    div(class="form-field")
+      label(for="feature-flanks")
+        |Flanking region:
+      input(id="feature-flanks", name="feature-flanks", type='text', placeholder='flank')
     p
+      button#find(type="button", class="ui-button ui-widget ui-button-text-only",
+        role="button")
+        span(class="ui-button-text")
+          | Find
 
 div#filterDialog
-  div#filterRadio
-    input(type="radio"
-      id="radioStrains"
-      name="filterRadio"
-      class="ui-corner-left")
-    label(for="radioStrains")
-      | Strains
-    input(type="radio"
-      id="radioSNPs"
-      name="filterRadio"
-      class="ui-corner-right")
-    label(for="radioSNPs")
-      | SNPs
   p
-    div
-      div#excluded
-        b
-          | Excluded:
-        div#exclSNPs
-          ul
-        div#exclStrains
-          ul
-      div#shuffling
-        button#removeButton(type="button")
-          | < Remove
-        button#addButton(type="button")
-          | Add >
-      div#included
-        b
-          | Included:
-        div#inclSNPs
-          ul
-        div#inclStrains
-          ul
+  p.filter-buttons
+    span(class="select-all ui-button ui-button-primary ui-corner-all")
+      |Select All
+    | 
+    span(class="toggle-selection ui-button ui-button-primary ui-corner-all")
+      |Toggle Selection
+    | 
+    span(type="button", class="exclude-selected ui-button ui-button-error ui-corner-all")
+      |Exclude Selected
+    | 
+    span(class="include-selected ui-button ui-button-success ui-corner-all")
+      |Include Selected
+
+div#highlightSNPsDialog
   p
-    div#applyFilters
-      button(type="button")
-        | Apply Changes
+  p.highlightSNPs-buttons
+    span(class="select-all ui-button ui-button-primary ui-corner-all")
+      |Select All
+    | 
+    span(class="toggle-selection ui-button ui-button-primary ui-corner-all")
+      |Toggle Selection
+    | 
+    span(class="unhighlight-selected ui-button ui-button-error ui-corner-all")
+      |Unhighlight Selected
+    | 
+    span(class="highlight-selected ui-button ui-button-success ui-corner-all")
+      |Highlight Selected
+    
+div#markAccessionsDialog
+  p
+  p.markAccessions-buttons
+    span(class="select-all ui-button ui-button-primary ui-corner-all")
+      |Select All
+    | 
+    span(class="toggle-selection ui-button ui-button-primary ui-corner-all")
+      |Toggle Selection
+    | 
+    span(class="unmark-selected ui-button ui-button-error ui-corner-all")
+      |Unmark Selected
+    | 
+    span(class="mark-selected ui-button ui-button-success ui-corner-all")
+      |Mark Selected
+
+div#bookmarkDialog
+  p
+    | 
+  p
+    input#bookmarkName(type='text', placeholder='bookmark name')
+    span#saveBookmark(type="button", class="ui-button ui-corner-all")
+      |Save
+
+div#SNPDialog
+  p
+
+div#graphs
+  div#tree
+  div#chart
 
 
-br
-
-p
-  div#navigate
-    span#goLeft(class="mini_icon icon_left")
-    span#zoomOut(class="mini_icon icon_minus")
-    span#zoomIn(class="mini_icon icon_plus")
-    span#goRight(class="mini_icon icon_right")
-    span#positionText
-
-  div#graphs
-    div#tree
-    div#chart

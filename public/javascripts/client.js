@@ -105,11 +105,11 @@
        }
 
        var location;
-       if (snp.attributes.variation === undefined) {
+       if (snp.attributes.variant_location === undefined) {
          location = "unknown";
        }
        else {
-         location = snp.attributes.variation.location || "unknown";
+         location = snp.attributes.variant_location || "unknown";
        }
 
        var row = [
@@ -228,11 +228,11 @@
           includedString += "</span>";
         }
         var location;
-        if (snp.attributes.variation === undefined) {
+        if (snp.attributes.variant_location === undefined) {
           location = "unknown";
         }
         else {
-          location = snp.attributes.variation.location || "unknown";
+          location = snp.attributes.variant_location || "unknown";
         }
         var row = [
           snp.attributes.ID,
@@ -309,11 +309,11 @@
         }
 
         var location;
-        if (snp.attributes.variation === undefined) {
+        if (snp.attributes.variant_location === undefined) {
           location = "unknown";
         }
         else {
-          location = snp.attributes.variation.location || "unknown";
+          location = snp.attributes.variant_location || "unknown";
         }
 
         var row = [
@@ -461,11 +461,11 @@
           highlightedString += "</span>";}
 
         var location;
-        if (snp.attributes.variation === undefined) {
+        if (snp.attributes.variant_location === undefined) {
           location = "unknown";
         }
         else {
-          location = snp.attributes.variation.location || "unknown";
+          location = snp.attributes.variant_location || "unknown";
         }
 
         var row = [

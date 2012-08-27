@@ -58,7 +58,6 @@ function getFeatureRegion(genome, name, flank, callback) {
         'attributes.genome': genome,
         'attributes.Name': name
     }, function(err, doc) {
-        console.log(doc);
         if (err) {callback(err);}
         else if (doc.length === 0) {callback(null, {});}
         else {
@@ -88,7 +87,10 @@ function getFeatures(region, callback) {
 function getRegion(region, callback) {
     async.parallel({
         features: function(paraCbk) {
-            getFeatures(region, paraCbk);
+            getFeatures(region, function(err, data) {
+              if (err) {throw err;}
+              paraCbk(null, data);
+          });
         },
         refseq: function(paraCbk) {
             getRefRegion(region, function(err, data) {

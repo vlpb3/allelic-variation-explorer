@@ -6,30 +6,33 @@
 var express = require('express');
 var seqdb = require('./seqdb');
 var os = require('os');
+var stylus = require('stylus');
 
-var app = module.exports = express.createServer();
-var io = require('socket.io').listen(app);
+var app = express();
+var http = require('http');
+var server = http.createServer(app);
+var io = require('socket.io').listen(server);
 
 // Configuration
-
 app.configure(function(){
     app.set('views', __dirname + '/views');
     app.set('view engine', 'jade');
     app.use(express.bodyParser());
     app.use(express.methodOverride());
-    app.use(require('stylus').middleware({src: __dirname + '/public'}));
+    app.use(stylus.middleware({ src: __dirname + '/public'}));
     app.use(app.router);
     app.use(express.static(__dirname + '/public'));
+
 });
 
 app.configure('development', function(){
     app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
-    app.listen(8787);
+    server.listen(8787);
 });
 
 app.configure('production', function(){
     app.use(express.errorHandler());
-    app.listen(3000);
+    server.listen(3000);
 });
 
 // fetch server ip adress
@@ -103,4 +106,4 @@ io.sockets.on('connection', function(socket) {
 });
 
 console.log("Express server listening on port %d in %s mode",
-    app.address().port, app.settings.env);
+    server.address().port, app.settings.env);

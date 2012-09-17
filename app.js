@@ -42,7 +42,10 @@ var interfaces = os.networkInterfaces();
 if (platform === "linux"){
   var hostip = interfaces.eth0[0].address;
 } else if (platform === "darwin"){
-  var hostip = interfaces.en0[1].address;
+  if (interfaces.en0 === undefined)
+    {var hostip = 'localhost';}
+  else
+    {var hostip = interfaces.en0[1].address;}
 }
 console.log(hostip);
 

@@ -153,7 +153,6 @@ It is important to work in virtualenv (`source ~/ave-env/bin/activate', as expla
 	
 		tar xvzf ave.tar.gz
 		cd ave
-		git checkout release-0.2
 		
 3. install node packages
 	

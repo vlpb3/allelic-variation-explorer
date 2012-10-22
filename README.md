@@ -107,7 +107,8 @@ Below you can find installation instructions with all necessary libraries.
 	
 	Get virtualenv script from github repository and install virtualenv with alternative python version.
 	
-		wget https://raw.github.com/pypa/virtualenv/master/virtualenv.py /home/user/alt_python/bin/python /home/user/ave-env
+		wget https://raw.github.com/pypa/virtualenv/master/virtualenv.py 
+		/home/user/alt_python/bin/python virtualenv.py -p /home/user/ave-env
 		
 	Activate the environment
 	
@@ -170,18 +171,23 @@ It is important to work in virtualenv (`source ~/ave-env/bin/activate', as expla
 		
 		make sure that name of the chromosome (or some other meaningful identifier) is provided as fasta identifier (the string just after ">"). Like in the example for Chromosome 1 sequence:
 			
-			>Chr1 CHROMOSOME dumped from ADB: Jun/20/09 14:53; last updated: 2009-02-02
-			CCCTAAACCCTAAACCCTAAACCCTAAACCTCTGAATCCTTAATCCCTAAATCCCTAAATCTTTAAATCCTACATCCAT
+			>Chr1 CHROMOSOME dumped from ADB: Jun/20/09 14:53
+			CCCTAAACCCTAAACCCTAAACCCTAAACCTCTGAATCCTTAATCCCTA
 			
 	- gene annotations in [gff3 format](http://www.sequenceontology.org/gff3.shtml)
 	- SNP annotations in [gff3 format](http://www.sequenceontology.org/gff3.shtml)
 	
-		SNPs should be annotated like in this example:
+		SNPs should be annotated like in this example
+		columns 1-7:
 		
-			Chr1	1001Genomes	SNP_adal_3	138	138	3	.	.	Change=T:C;Strain=adal_3;Project=GMINordborg2010;ID=9323.138
+			Chr1 1001Genomes SNP_adal_3	138 138 3 . .
+		
+		column 8 (key value pairs):
+			
+			Change=T:C;Strain=adal_3;Project=GMINordborg2010;ID=9323.138
 			
 		
-		First column should correspond to seq id from fasta file.
+		First column should correspond to seq id from fasta file provided as reference.
 		
 		In last column:
 		
@@ -195,15 +201,18 @@ It is important to work in virtualenv (`source ~/ave-env/bin/activate', as expla
 		
 	You can annotate the SNPs in gff file with SNPs location. To do it run
 	
-		python ./ave_tools.py snps_by_location --annot gene_annotation.gff --snps snp_file1.gff --snp_file2.gff
+		python ./ave_tools.py snps_by_location --annot gene_annotation.gff \
+		--snps snp_file1.gff --snp_file2.gff
 		
-	The script generates new gff files, one for each snp location, with annotated location, like in this line:
+	The script generates new gff files, one for each snp location, with annotated location in last column:
 	
-		Chr1	1001Genomes	SNP_ale_stenar_44_4	6992	6992	12	.	.	Project=GMINordborg2010;Strain=ale_stenar_44_4;variant_location=CDS;ID=992.6992;Change=T:C
+		Project=GMINordborg2010;Strain=ale_stenar_44_4;variant_location=CDS;
+		ID=992.6992;Change=T:C
 		
 	To import data into the database run:
 	
-		python ./ave_tools.py import --genome TAIR10 --ref reference.fas --annot gene_annotations.gff snps_annotations.gff
+		python ./ave_tools.py import --genome TAIR10 --ref \
+		reference.fas --annot gene_annotations.gff snps_annotations.gff
 		
 	
 	after `--genome` provide a name of the genome which was used to map the reads and call variants against

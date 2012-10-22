@@ -2,23 +2,14 @@
 html(lang='en')
 
 // jQuery import
-//script(src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js")
-//script(src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js")
 script(type="text/javascript", src="javascripts/jquery-1.8.2.min.js")
-script(type="text/javascript", src="javascripts/jquery-ui-1.8.23.custom.min.js")
-//script(type="text/javascript", src="http://ajax.aspnetcdn.com/ajax/jquery/jquery-1.7.1.min.js")
-//script(type="text/javascript", src="http://ajax.aspnetcdn.com/ajax/jquery.ui/1.8.17/jquery-ui.min.js")
 
 // underscore and backbone
-//script(src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.1.7/underscore-min.js")
-//script(src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.5.3/backbone-min.js")
 script(type="text/javascript", src="javascripts/underscore-min.js")
 script(type="text/javascript", src="javascripts/backbone-min.js")
 
 // d3.js stuff
-// script(type="text/javascript", src="http://mbostock.github.com/d3/d3.js?2.4.2")
 script(type="text/javascript", src="javascripts/d3.v2.min.js")
-//script(type="text/javascript", src="javascripts/d3.layout.js")
 
 // other libs
 script(src="/socket.io/socket.io.js")
@@ -37,19 +28,6 @@ script(type="text/javascript", src="javascripts/jquery.dataTables.min.js")
 // application scripts
 script(type="text/javascript", src="javascripts/client.js")
 
-// wijmo
-// Wijmo Widgets CSS
-link(type="text/css", href="stylesheets/jquery.wijmo-open.2.2.1.css", rel="stylesheet")
-
-//Wijmo Widgets JavaScript
-script(src="javascripts/jquery.wijmo-open.all.2.2.1.min.js", type="text/javascript")
-
-// bootstrap ui
-link(type="text/css", href="bootstrap/bootstrap.css", rel="stylesheet")
-link(type="text/css", href="stylesheets/custom-theme/jquery-ui-1.8.16.custom.css", rel="stylesheet")
-
-// raphael font icons
-link(rel="stylesheet", type="text/css", href="stylesheets/raphaelicons/raphaelicons.css")
 
 // app css
 link(rel="stylesheet", type="text/css", href="stylesheets/style.css")
@@ -60,7 +38,7 @@ input(type="hidden"
   id="hostip"
   value=hostip)
 
-div(id='mobile-menu-plus')
+div()
   ul(id='menu', class="unselectable")
     li
       h3

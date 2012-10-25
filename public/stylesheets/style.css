@@ -6,7 +6,7 @@ body,
 #SNPDialog,
 #highlightSNPsDialog,
 #markAccessionsDialog {
-  background-image: url("../images/grid_noise.png");
+  background-image: url("../images/cream_dust.png");
 }
 .unselectable {
   -moz-user-select: -moz-none;
@@ -14,9 +14,6 @@ body,
   -webkit-user-select: none;
   -ms-user-select: none;
   user-select: none;
-}
-#navi {
-  text-align: center;
 }
 #goLeft,
 #zoomOut,
@@ -26,7 +23,7 @@ body,
 #goToFeature,
 #filter,
 #addBookmark,
-#higlight,
+#highlight,
 #highlightSNPs,
 #markAccessions,
 #bookmarks {
@@ -37,20 +34,10 @@ body,
 }
 #graphs {
   position: absolute;
-  top: 180px;
 }
 #chart,
 #tree {
   float: left;
-  padding: 40;
-}
-.form-field {
-  margin-bottom: 15px;
-}
-.form-field label {
-  margin-top: 0.75em;
-  float: left;
-  width: 120px;
 }
 #find {
   float: right;
@@ -58,6 +45,9 @@ body,
 #fastaSeqArea {
   width: 570px;
   height: 20em;
+}
+.nav-row {
+  text-align: center;
 }
 .included-row,
 .highlighted-row {
@@ -98,10 +88,6 @@ div#hjaf {
   fill: none;
   stroke: #ccc;
   stroke-width: 1.5px;
-}
-.ui-dialog-content {
-  font-family: "Helvetica Neue", "Lucida Grande", "Arial";
-  font-size: 13px;
 }
 .ui-selecting {
   background: #b9e0f5;

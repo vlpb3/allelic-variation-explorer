@@ -1,130 +1,115 @@
 !!! 5
-html(lang='en')
+html(lang="en")
+meta(name="viewport", content="width=device-width, initial-scale=1.0")
 
-// jQuery import
-//script(src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js")
-//script(src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js")
-script(type="text/javascript", src="javascripts/jquery-1.8.0.min.js")
-script(type="text/javascript", src="javascripts/jquery-ui-1.8.23.custom.min.js")
-//script(type="text/javascript", src="http://ajax.aspnetcdn.com/ajax/jquery/jquery-1.7.1.min.js")
-//script(type="text/javascript", src="http://ajax.aspnetcdn.com/ajax/jquery.ui/1.8.17/jquery-ui.min.js")
 
-// underscore and backbone
-//script(src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.1.7/underscore-min.js")
-//script(src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.5.3/backbone-min.js")
-script(type="text/javascript", src="javascripts/underscore-min.js")
-script(type="text/javascript", src="javascripts/backbone-min.js")
+// stylesheets ----------------------------------------------------------
 
-// d3.js stuff
-// script(type="text/javascript", src="http://mbostock.github.com/d3/d3.js?2.4.2")
-script(type="text/javascript", src="javascripts/d3.v2.min.js")
-//script(type="text/javascript", src="javascripts/d3.layout.js")
-
-// other libs
-script(src="/socket.io/socket.io.js")
-
-// clustering lib
-script(type="text/javascript", src="javascripts/clusterfck-0.1.js")
-
-// saving to file from client side
-script(type="text/javascript", src="javascripts/BlobBuilder.js")
-script(type="text/javascript", src="javascripts/FileSaver.js")
+// jquery ui
+link(rel="stylesheet", type="text/css", href="stylesheets/custom-theme/jquery-ui-1.9.0.custom.css")
 
 // datatables
 link(rel="stylesheet", type="text/css", href="stylesheets/jquery.dataTables.css")
-script(type="text/javascript", src="javascripts/jquery.dataTables.min.js")
 
-// application scripts
-script(type="text/javascript", src="javascripts/client.js")
+// bootstrap stuff
+link(rel="stylesheet", type="text/css", href="stylesheets/bootstrap.min.css")
+link(rel="stylesheet", type="text/css", href="stylesheets/bootstrap-responsive.min.css")
 
-// wijmo
-// Wijmo Widgets CSS
-link(type="text/css", href="stylesheets/jquery.wijmo-open.2.2.1.css", rel="stylesheet")
-
-//Wijmo Widgets JavaScript
-script(src="javascripts/jquery.wijmo-open.all.2.2.1.min.js", type="text/javascript")
-
-// bootstrap ui
-link(type="text/css", href="bootstrap/bootstrap.css", rel="stylesheet")
-link(type="text/css", href="stylesheets/custom-theme/jquery-ui-1.8.16.custom.css", rel="stylesheet")
-
-// raphael font icons
-link(rel="stylesheet", type="text/css", href="stylesheets/raphaelicons/raphaelicons.css")
 
 // app css
 link(rel="stylesheet", type="text/css", href="stylesheets/style.css")
 
-
 // hidden variable with ip adress of server
-input(type="hidden"
-  id="hostip"
-  value=hostip)
+input(type="hidden", id="hostip", value=hostip)
 
-div(id='mobile-menu-plus')
-  ul(id='menu', class="unselectable")
-    li
-      h3
-        a
-          | Allelic variation Explorer
-    li
-      input(id="loc-genome", type='text', placeholder='Genome')
-    li
-      input(id="loc-chrom", type='text', placeholder='chromosome')
-    li
-      input(id="loc-start", type='text', placeholder='start')
-    li
-      a
-        | ... 
-    li
-      input(id="loc-end", type='text', placeholder='end')
-    li
-      a
-          span(id="go", class='icon')
-            | Ã 
-    li
-      a#goToFeature
-        | Go to feature
-    li
-      a#filter
-        | Filter
-    li
-      a#higlight
-        | Highlight
-      ul
-        li
-          a#highlightSNPs
-            | SNPs
-        li
-          a#markAccessions
-            | Accessions
-    li
-      a#bookmarks
-        | Bookmarks
-      ul#bookmarkList
-        li
-    li
-      a
-        span#addBookmark(class='icon')
-          | I
-    li
-      a
-        span#info(class='icon')
-          | "
+div(class="navbar navbar navbar-fixed-top", id="menu")
+  div(class="navbar-inner")
+    div(class="container-fluid")
+      a(class="btn btn-navbar", data-toggle="collapse", data-target=".nav-collapse")
+        span(class="icon-bar")
+        span(class="icon-bar")
+        span(class="icon-bar")
+        span(class="icon-bar")
+      a(class="brand pull-left")
+        | Allelic Variation Explorer
+      div(class="nav-collapse collapse")
+        ul(class="nav pull-left")
+          li
+            form(class="navbar-form form-inline")
+              div(class="input-prepend")
+                span(class="add-on")
+                  | Genome
+                input(class="input-small", type="text", id="loc-genome")
+              div(class="input-prepend")
+                span(class="add-on")
+                  | Chrom
+                input(class="input-small", type="text", id="loc-chrom")
+              div(class="input-prepend")
+                span(class="add-on")
+                  | start
+                input(class="input-small", type="text", id="loc-start")
+              div(class="input-prepend")
+                span(class="add-on")
+                  | end
+                input(class="input-small", type="text", id="loc-end")
+                button(class="btn", type="submit", id="go")
+                  | Go
+          li
+            a(id="goToFeature")
+              | Go to
+          li
+            a(id="filter")
+              | Filter
+          li(class="dropdown")
+            a(id="highlight", class="dropdown-toggle", data-toggle="dropdown")
+              | Highlight
+              b(class="caret")
+            ul(class="dropdown-menu", aria-labelledby="dropdownMenu", role="menu")
+              li
+                a(id="highlightSNPs", tabindex="-1")
+                  | SNPs
+              li
+                a(id="markAccessions", tabindex="-1")
+                  | accessions
 
-  div(id='navi', class="unselectable")
-    span(class='icon')
-      br
-      h1
-        span(id='goLeft')
-          | <
-        span(id='zoomOut')
-          |  A 
-        span(id='zoomIn')
-          |  @
-        span(id='goRight')
-          |  =
+          li(class="dropdown")
+            a(id="bookmarks", class="dropdown-toggle", data-toggle="dropdown")
+              | Bookmarks
+              b(class="caret")
+            ul(id="bookmarkList", class="dropdown-menu", aria-labelledby="dropdownMenu", role="menu")
 
-div#haplDialog
+        ul(class="nav pull-right")
+          li
+            a(id="addBookmark")
+              i(class="icon-map-marker")
+          li
+            a()
+              i(class="icon-info-sign")
+          li
+            a()
+              i(class="icon-cog")
+
+
+  div(class="container-fluid")
+    div(class="row-fluid")
+      p(class="lead")
+        div(class="offset5", id="navi")
+          div(class="control-group")
+            div(class="btn-group")
+              a(class="btn", id="goLeft")
+                i(class="icon-chevron-left")
+              a(class="btn", id="zoomOut")
+                i(class="icon-zoom-out")
+              a(class="btn", id="zoomIn")
+                i(class="icon-zoom-in")
+              a(class="btn", id="goRight")
+                i(class="icon-chevron-right")
+
+  div#graphs
+    div(id="tree")
+    div(id="chart")
+
+div#haplDialog(class="ui-helper-hidden")
   p
     b Strains:
   p
@@ -139,83 +124,110 @@ div#haplDialog
     | .fas
     input#saveFasta(type="submit", value="save")
 
-div#goToFeatureDialog
-    div(class="form-field")
-      label(for="feature-genome")
-        |Genome:
-      input(id="feature-genome", name="feature-genome", type='text', placeholder='Genome')
-    div(class="form-field")
-      label(for="feature-name")
-        |Feature name:
-      input(id="feature-name", name="feature-name", type='text', placeholder='name')
-    div(class="form-field")
-      label(for="feature-flanks")
-        |Flanking region:
-      input(id="feature-flanks", name="feature-flanks", type='text', placeholder='flank')
-    p
-      button#find(type="button", class="ui-button ui-widget ui-button-text-only",
-        role="button")
-        span(class="ui-button-text")
-          | Find
+div#goToFeatureDialog(class="ui-helper-hidden")
+  form(class="form", id="goToFeatureForm")
+    label
+      | Genome:
+    input(id="feature-genome", class="input-small", type='text', placeholder='eg. TAIR10')
+    label
+      | Feature name:
+    input(id="feature-name", name="feature-name", type='text', placeholder='eg. AT1G01320')
+    label
+      | Flanking region:
+    input(id="feature-flanks", name="feature-flanks", type='text', placeholder='eg. 1000')
+  button(id="findFeature", class="btn btn-success pull-right")
+    | Search
 
-div#filterDialog
+div#filterDialog(class="ui-helper-hidden")
   p
   p.filter-buttons
-    span(class="select-all ui-button ui-button-primary ui-corner-all")
-      |Select All
-    | 
-    span(class="toggle-selection ui-button ui-button-primary ui-corner-all")
-      |Toggle Selection
-    | 
-    span(type="button", class="exclude-selected ui-button ui-button-error ui-corner-all")
-      |Exclude Selected
-    | 
-    span(class="include-selected ui-button ui-button-success ui-corner-all")
-      |Include Selected
+    div(class="control-group")
+      div(class="btn-group")
+        button(class="select-all btn btn-primary")
+          |Select All
+        button(class="toggle-selection btn btn-primary")
+          |Toggle Selection
+        button(class="exclude-selected btn btn-danger")
+          |Exclude Selected
+        button(class="include-selected btn btn-success")
+          |Include Selected
 
-div#highlightSNPsDialog
+div#highlightSNPsDialog(class="ui-helper-hidden")
   p
   p.highlightSNPs-buttons
-    span(class="select-all ui-button ui-button-primary ui-corner-all")
-      |Select All
-    | 
-    span(class="toggle-selection ui-button ui-button-primary ui-corner-all")
-      |Toggle Selection
-    | 
-    span(class="unhighlight-selected ui-button ui-button-error ui-corner-all")
-      |Unhighlight Selected
-    | 
-    span(class="highlight-selected ui-button ui-button-success ui-corner-all")
-      |Highlight Selected
-    
-div#markAccessionsDialog
+    div(class="control-group")
+      div(class="btn-group")
+        button(class="select-all btn btn-primary")
+          | Select All
+        button(class="toggle-selection btn btn-primary")
+          | Toggle Selection
+        button(class="unhighlight-selected btn btn-danger")
+          | Unhighlight Selected
+        button(class="highlight-selected btn btn-success")
+          | Highlight Selected
+
+div(id="markAccessionsDialog", class="ui-helper-hidden")
   p
   p.markAccessions-buttons
-    span(class="select-all ui-button ui-button-primary ui-corner-all")
-      |Select All
-    | 
-    span(class="toggle-selection ui-button ui-button-primary ui-corner-all")
-      |Toggle Selection
-    | 
-    span(class="unmark-selected ui-button ui-button-error ui-corner-all")
-      |Unmark Selected
-    | 
-    span(class="mark-selected ui-button ui-button-success ui-corner-all")
-      |Mark Selected
+    div(class="control-group")
+      div(class="btn-group")
+        span(class="select-all btn btn-primary")
+          |Select All
+        span(class="toggle-selection btn btn-primary")
+          |Toggle Selection
+        span(class="unmark-selected btn btn-danger")
+          |Unmark Selected
+        span(class="mark-selected btn btn-success")
+          |Mark Selected
 
-div#bookmarkDialog
+div#bookmarkDialog(class="ui-helper-hidden")
+  div(class="input-prepend")
+    span(class="add-on")
+        i(class="icon-map-marker")
+      input(id="bookmarkName", type='text', placeholder='name')
   p
-    | 
-  p
-    input#bookmarkName(type='text', placeholder='bookmark name')
-    span#saveBookmark(type="button", class="ui-button ui-corner-all")
+    button(id="saveBookmark", class="btn btn-success pull-right")
       |Save
 
-div#SNPDialog
+div#SNPDialog(class="ui-helper-hidden")
   p
 
-div#graphs
-  div#tree
-  div#chart
+
+
+// javascript imports -----------------------------------------------
+
+// jQuery import
+script(type="text/javascript", src="javascripts/jquery-1.8.2.min.js")
+
+// JQuery UI
+script(type="text/javascript", src="javascripts/jquery-ui-1.9.0.custom.min.js")
+
+// datatables
+script(type="text/javascript", src="javascripts/jquery.dataTables.min.js")
+
+// bootstrap
+script(type="text/javascript", src="javascripts/bootstrap.min.js")
+
+// underscore and backbone
+script(type="text/javascript", src="javascripts/underscore-min.js")
+script(type="text/javascript", src="javascripts/backbone-min.js")
+
+// d3.js stuff
+script(type="text/javascript", src="javascripts/d3.v2.min.js")
+
+// other libs
+script(src="/socket.io/socket.io.js")
+
+// clustering lib
+script(type="text/javascript", src="javascripts/clusterfck-0.1.js")
+
+// saving to file from client side
+script(type="text/javascript", src="javascripts/BlobBuilder.js")
+script(type="text/javascript", src="javascripts/FileSaver.js")
+
+
+// application client side script
+script(type="text/javascript", src="javascripts/client.js")
+
 
 

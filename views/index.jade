@@ -5,12 +5,16 @@ meta(name="viewport", content="width=device-width, initial-scale=1.0")
 
 // stylesheets ----------------------------------------------------------
 
+// jquery ui
+link(rel="stylesheet", type="text/css", href="stylesheets/custom-theme/jquery-ui-1.9.0.custom.css")
+
 // datatables
 link(rel="stylesheet", type="text/css", href="stylesheets/jquery.dataTables.css")
 
 // bootstrap stuff
 link(rel="stylesheet", type="text/css", href="stylesheets/bootstrap.min.css")
 link(rel="stylesheet", type="text/css", href="stylesheets/bootstrap-responsive.min.css")
+
 
 // app css
 link(rel="stylesheet", type="text/css", href="stylesheets/style.css")
@@ -26,7 +30,7 @@ div(class="navbar navbar navbar-fixed-top", id="menu")
         span(class="icon-bar")
         span(class="icon-bar")
         span(class="icon-bar")
-      a(class="brand pull-left", href="#")
+      a(class="brand pull-left")
         | Allelic Variation Explorer
       div(class="nav-collapse collapse")
         ul(class="nav pull-left")
@@ -51,26 +55,38 @@ div(class="navbar navbar navbar-fixed-top", id="menu")
                 button(class="btn", type="submit", id="go")
                   | Go
           li
-            a(id="goToFeature", href="#")
+            a(id="goToFeature")
               | Go to
           li
-            a(href="#")
+            a(id="filter")
               | Filter
-          li
-            a(href="#")
+          li(class="dropdown")
+            a(id="highlight", class="dropdown-toggle", data-toggle="dropdown")
               | Highlight
-          li
-            a(href="#")
+              b(class="caret")
+            ul(class="dropdown-menu", aria-labelledby="dropdownMenu", role="menu")
+              li
+                a(id="highlightSNPs", tabindex="-1")
+                  | SNPs
+              li
+                a(id="markAccessions", tabindex="-1")
+                  | accessions
+
+          li(class="dropdown")
+            a(id="bookmarks", class="dropdown-toggle", data-toggle="dropdown")
               | Bookmarks
+              b(class="caret")
+            ul(id="bookmarkList", class="dropdown-menu", aria-labelledby="dropdownMenu", role="menu")
+
         ul(class="nav pull-right")
           li
-            a(href="#")
+            a(id="addBookmark")
               i(class="icon-map-marker")
           li
-            a(href="#")
+            a()
               i(class="icon-info-sign")
           li
-            a(href="#")
+            a()
               i(class="icon-cog")
 
 
@@ -93,7 +109,7 @@ div(class="navbar navbar navbar-fixed-top", id="menu")
     div(id="tree")
     div(id="chart")
 
-div#haplDialog(class="hidden")
+div#haplDialog(class="ui-helper-hidden")
   p
     b Strains:
   p
@@ -108,75 +124,72 @@ div#haplDialog(class="hidden")
     | .fas
     input#saveFasta(type="submit", value="save")
 
-div#goToFeatureDialog(class="popover hidden")
-  div(class="popover-inner")
-      form(class="form", id="goToFeatureForm")
-        label
-          | Genome:
-        input(id="feature-genome", class="input-small", type='text', placeholder='eg. TAIR10')
-        label
-          | Feature name:
-        input(id="feature-name", name="feature-name", type='text', placeholder='eg. AT1G01320')
-        label
-          | Flanking region:
-        input(id="feature-flanks", name="feature-flanks", type='text', placeholder='eg. 1000')
-      button(id="findFeature", class="btn btn-success pull-right")
-        | Search
+div#goToFeatureDialog(class="ui-helper-hidden")
+  form(class="form", id="goToFeatureForm")
+    label
+      | Genome:
+    input(id="feature-genome", class="input-small", type='text', placeholder='eg. TAIR10')
+    label
+      | Feature name:
+    input(id="feature-name", name="feature-name", type='text', placeholder='eg. AT1G01320')
+    label
+      | Flanking region:
+    input(id="feature-flanks", name="feature-flanks", type='text', placeholder='eg. 1000')
+  button(id="findFeature", class="btn btn-success pull-right")
+    | Search
 
-div#filterDialog(class="hidden")
+div#filterDialog(class="ui-helper-hidden")
   p
   p.filter-buttons
-    span(class="select-all ui-button ui-button-primary ui-corner-all")
-      |Select All
-    |
-    span(class="toggle-selection ui-button ui-button-primary ui-corner-all")
-      |Toggle Selection
-    |
-    span(type="button", class="exclude-selected ui-button ui-button-error ui-corner-all")
-      |Exclude Selected
-    |
-    span(class="include-selected ui-button ui-button-success ui-corner-all")
-      |Include Selected
+    div(class="control-group")
+      div(class="btn-group")
+        button(class="select-all btn btn-primary")
+          |Select All
+        button(class="toggle-selection btn btn-primary")
+          |Toggle Selection
+        button(class="exclude-selected btn btn-danger")
+          |Exclude Selected
+        button(class="include-selected btn btn-success")
+          |Include Selected
 
-div#highlightSNPsDialog(class="hidden")
+div#highlightSNPsDialog(class="ui-helper-hidden")
   p
   p.highlightSNPs-buttons
-    span(class="select-all ui-button ui-button-primary ui-corner-all")
-      |Select All
-    |
-    span(class="toggle-selection ui-button ui-button-primary ui-corner-all")
-      |Toggle Selection
-    |
-    span(class="unhighlight-selected ui-button ui-button-error ui-corner-all")
-      |Unhighlight Selected
-    |
-    span(class="highlight-selected ui-button ui-button-success ui-corner-all")
-      |Highlight Selected
+    div(class="control-group")
+      div(class="btn-group")
+        button(class="select-all btn btn-primary")
+          | Select All
+        button(class="toggle-selection btn btn-primary")
+          | Toggle Selection
+        button(class="unhighlight-selected btn btn-danger")
+          | Unhighlight Selected
+        button(class="highlight-selected btn btn-success")
+          | Highlight Selected
 
-div#markAccessionsDialog(class="hidden")
+div(id="markAccessionsDialog", class="ui-helper-hidden")
   p
   p.markAccessions-buttons
-    span(class="select-all ui-button ui-button-primary ui-corner-all")
-      |Select All
-    |
-    span(class="toggle-selection ui-button ui-button-primary ui-corner-all")
-      |Toggle Selection
-    |
-    span(class="unmark-selected ui-button ui-button-error ui-corner-all")
-      |Unmark Selected
-    |
-    span(class="mark-selected ui-button ui-button-success ui-corner-all")
-      |Mark Selected
+    div(class="control-group")
+      div(class="btn-group")
+        span(class="select-all btn btn-primary")
+          |Select All
+        span(class="toggle-selection btn btn-primary")
+          |Toggle Selection
+        span(class="unmark-selected btn btn-danger")
+          |Unmark Selected
+        span(class="mark-selected btn btn-success")
+          |Mark Selected
 
-div#bookmarkDialog(class="hide")
+div#bookmarkDialog(class="ui-helper-hidden")
+  div(class="input-prepend")
+    span(class="add-on")
+        i(class="icon-map-marker")
+      input(id="bookmarkName", type='text', placeholder='name')
   p
-    |
-  p
-    input#bookmarkName(type='text', placeholder='bookmark name')
-    span#saveBookmark(type="button", class="ui-button ui-corner-all")
+    button(id="saveBookmark", class="btn btn-success pull-right")
       |Save
 
-div#SNPDialog(class="hidden")
+div#SNPDialog(class="ui-helper-hidden")
   p
 
 
@@ -185,6 +198,12 @@ div#SNPDialog(class="hidden")
 
 // jQuery import
 script(type="text/javascript", src="javascripts/jquery-1.8.2.min.js")
+
+// JQuery UI
+script(type="text/javascript", src="javascripts/jquery-ui-1.9.0.custom.min.js")
+
+// datatables
+script(type="text/javascript", src="javascripts/jquery.dataTables.min.js")
 
 // bootstrap
 script(type="text/javascript", src="javascripts/bootstrap.min.js")
@@ -206,8 +225,6 @@ script(type="text/javascript", src="javascripts/clusterfck-0.1.js")
 script(type="text/javascript", src="javascripts/BlobBuilder.js")
 script(type="text/javascript", src="javascripts/FileSaver.js")
 
-// datatables
-script(type="text/javascript", src="javascripts/jquery.dataTables.min.js")
 
 // application client side script
 script(type="text/javascript", src="javascripts/client.js")

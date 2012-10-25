@@ -57,7 +57,6 @@
    },
 
    render: function() {
-      $("#filterDialog").hide();
       $(document).on("click", "#filterDialog .exclude-selected", this.onExcludeSelected);
       $(document).on("click", "#filterDialog .include-selected", this.onIncludeSelected);
       $(document).on("click", "#filterDialog .select-all", this.onSelectAll);
@@ -67,7 +66,8 @@
    open: function() {
      this.filterDialog = $("#filterDialog").dialog({
        title: "Filter input data",
-       minWidth: 700
+       minWidth: 700,
+      zIndex: 90000
      });
 
      var updateTable = this.updateTable;
@@ -265,7 +265,6 @@
     },
 
     render: function() {
-      $("#highlightSNPsDialog").hide();
       $(document).on("click", "#highlightSNPsDialog .highlight-selected",
         this.onHighlightSelected);
       $(document).on("click", "#highlightSNPsDialog .unhighlight-selected",
@@ -353,6 +352,7 @@
       this.highlightSNPsDialog = $("#highlightSNPsDialog").dialog({
         title: "Highlight SNPs",
         minWidth: 700,
+        zIndex: 90000,
         close: this.onClose
       });
 
@@ -496,7 +496,6 @@
     },
 
     render: function() {
-      $("#markAccessionsDialog").hide();
       $(document).on("click", "#markAccessionsDialog .mark-selected",
       this.onMarkSelected);
       $(document).on("click", "#markAccessionsDialog .unmark-selected",
@@ -510,7 +509,8 @@
     open: function() {
       this.markAccessionsDialog = $("#markAccessionsDialog").dialog({
         title: "Mark Accessions",
-        minWidth: 500,
+        minWidth: 700,
+        zIndex: 90000
       });
       this.drawTable();
     },
@@ -606,20 +606,8 @@
 
     render: function () {
 
-      // bind goToFeatureDialog to 'Go to' navbar item
-      $("#goToFeature").popover({
-        title: "Go to feature of interest.",
-        placement: "bottom",
-        offset: 10,
-        html: true,
-        content: function() {
-          return $('#goToFeatureDialog').html();
-        }
-      });
-      // bind action to Search button in goToFeature popover
-      $(document).on("click", "#findFeature", this.findFeature);
 
-
+      // create dialogs
       this.filterDialog = new FilterDialog({
         el: $("#filterDialog"),
         model: this.model
@@ -634,6 +622,14 @@
         el: $("#markAccessionsDialog"),
         model: this.model
       });
+
+      // bind action to save bookmark button
+      $(document).on("click", "#saveBookmark", this.onSaveBookmark);
+      // bind action to Search button in goToFeature popover
+      $(document).on("click", "#findFeature", this.findFeature);
+
+      // activate dropdowns
+      $(".dropdown-toggle").dropdown();
 
       // $(window).scroll(function () {
       //   $('#mobile-menu-plus').css({'position': 'fixed', 'z-index': 2,
@@ -654,13 +650,12 @@
           $(this).closest('li').remove();}
           // $("#menu").wijmenu("refresh");
       });
-      // $(document).on("click", "#saveBookmark", this.onSaveBookmark);
+
     },
 
     events: {
       "click #go": "go",
-      // "click #find": "findFeature",
-      // "click #goToFeature": "openGoToFeatureDialog",
+      "click #goToFeature": "openGoToFeatureDialog",
       "click #filter": "openFilterDialog",
       "click #highlightSNPs": "openHighlightSNPsDialog",
       "click #markAccessions": "openMarkAccessionsDialog",
@@ -684,20 +679,17 @@
     },
 
     findFeature: function() {
-      console.log("finding");
       var genome = $("#feature-genome").val();
       var name = $("#feature-name").val();
       var flanks = parseInt($("#feature-flanks").val(), 10);
-      console.log(genome);
       this.model.goToFeature(genome, name, flanks);
     },
 
     openGoToFeatureDialog: function() {
-      // $("#find").button().click(this.findFeature);
-
-      // $("#goToFeatureDialog").dialog(
-      //     {title: "Find faeture of interest."}
-      //   );
+      $("#goToFeatureDialog").dialog({
+          title: "Find feature of interest.",
+          zIndex: 90000
+        });
     },
 
     openMarkAccessionsDialog: function() {
@@ -735,17 +727,20 @@
 
     onAddBookmark: function() {
       this.bookmarkDialog = $("#bookmarkDialog").dialog({
-        title: "Save position as bookmark"
+        title: "Save position",
+        zIndex: 90000
       });
     },
 
     onSaveBookmark: function() {
       var name = $("#bookmarkName").val();
       var href = window.location.href;
-      var bookmark = "<li><a class='bookmark' href='" + href + "''>";
+      var bookmark = "";
+      console.log("bookmark before: " + bookmark)
+      bookmark = "<li><a class='bookmark', tabindex='-1' href='" + href + "''>";
       bookmark += name + "</a></li>";
+      console.log("bookmark after: " + bookmark)
       $("#bookmarkList").append(bookmark);
-      // $("#menu").wijmenu("refresh");
       this.bookmarkDialog.dialog("close");
       localStorage.setItem('bookmark.' + name, href);
 
@@ -1247,8 +1242,6 @@
       .attr("transform", "translate(" + this.left + "," + this.top + ")");
       // this.draw();
 
-      // hide haplotype dialog window
-      $("#haplDialog").hide();
       return this;
     },
 
@@ -1863,6 +1856,7 @@
       var SNPDialog = $('#SNPDialog').clone().dialog({
          title: "Single Nucleotide Polymorphism",
          minWidth: 540,
+         zIndex: 90000,
          close: function(ev, ui) {
           $(this).remove();
          }
@@ -1889,6 +1883,7 @@
       var haplDialog = $("#haplDialog").clone().dialog({
         title: 'Haplotype for ' + posStr,
         minWidth: 600,
+        zIndex: 90000,
         close: function(ev, ui) {
           $(this).remove();
         }

@@ -23,7 +23,7 @@ body,
 #goToFeature,
 #filter,
 #addBookmark,
-#higlight,
+#highlight,
 #highlightSNPs,
 #markAccessions,
 #bookmarks {
@@ -45,12 +45,6 @@ body,
 #fastaSeqArea {
   width: 570px;
   height: 20em;
-}
-.popover {
-  z-index: 9999;
-}
-.hidden {
-  display: none;
 }
 .nav-row {
   text-align: center;
@@ -94,10 +88,6 @@ div#hjaf {
   fill: none;
   stroke: #ccc;
   stroke-width: 1.5px;
-}
-.ui-dialog-content {
-  font-family: "Helvetica Neue", "Lucida Grande", "Arial";
-  font-size: 13px;
 }
 .ui-selecting {
   background: #b9e0f5;

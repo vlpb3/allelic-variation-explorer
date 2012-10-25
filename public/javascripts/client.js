@@ -2,8 +2,8 @@
           saveAs, document, localStorage) {
   'use strict';
   // all vars
-  var AppRouter, ChoiceView, FilterDialog, MenuView, NavigateView;
-  var HighlightSNPsDialog, MarkAccessionsDialog;
+  var AppRouter, ChoiceView, FilterDialog, MenuView, NavigateView,
+      HighlightSNPsDialog, MarkAccessionsDialog;
   // router stuff
 
    AppRouter = Backbone.Router.extend({
@@ -605,7 +605,20 @@
     },
 
     render: function () {
-      // $('#menu').wijmenu();
+
+      // bind goToFeatureDialog to 'Go to' navbar item
+      $("#goToFeature").popover({
+        title: "Go to feature of interest.",
+        placement: "bottom",
+        offset: 10,
+        html: true,
+        content: function() {
+          return $('#goToFeatureDialog').html();
+        }
+      });
+      // bind action to Search button in goToFeature popover
+      $(document).on("click", "#findFeature", this.findFeature);
+
 
       this.filterDialog = new FilterDialog({
         el: $("#filterDialog"),
@@ -627,9 +640,6 @@
       //     'top': 0, 'left': 0, 'right': 0});
       // });
 
-      // hide dialogs
-      $("#goToFeatureDialog").hide();
-      $("#bookmarkDialog").hide();
       this.setLocation();
       var socket = this.model.get("socket");
       socket.emit("getRefList");
@@ -644,12 +654,13 @@
           $(this).closest('li').remove();}
           // $("#menu").wijmenu("refresh");
       });
-      $(document).on("click", "#saveBookmark", this.onSaveBookmark);
+      // $(document).on("click", "#saveBookmark", this.onSaveBookmark);
     },
 
     events: {
       "click #go": "go",
-      "click #goToFeature": "openGoToFeatureDialog",
+      // "click #find": "findFeature",
+      // "click #goToFeature": "openGoToFeatureDialog",
       "click #filter": "openFilterDialog",
       "click #highlightSNPs": "openHighlightSNPsDialog",
       "click #markAccessions": "openMarkAccessionsDialog",
@@ -673,18 +684,20 @@
     },
 
     findFeature: function() {
+      console.log("finding");
       var genome = $("#feature-genome").val();
       var name = $("#feature-name").val();
       var flanks = parseInt($("#feature-flanks").val(), 10);
+      console.log(genome);
       this.model.goToFeature(genome, name, flanks);
     },
 
     openGoToFeatureDialog: function() {
-      $("#find").button().click(this.findFeature);
+      // $("#find").button().click(this.findFeature);
 
-      $("#goToFeatureDialog").dialog(
-          {title: "Find faeture of interest."}
-        );
+      // $("#goToFeatureDialog").dialog(
+      //     {title: "Find faeture of interest."}
+      //   );
     },
 
     openMarkAccessionsDialog: function() {
@@ -760,69 +773,69 @@
     },
 
     goLeft: function() {
-      var pos = this.model.get("pos");
-      var step = Math.floor((pos.ends - pos.starts) / this.step);
-      var starts = pos.starts - step;
+      var pos = this.model.get("pos"),
+          step = Math.floor((pos.ends - pos.starts) / this.step),
+          starts = pos.starts - step,
+          ends = pos.ends - step,
+          update = {
+            pos: {
+              "genome": pos.genome,
+              "starts": starts,
+              "ends": ends,
+              "chrom": pos.chrom
+            }
+          };
+
       starts = starts > 0 ? starts : 0;
-      var ends = pos.ends - step;
-      var update = {
-        pos: {
-          "genome": pos.genome,
-          "starts": starts,
-          "ends": ends,
-          "chrom": pos.chrom
-        }
-      };
       this.model.set(update);
     },
 
     zoomOut: function() {
-      var pos = this.model.get("pos");
-      var step = Math.floor((pos.ends - pos.starts) / 2);
-      var starts = pos.starts - step;
+      var pos = this.model.get("pos"),
+          step = Math.floor((pos.ends - pos.starts) / 2),
+          starts = pos.starts - step,
+          nds = pos.ends + step,
+          update = {
+            pos: {
+              "genome": pos.genome,
+              "starts": starts,
+              "ends": ends,
+              "chrom": pos.chrom
+            }
+          };
       starts = starts > 0 ? starts : 0;
-      var ends = pos.ends + step;
-      var update = {
-        pos: {
-          "genome": pos.genome,
-          "starts": starts,
-          "ends": ends,
-          "chrom": pos.chrom
-        }
-      };
       this.model.set(update);
     },
 
     zoomIn: function() {
-      var pos = this.model.get("pos");
-      var step = Math.floor((pos.ends - pos.starts) / 4);
-      var starts = pos.starts + step;
-      var ends = pos.ends - step;
-      var update = {
-        pos: {
-          "genome": pos.genome,
-          "starts": starts,
-          "ends": ends,
-          "chrom": pos.chrom
-        }
-      };
+      var pos = this.model.get("pos"),
+          step = Math.floor((pos.ends - pos.starts) / 4),
+          starts = pos.starts + step,
+          ends = pos.ends - step,
+          update = {
+            pos: {
+              "genome": pos.genome,
+              "starts": starts,
+              "ends": ends,
+              "chrom": pos.chrom
+            }
+          };
       this.model.set(update);
-
     },
 
     goRight: function() {
-      var pos = this.model.get("pos");
-      var step = Math.floor((pos.ends - pos.starts) / this.step);
-      var starts = pos.starts + step;
-      var ends = pos.ends + step;
-      var update = {
-        pos: {
-          "genome": pos.genome,
-          "starts": starts,
-          "ends": ends,
-          "chrom": pos.chrom
-        }
-      };
+      var pos = this.model.get("pos"),
+          step = Math.floor((pos.ends - pos.starts) / this.step),
+          starts = pos.starts + step,
+          ends = pos.ends + step,
+          update = {
+            pos: {
+              "genome": pos.genome,
+              "starts": starts,
+              "ends": ends,
+              "chrom": pos.chrom
+            }
+          };
       this.model.set(update);
     }
   });
@@ -992,8 +1005,8 @@
       }
 
       // check if new position is in buffer
-      var startInBuffer = pos.starts >= bufferData.starts;
-      var endInBuffer = pos.ends <= bufferData.ends;
+      var startInBuffer = pos.starts >= bufferData.starts,
+          endInBuffer = pos.ends <= bufferData.ends;
       // if it is import otherwise say waiting
       if (startInBuffer && endInBuffer && !otherChromosome) {
         this.updateDisplayData();
@@ -1029,12 +1042,11 @@
     },
 
     updateDisplayData: function() {
-      var bufferData = this.get("bufferData");
-      // first fetch the fragment from the buffer
-      var displayData = this.get("displayData");
-
-      // get features
-      var features = bufferData.features;
+      var bufferData = this.get("bufferData"),
+          // fetch the fragment from the buffer
+          displayData = this.get("displayData"),
+          // get features
+          features = bufferData.features;
       displayData.features = _.select(features, this.isFeatureInRegion);
 
       // if range exceeded save just features and return

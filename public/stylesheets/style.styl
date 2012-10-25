@@ -1,6 +1,6 @@
 body, #filterDialog, #bookmarkDialog, #goToFeatureDialog, #haplDialog,
 #SNPDialog, #highlightSNPsDialog, #markAccessionsDialog
-    background-image url('../images/grid_noise.png')
+    background-image url('../images/cream_dust.png')
 
 
 .unselectable
@@ -10,8 +10,6 @@ body, #filterDialog, #bookmarkDialog, #goToFeatureDialog, #haplDialog,
     -ms-user-select none
     user-select none
 
-#navi
-    text-align center
 
 #goLeft, #zoomOut, #zoomIn, #goRight, #go, #goToFeature, #filter, #addBookmark,
 #higlight, #highlightSNPs, #markAccessions, #bookmarks
@@ -20,21 +18,13 @@ body, #filterDialog, #bookmarkDialog, #goToFeatureDialog, #haplDialog,
 #bookmarkDialog p
   text-align center
 
+
 #graphs
   position absolute
-  top 180px
 
 #chart, #tree
   float left
-  padding 40
-
-.form-field
-    margin-bottom: 15px
-
-.form-field label
-    margin-top 0.75em
-    float left
-    width 120px
+  // padding 40
 
 #find
     float right
@@ -42,6 +32,16 @@ body, #filterDialog, #bookmarkDialog, #goToFeatureDialog, #haplDialog,
 #fastaSeqArea
     width 570px
     height 20em
+
+.popover
+  z-index 9999
+
+.hidden
+  display none
+
+.nav-row
+  text-align center
+
 
 .included-row, .highlighted-row
     color green

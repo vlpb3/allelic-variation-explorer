@@ -42,7 +42,7 @@ function getRefRegion(region, callback) {
         },
         function(data, wfCbk) {
             if (!data.fragments.length) {
-              return callback(null, "");  
+              return callback(null, "");
             }
             var fragStart = data.fragments[0].starts;
             var sliceStart = region.start - fragStart;
@@ -75,6 +75,7 @@ function getFeatureRegion(genome, name, flank, callback) {
 }
 
 function getFeatures(region, callback) {
+    console.log(region);
     var regionQuery = {
       'attributes.genome': region.genome,
       type: {$in: [/^SNP/, 'gene', 'five_prime_UTR', 'three_prime_UTR', 'CDS', 'trait']},
@@ -111,7 +112,7 @@ function getAllStrains(genome, callback) {
     if (err) {throw err;}
     callback(data.strains);
     });
-  // callback(null, data)  
+  // callback(null, data)
 }
 
 function getRefList(callback) {

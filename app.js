@@ -70,11 +70,12 @@ io.sockets.on('connection', function(socket) {
               socket.emit('featureNotFound',
               "region out of range!");
             } else {
+              // console.log(data)
               socket.emit('data', data);
             }
         });
     });
-    
+
     socket.on('getFeatureRegion', function(req) {
         console.log(req);
         var genome = req.genome;
@@ -92,14 +93,14 @@ io.sockets.on('connection', function(socket) {
 
     socket.on('getStrains', function(genome) {
       seqdb.getAllStrains(genome, function(data) {
-        socket.emit('strains', data);  
-      });  
+        socket.emit('strains', data);
+      });
     });
 
     socket.on('getRefList', function() {
       seqdb.getRefList(function(data) {
-        socket.emit('refList', data);  
-      });    
+        socket.emit('refList', data);
+      });
     });
 
     socket.on('switchReference', function(refgen) {

@@ -789,7 +789,7 @@
       var pos = this.model.get("pos"),
           step = Math.floor((pos.ends - pos.starts) / 2),
           starts = pos.starts - step,
-          nds = pos.ends + step,
+          ends = pos.ends + step,
           update = {
             pos: {
               "genome": pos.genome,
@@ -1107,6 +1107,7 @@
       var SNPs = _.select(displayData.SNPs, function(snp) {
         return (snp.attributes.included || snp.attributes.included === undefined);
       });
+      console.log(SNPs);
 
       // create strains object
       var strains = _.reduce(SNPs, function(memo, snp) {

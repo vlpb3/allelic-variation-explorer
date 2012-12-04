@@ -57,17 +57,29 @@ body,
 .unHighlighted-row {
   color: #ff6347;
 }
-.dimmed-snp {
-  opacity: 0.1;
-}
 svg {
   font: 10px sans-serif;
 }
-circle {
-  opacity: 0.6;
-}
 rect {
   opacity: 0.6;
+}
+.A {
+  fill: #abd9e9;
+}
+.T {
+  fill: #2c7bb6;
+}
+.G {
+  fill: #d7191c;
+}
+.C {
+  fill: #fdae61;
+}
+.IUPAC {
+  fill: #ffffbf;
+}
+.dimmed-snp {
+  opacity: 0.1;
 }
 div#hjaf {
   outline: 1px dashed #f00;
@@ -96,8 +108,8 @@ div#hjaf {
   background: #b9e0f5;
 }
 .hap {
-  fill: #4682b4;
-  opacity: 0.2;
+  fill: #d3d3d3;
+  opacity: 0.4;
 }
 .refHap {
   fill: #ffa500;

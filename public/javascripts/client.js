@@ -253,7 +253,7 @@
         $(this).toggleClass('rselect');
       });
 
-    },
+    }
   });
 
   HighlightSNPsDialog = Backbone.View.extend({
@@ -444,7 +444,7 @@
           {"sTitle": "Score"},
           {"sTitle": "Accession"},
           {"sTitle": "Location"},
-          {"sTitle": "highlighted"},
+          {"sTitle": "highlighted"}
         ]
       });
 
@@ -485,7 +485,7 @@
       this.dTable.$('tr').click( function() {
         $(this).toggleClass('rselect');
       });
-    },
+    }
   });
 
   MarkAccessionsDialog = Backbone.View.extend({
@@ -589,7 +589,7 @@
       this.dTable.$('tr').click( function() {
         $(this).toggleClass('rselect');
       });
-    },
+    }
   });
 
 
@@ -736,10 +736,8 @@
       var name = $("#bookmarkName").val();
       var href = window.location.href;
       var bookmark = "";
-      console.log("bookmark before: " + bookmark)
       bookmark = "<li><a class='bookmark', tabindex='-1' href='" + href + "''>";
       bookmark += name + "</a></li>";
-      console.log("bookmark after: " + bookmark)
       $("#bookmarkList").append(bookmark);
       this.bookmarkDialog.dialog("close");
       localStorage.setItem('bookmark.' + name, href);
@@ -846,7 +844,7 @@
         "genome": "",
         "chrom": "",
         "starts": 0,
-        "ends": 0,
+        "ends": 0
       },
       "strains": [],
       "bufferData": {
@@ -1107,7 +1105,6 @@
       var SNPs = _.select(displayData.SNPs, function(snp) {
         return (snp.attributes.included || snp.attributes.included === undefined);
       });
-      console.log(SNPs);
 
       // create strains object
       var strains = _.reduce(SNPs, function(memo, snp) {
@@ -1278,9 +1275,9 @@
         var isInHighlightedPosition = _.include(highlightedPositions, String(d.x));
         if (isInHighlightedPosition) {
           var highlightedStrains = highlighted[String(d.x)];
-          if ( (_.intersection(d.strains, highlightedStrains).length > 0)
-            || _.include(d.strains, "refStrain") ){
-              return 0.8;
+          if ( (_.intersection(d.strains, highlightedStrains).length > 0) ||
+            _.include(d.strains, "refStrain") ){
+              return 1;
             }
         }
         var unhighlightedPositions = _.keys(unhighlighted);
@@ -1291,7 +1288,7 @@
               return 0.1;
             }
         }
-        return 0.6;
+        return 0.8;
       });
     },
 
@@ -1579,22 +1576,23 @@
         .attr('fill', 'steelblue');
 
       strainFracs.exit().remove();
+
       // draw SNPs
       var SNPCircles = this.svg.selectAll('.SNP').data(this.hapSNPs);
+
       SNPCircles.attr('cx', function(d) { return x(d.x); })
       .attr('cy', function(d) {
         return d.y + freePos - glyphT;
       })
-      .attr('fill', this.baseColor)
-      .attr('opacity', 0.6);
+      .attr('class', this.baseClass);
+
       SNPCircles.enter().append('svg:circle')
-      .attr('class', 'SNP')
+      .attr('class', this.baseClass)
       .attr('r', glyphH/4)
       .attr('cx', function(d) { return x(d.x); })
       .attr('cy', function(d) {
         return d.y + freePos - glyphT;
       })
-      .attr('fill', this.baseColor)
       .on("mouseover", this.onSNPmouseOver)
       .on("mouseout", this.onSNPmouseOut)
       .on('click', this.onSNPClick);
@@ -1731,10 +1729,10 @@
     drawLegend: function(){
       var glyphH = this.glyphH;
       var circleData = [
-        [glyphH/2, "red", "A"],
-        [glyphH*5.5, "green", "C"],
-        [glyphH*10.5, "blue", "G"],
-        [glyphH*15.5, "orange", "T"]];
+        [glyphH/2, "#ABD9E9", "A"],
+        [glyphH*5.5, "#FDAE61", "C"],
+        [glyphH*10.5, "#D7191C", "G"],
+        [glyphH*15.5, "#2C7BB6", "T"]];
 
       var rectData = [
         [0, "chartreuse", "gene"],
@@ -1745,11 +1743,10 @@
       var legendCircs = this.svgTree.selectAll('.legendCircs')
         .data(circleData);
       legendCircs.enter().append("svg:circle")
-        .attr('class', 'legendCircs')
+        .attr('class', function(d) {return 'legendCircs ' + d[2];})
         .attr('r', glyphH/4)
         .attr('cx', function(d) {return d[0];})
-        .attr('cy', 0)
-        .attr('fill', function(d) {return d[1];});
+        .attr('cy', 0);
 
       var legendRects = this.svgTree.selectAll('.legendRects')
         .data(rectData);
@@ -1800,8 +1797,8 @@
       .transition()
       .duration(400)
       .style("opacity", function(d) {
-        if (_.include(posWithSNP, d.x)) {return 0.2;}
-        return 0.1;
+        if (_.include(posWithSNP, d.x)) {return 0.4;}
+        return 0;
       });
 
       d3.selectAll(".nodeCircle")
@@ -1827,7 +1824,7 @@
       d3.selectAll(".hap")
       .transition()
       .duration(400)
-      .style("opacity", 0.2);
+      .style("opacity", 0.4);
       d3.selectAll(".nodeCircle")
       .transition()
       .duration(400)
@@ -1925,15 +1922,13 @@
       return leaf;
     },
 
-    baseColor: function(d) {
-      var baseColors = {
-        'A': 'red',
-        'C': 'green',
-        'G': 'blue',
-        'T': 'orange'
-      };
-      return baseColors[d.base];
-    }
+    baseClass: function(d) {
+      var baseList = ["A", "T", "G", "C"];
+      if ( _.contains(baseList, d.base) ) {
+        return "SNP " + d.base;}
+      else {
+        return "SNP IUPAC";}
+    } 
 
   });
 

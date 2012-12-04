@@ -16,7 +16,7 @@ body, #filterDialog, #bookmarkDialog, #goToFeatureDialog, #haplDialog,
     cursor pointer
 
 #bookmarkDialog p
-  text-align center
+    text-align center
 
 
 #graphs
@@ -24,7 +24,6 @@ body, #filterDialog, #bookmarkDialog, #goToFeatureDialog, #haplDialog,
 
 #chart, #tree
   float left
-  // padding 40
 
 #find
     float right
@@ -36,25 +35,36 @@ body, #filterDialog, #bookmarkDialog, #goToFeatureDialog, #haplDialog,
 .nav-row
   text-align center
 
-
 .included-row, .highlighted-row
     color green
 
 .excluded-row, .unHighlighted-row
     color tomato
 
-.dimmed-snp
-    opacity 0.1
 svg
   font 10px sans-serif
-
-circle
-  opacity 0.6
 
 rect
   opacity 0.6
 
+.A
+    fill #ABD9E9
 
+.T
+    fill #2C7BB6
+
+.G
+    fill #D7191C
+
+.C
+    fill #FDAE61
+
+.IUPAC
+    fill #FFFFBF
+
+.dimmed-snp
+    opacity 0.1
+ 
 div#hjaf
   outline 1px dashed red
 
@@ -86,8 +96,8 @@ div#hjaf
   background #b9e0f5
 
 .hap
-  fill steelblue
-  opacity 0.2
+  fill lightgrey
+  opacity 0.4
 
 .refHap
     fill orange
@@ -103,5 +113,6 @@ div#hjaf
 .message
   font-size 15px
   stroke orangered
+
 .rselect
   color royalblue

@@ -1,12 +1,17 @@
 import argparse
 import time
+import sys
 import os
 import multiprocessing
 import pymongo
+import logging
+import pybedtools
 from pybedtools import BedTool as bt
 from pymongo import Connection
 from Bio import SeqIO
 from itertools import islice, chain, repeat
+from json import JSONDecoder as jd
+import Colorer
 
 
 def chunks(l, n):
@@ -28,19 +33,19 @@ def parse_annotations(f, genome):
     Parse the annotations and write them into the db.
     """
     feat = bt(f)
-    print 'processing: '
-    print f
+    logging.info('processing: %s' % f.name)
     chunk_size = 1024
     con = Connection()
     seqdb = con['seqdb']
     features = seqdb.features
     strains = seqdb.genomestrains
     small_feature_chunks = ichunked(feat, chunk_size)
-    for chunk in small_feature_chunks:
-        feature_list = []
-        strain_list = []
-        for a in chunk:
-            feature = {
+    try:
+        for chunk in small_feature_chunks:
+            feature_list = []
+            strain_list = []
+            for a in chunk:
+                feature = {
                     'seqid': a[0],
                     'source': a[1],
                     'type': a[2],
@@ -50,21 +55,24 @@ def parse_annotations(f, genome):
                     'strand': a[6],
                     'phase': a[7],
                     'attributes': a.attrs
-                    }
-            feature['attributes']['genome'] = genome
-            feature_list.append(feature)
-            try:
-                strain = feature['attributes']['Strain']
-                strain_list.append(strain)
-            except:
-                pass
-        strain_list = list(set(strain_list))
-        strains.update(
+                }
+                feature['attributes']['genome'] = genome
+                feature_list.append(feature)
+                try:
+                    strain = feature['attributes']['Strain']
+                    strain_list.append(strain)
+                except:
+                    pass
+            strain_list = list(set(strain_list))
+            strains.update(
                 {'genome': genome},
                 {'$addToSet': {'strains': {'$each': strain_list}}}
-                )
-        features.insert(feature_list, safe=True)
-    print ('finished processing file')
+            )
+            features.insert(feature_list, safe=True)
+    except pybedtools.cbedtools.MalformedBedLineError:
+        logging.error("Gff file is not formated corectly, please validate it!")
+        sys.exit(0)
+    logging.info('finished processing file')
     return
 
 
@@ -72,7 +80,7 @@ def parse_annotations(f, genome):
 def import_annotations(annot, genome):
     """Read in annotation files and import into db.
     """
-    print("processing annotations")
+    logging.info("processing annotations")
     t0 = time.time()
     conn = Connection()
     seqdb = conn.seqdb
@@ -80,8 +88,8 @@ def import_annotations(annot, genome):
     for f in annot:
         parse_annotations(f, genome)
     t1 = time.time()
-    print "time elapsed: "
-    print t1 - t0
+    t = t1 - t0
+    logging.info("time elapsed: %d" % t)
 
 
 def import_ref_seq(ref, genome):
@@ -94,13 +102,12 @@ def import_ref_seq(ref, genome):
     con = Connection()
     seqdb = con['seqdb']
     refseqs = seqdb.refseqs
-
     for fin in ref:
         fasta = SeqIO.parse(fin, 'fasta')
         for seq in fasta:
             seq_len = len(seq)
             chrom = seq.id
-            print('processing sequence from: ' + chrom)
+            logging.info('processing sequence from: ' + chrom)
             startlist = islice(xrange(seq_len), 1, None, chunk_size)
             endlist = islice(xrange(seq_len), chunk_size, None, chunk_size)
             if ((seq_len % chunk_size) > 0):
@@ -121,7 +128,7 @@ def make_indexes():
     seqdb = con['seqdb']
     features = seqdb.features
     refseqs = seqdb.refseqs
-    print('indexing features')
+    logging.info('indexing features')
     features.create_index([
         ('attributes.genome', pymongo.ASCENDING),
         ('type', pymongo.ASCENDING),
@@ -131,20 +138,106 @@ def make_indexes():
     seqdb.features.create_index([
         ('attributes.genome', pymongo.ASCENDING),
         ('attributes.Name', pymongo.ASCENDING)])
-    print('indexing reference sequence')
-    refseqs.create_index(
-            [('chrom', pymongo.ASCENDING),
-            ('starts', pymongo.ASCENDING),
-            ('ends', pymongo.ASCENDING)])
+    logging.info('indexing reference sequence')
+    refseqs.create_index([
+        ('chrom', pymongo.ASCENDING),
+        ('starts', pymongo.ASCENDING),
+        ('ends', pymongo.ASCENDING)])
+
+
+def parse_chromInfo(args):
+    """Parse file storing information about chromosome sizes.
+    """
+    lines = args.chromInfo.readlines()
+    chromInfo = {l.split(" ")[0]: int(l.split(" ")[1]) for l in lines}
+    return chromInfo
+
+
+def parse_config(args):
+    """Parse json config file.
+    """
+    decode = jd().decode
+    json_string = args.config.read()
+    jargs = decode(json_string)
+    args.chromInfo = open(jargs['chromInfo'], 'r')
+    args.genome = jargs['genome']
+    # open annotation files and put into args
+    args.annot = [open(f, 'r') for f in jargs['annot']]
+    args.ref = [open(f, 'r') for f in jargs['ref']]
+    return args
+
+
+def check_chroms(args, chromInfo):
+    """
+    Check for consistency in chromosome naming.
+    """
+    logging.info("Checking for consistency of chromosome ids:")
+    # extract chromosome ids from chromInfo
+    chromInfo_chromset = set(chromInfo.keys())
+    # extract chromosome ids from fasta files
+    ref_chromset = set([])
+    for fin in args.ref:
+        fasta = SeqIO.parse(fin.name, 'fasta')
+        for seq in fasta:
+            ref_chromset.add(seq.id)
+    # extract chromosome ids from features in gff files
+    annot_chromset = set([])
+    for fin in args.annot:
+        for line in open(fin.name, 'r').readlines():
+            annot_chromset.add(line.strip().split("\t")[0])
+
+    # compare all chromsets
+    in_chromInfo_not_ref = chromInfo_chromset - ref_chromset
+    in_chromInfo_not_annot = chromInfo_chromset - annot_chromset
+    in_ref_not_chromInfo = ref_chromset - chromInfo_chromset
+    in_annot_not_chromInfo = annot_chromset - chromInfo_chromset
+    all_right = True
+    if (len(in_chromInfo_not_ref) > 0):
+        all_right = False
+        chroms_str = ", ".join(in_chromInfo_not_ref)
+        logging.warning('%s present in chromInfo but not in reference',
+                        chroms_str)
+    if (len(in_chromInfo_not_annot) > 0):
+        all_right = False
+        chroms_str = ", ".join(in_chromInfo_not_annot)
+        logging.warning('%s present in chromInfo but not in annotations',
+                        chroms_str)
+    if (len(in_ref_not_chromInfo) > 0):
+        all_right = False
+        chroms_str = ". ".join(in_ref_not_chromInfo)
+        logging.warning('%s present in reference but not in chromInfo',
+                        chroms_str)
+    if (len(in_annot_not_chromInfo) > 0):
+        all_right = False
+        chroms_str = ". ".join(in_annot_not_chromInfo)
+        logging.warning('%s present in annotations but not in chromInfo',
+                        chroms_str)
+
+    if all_right:
+        logging.info("Chromosome intendifiers are all right.")
+    else:
+        logging.error("Chromosome identifiers don't match.")
+        qu = "Do you wont to countinue imports? [y/N]"
+        do_continue = True if raw_input(qu).lower() == 'y' else False
+        if not do_continue:
+            logging.error("Canceling imports.")
+            sys.exit(0)
 
 
 def import_data(args):
     """Import data into a database.
     """
+    # if the arguments are in a config file
+    # parse this config file first
+    # ans supply proper args
+    if (args.config):
+        args = parse_config(args)
+    chromInfo = parse_chromInfo(args)
+    check_chroms(args, chromInfo)
     import_annotations(args.annot, args.genome)
     import_ref_seq(args.ref, args.genome)
-    make_indexes()
-    print('Successfully finished imports')
+    # make_indexes()
+    logging.info('Successfully finished imports')
 
 
 def featuretype_filter(feature, featuretype):
@@ -169,16 +262,16 @@ def annotate_location(snp, loc):
 def subset_features((featuretype, annotations)):
     a = bt(annotations)
     features_of_type = a.filter(featuretype_filter,
-                featuretype).saveas().fn
-    print("subsetting features in " + featuretype)
+                                featuretype).saveas().fn
+    logging.info("subsetting features in " + featuretype)
     return ((featuretype, features_of_type))
 
 
 def subset_snps((featuretype, features, snps)):
     s = bt(snps)
     snps_in_location = s.intersect(bt(features[featuretype]),
-                u=True).saveas().fn
-    print("subsetting snps in " + featuretype)
+                                   u=True).saveas().fn
+    logging.info("subsetting snps in " + featuretype)
     return((featuretype, snps_in_location))
 
 
@@ -220,7 +313,7 @@ def snps_by_location(args):
     snps_list = [snps for i in range(pool_size)]
     features_list = repeat(features_by_type, times=pool_size)
     results = pool.map(subset_snps, zip(features_by_type.keys(),
-        features_list, snps_list))
+                       features_list, snps_list))
     snps_by_location = {ftype: feature for (ftype, feature) in results}
 
     # find intergenic snps
@@ -255,38 +348,52 @@ def snps_by_location(args):
     pool.map(annotate_snps, zip(snps_by_location.items(), dd_list))
 
     t1 = time.time()
-    print(t1 - t0)
+    t = t1 - t0
+    logging.info("time elapsed: %d" % t)
 
 
 def main():
+    # setup logger
+    formater = '%(asctime)s:\n%(message)s'
+    logging.basicConfig(format=formater, level=logging.DEBUG)
+
     # parse script arguments
     general_description = 'Usefull tools for Allelic Variation Explorer'
     parser = argparse.ArgumentParser(description=general_description)
 
     subparsers = parser.add_subparsers(title='tools',
-            description='available ave tools')
+                                       description='available ave tools')
 
     # subparser for import tool
-    import_parser = subparsers.add_parser('import',
-            help='importing data to ave db')
-    import_parser.add_argument('--genome', type=str,
-            help='name of the genome')
-    import_parser.add_argument('--ref', nargs='*', type=argparse.FileType('r'),
-            help='reference sequnce in fasta format')
-    import_parser.add_argument('--annot', nargs='*',
-            type=argparse.FileType('r'),
-            help='annotations in gff3 format')
+    import_parser = subparsers.add_parser(
+        'import', help='importing data to ave db')
+    import_parser.add_argument(
+        '--chromInfo', type=argparse.FileType('r'))
+    import_parser.add_argument(
+        '--config', type=argparse.FileType('r'))
+    import_parser.add_argument(
+        '--genome', type=str, help='name of the genome')
+    import_parser.add_argument(
+        '--ref', nargs='*', type=argparse.FileType('r'),
+        help='reference sequnce in fasta format')
+    import_parser.add_argument(
+        '--annot', nargs='*',
+        type=argparse.FileType('r'),
+        help='annotations in gff3 format')
     import_parser.set_defaults(func=import_data)
 
     # subparser for snp annotation by location
-    group_snps_parser = subparsers.add_parser('group_snps_by_loc',
-            help='group SNPs by location according to annotations')
-    group_snps_parser.add_argument('--annot', nargs='*',
-            type=argparse.FileType('r'),
-            help='gene models annotations in gff format')
-    group_snps_parser.add_argument('--snps', nargs='*',
-            type=argparse.FileType('r'),
-            help='snp annotations in gff format')
+    group_snps_parser = subparsers.add_parser(
+        'group_snps_by_loc',
+        help='group SNPs by location according to annotations')
+    group_snps_parser.add_argument(
+        '--annot', nargs='*',
+        type=argparse.FileType('r'),
+        help='gene models annotations in gff format')
+    group_snps_parser.add_argument(
+        '--snps', nargs='*',
+        type=argparse.FileType('r'),
+        help='snp annotations in gff format')
     group_snps_parser.set_defaults(func=snps_by_location)
 
     args = parser.parse_args()

@@ -41,4 +41,13 @@ var GenomeStrainsSchema = new Schema(
   });
 dbConnection.model('genomestrains', GenomeStrainsSchema);
 
+// define schema for storing chromInfo
+var ChromInfoSchema = new Schema(
+  {
+    genome: {type: String},
+    chromosomes: {}
+  }
+);
+dbConnection.model('chromInfo', ChromInfoSchema);
+
 exports.dbConnection = dbConnection;

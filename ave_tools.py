@@ -229,11 +229,11 @@ def import_chromInfo(args, chromInfo):
     """
     con = Connection()
     seqdb = con['seqdb']
-    chromInfo_collection = seqdb.chromInfo
+    chrominfos = seqdb.chrominfos
     chromInfo_doc = {'genome': args.genome,
                      'chromosomes': chromInfo}
     print(chromInfo_doc)
-    chromInfo_collection.insert(chromInfo_doc, safe=True)
+    chrominfos.insert(chromInfo_doc, safe=True)
 
 
 def import_data(args):

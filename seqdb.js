@@ -12,6 +12,7 @@ var dbConnection = models.dbConnection;
 var Feature = dbConnection.model("Feature");
 var RefSeq = dbConnection.model("RefSeq");
 var GenomeStrains = dbConnection.model("genomestrains");
+var ChromInfo = dbConnection.model("chromInfo");
 
 function getRefRegion(region, callback) {
     async.waterfall([
@@ -107,6 +108,7 @@ function getRegion(region, callback) {
     });
 }
 
+// fetch list of all strains in this genome
 function getAllStrains(genome, callback) {
   GenomeStrains.findOne({'genome': genome}, function(err, data) {
     if (err) {throw err;}
@@ -115,10 +117,20 @@ function getAllStrains(genome, callback) {
   // callback(null, data)
 }
 
+// fetch list of genomes
 function getRefList(callback) {
   GenomeStrains.find().distinct('genome', function(err, data) {
     if (err) {throw err;}
     callback(data);
+  });
+}
+
+// fetch chromInfo for queried genome
+function getChromInfo(genome, callback) {
+  ChromInfo.find({
+    'genome': genome}, function(err, data) {
+      if (err) {throw err;}
+      callback(data);
   });
 }
 
@@ -129,3 +141,4 @@ exports.getFeatures = getFeatures;
 exports.getFeatureRegion = getFeatureRegion;
 exports.getAllStrains = getAllStrains;
 exports.getRefList = getRefList;
+exports.getChromInfo = getChromInfo;

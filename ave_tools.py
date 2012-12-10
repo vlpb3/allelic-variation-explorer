@@ -224,6 +224,18 @@ def check_chroms(args, chromInfo):
             sys.exit(0)
 
 
+def import_chromInfo(args, chromInfo):
+    """Import chromosome sizes from chromInfo into mongodb.
+    """
+    con = Connection()
+    seqdb = con['seqdb']
+    chromInfo_collection = seqdb.chromInfo
+    chromInfo_doc = {'genome': args.genome,
+                     'chromosomes': chromInfo}
+    print(chromInfo_doc)
+    chromInfo_collection.insert(chromInfo_doc, safe=True)
+
+
 def import_data(args):
     """Import data into a database.
     """
@@ -234,8 +246,9 @@ def import_data(args):
         args = parse_config(args)
     chromInfo = parse_chromInfo(args)
     check_chroms(args, chromInfo)
-    import_annotations(args.annot, args.genome)
-    import_ref_seq(args.ref, args.genome)
+    import_chromInfo(args, chromInfo)
+    # import_annotations(args.annot, args.genome)
+    # import_ref_seq(args.ref, args.genome)
     # make_indexes()
     logging.info('Successfully finished imports')
 

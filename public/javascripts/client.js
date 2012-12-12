@@ -642,13 +642,11 @@
       socket.on("refList", this.setRefGen);
 
       this.loadBookmarks();
-      $(document).on("click", ".bookmark", function(evnt) {
-        if ( evnt.metaKey ) {
-          var name = $(evnt.target).text();
-          localStorage.removeItem("bookmark." + name);
-          evnt.preventDefault();
-          $(this).closest('li').remove();}
-          // $("#menu").wijmenu("refresh");
+      $(document).on("click", ".delbookmark", function(evnt) {
+        var name = $(this).closest('li').text();
+        localStorage.removeItem("bookmark." + name);
+        evnt.preventDefault();
+        $(this).closest('li').remove();
       });
 
     },
@@ -671,9 +669,9 @@
           var name = key.split('bookmark.')[1];
           var href = localStorage.getItem(key);
           var bookmark = "<li><a class='bookmark' href='" + href + "''>";
-          bookmark += name + "</a></li>";
+          bookmark += name + "<i class='icon-trash delbookmark pull-right'>";
+          bookmark += "</i></a></li>";
           $("#bookmarkList").append(bookmark);
-          // $("#menu").wijmenu("refresh");
         }
       }
     },
@@ -736,8 +734,9 @@
       var name = $("#bookmarkName").val();
       var href = window.location.href;
       var bookmark = "";
-      bookmark = "<li><a class='bookmark', tabindex='-1' href='" + href + "''>";
-      bookmark += name + "</a></li>";
+      bookmark = "<li><a class='bookmark' href='" + href + "''>";
+      bookmark += name + "<i class='icon-trash delbookmark pull-right'>";
+      bookmark += "</i></a></li>";
       $("#bookmarkList").append(bookmark);
       this.bookmarkDialog.dialog("close");
       localStorage.setItem('bookmark.' + name, href);

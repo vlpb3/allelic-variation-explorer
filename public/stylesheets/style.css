@@ -46,11 +46,9 @@ body,
   width: 570px;
   height: 20em;
 }
-.navbar-search {
-  margin-top: 5px;
-}
-.navbar-search .search-query {
-  margin-bottom: 0;
+#loc-genome,
+#loc-chrom {
+  margin-top: 0px;
 }
 .nav-row {
   text-align: center;

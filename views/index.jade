@@ -40,17 +40,10 @@ div(class="navbar navbar navbar-fixed-top", id="menu")
                 span(class="add-on")
                   | Genome 
                 select(class="input-small", type="text", id="loc-genome")
-                  option
-                    | a
-                  option
-                    | b
-                  option
-                    | c
-                // input(class="input-small", type="text", id="loc-genome")
               div(class="input-prepend")
                 span(class="add-on")
                   | Chrom 
-                input(class="input-small", type="text", id="loc-chrom")
+                select(class="input-small", type="text", id="loc-chrom")
               div(class="input-prepend")
                 span(class="add-on")                 
                   | Start
@@ -59,7 +52,7 @@ div(class="navbar navbar navbar-fixed-top", id="menu")
                 span(class="add-on")
                   | End
                 input(class="input-small", type="number", id="loc-end")
-                button(class="btn", type="submit", id="go")
+                button(class="btn loc-nav", type="submit", id="go")
                   | Go
           li
             a(id="goToFeature")

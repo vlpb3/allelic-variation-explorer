@@ -46,6 +46,12 @@ body,
   width: 570px;
   height: 20em;
 }
+.navbar-search {
+  margin-top: 5px;
+}
+.navbar-search .search-query {
+  margin-bottom: 0;
+}
 .nav-row {
   text-align: center;
 }
@@ -80,9 +86,6 @@ rect {
 }
 .dimmed-snp {
   opacity: 0.1;
-}
-div#hjaf {
-  outline: 1px dashed #f00;
 }
 .geneLabel {
   font: 9px sans-serif;

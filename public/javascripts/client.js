@@ -636,11 +636,9 @@
       //     'top': 0, 'left': 0, 'right': 0});
       // });
 
+      // set all the inputs according to location
       this.setLocation();
-      var socket = this.model.get("socket");
-      socket.emit("getRefList");
-      socket.on("refList", this.setRefGen);
-
+      
       this.loadBookmarks();
       $(document).on("click", ".delbookmark", function(evnt) {
         var name = $(this).closest('li').text();
@@ -704,6 +702,12 @@
     },
 
     setLocation: function() {
+      // fetch from mongo list of available reference genomes
+      var socket = this.model.get("socket");
+      socket.emit("getRefList");
+      // when reference list arrive setup the input
+      socket.on("refList", this.setRefGen);
+
       var pos = this.model.get("pos");
       $("#loc-genome").val(pos.genome);
       $("#loc-chrom").val(pos.chrom);
@@ -712,6 +716,7 @@
     },
 
     setRefGen: function (refList) {
+      console.log(refList);
       // $('#loc-genome').autocomplete({source: refList});
     },
 

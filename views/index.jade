@@ -38,20 +38,27 @@ div(class="navbar navbar navbar-fixed-top", id="menu")
             form(class="navbar-form form-inline")
               div(class="input-prepend")
                 span(class="add-on")
-                  | Genome
-                input(class="input-small", type="text", id="loc-genome")
+                  | Genome 
+                select(class="input-small", type="text", id="loc-genome")
+                  option
+                    | a
+                  option
+                    | b
+                  option
+                    | c
+                // input(class="input-small", type="text", id="loc-genome")
               div(class="input-prepend")
                 span(class="add-on")
-                  | Chrom
+                  | Chrom 
                 input(class="input-small", type="text", id="loc-chrom")
               div(class="input-prepend")
-                span(class="add-on")
-                  | start
-                input(class="input-small", type="text", id="loc-start")
+                span(class="add-on")                 
+                  | Start
+                input(class="input-small", type="number", id="loc-start")
               div(class="input-prepend")
                 span(class="add-on")
-                  | end
-                input(class="input-small", type="text", id="loc-end")
+                  | End
+                input(class="input-small", type="number", id="loc-end")
                 button(class="btn", type="submit", id="go")
                   | Go
           li

@@ -247,9 +247,9 @@ def import_data(args):
     chromInfo = parse_chromInfo(args)
     check_chroms(args, chromInfo)
     import_chromInfo(args, chromInfo)
-    # import_annotations(args.annot, args.genome)
-    # import_ref_seq(args.ref, args.genome)
-    # make_indexes()
+    import_annotations(args.annot, args.genome)
+    import_ref_seq(args.ref, args.genome)
+    make_indexes()
     logging.info('Successfully finished imports')
 
 

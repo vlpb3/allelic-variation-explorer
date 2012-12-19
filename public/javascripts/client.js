@@ -595,10 +595,12 @@
 
   MenuView = Backbone.View.extend({
     initialize: function () {
-      _.bindAll(this, "render", "setRefGen", "setLocation",
+      _.bindAll(this, "render", "setLocation",
                "openGoToFeatureDialog", "go", "findFeature", "openFilterDialog",
                "openHighlightSNPsDialog", "openMarkAccessionsDialog",
-               "onAddBookmark", "onSaveBookmark", "loadBookmarks");
+               "onAddBookmark", "onSaveBookmark", "loadBookmarks",
+               "getChromInfo", "onChromInfo", "onGenomeChange",
+               "onChromChange");
 
       this.model.on("change:pos", this.setLocation);
       this.render();
@@ -623,6 +625,11 @@
         model: this.model
       });
 
+      // change chromosome list on genome change
+      $(document).on('change', '#loc-genome', this.onGenomeChange);
+      // change chromosome sizes on genome or chromosome change
+      $(document).on('change', '#loc-chrom', this.onChromChange);
+      $(document).on('change', '#loc-genome', this.onChromChange);
       // bind action to save bookmark button
       $(document).on("click", "#saveBookmark", this.onSaveBookmark);
       // bind action to Search button in goToFeature popover
@@ -636,6 +643,9 @@
       //     'top': 0, 'left': 0, 'right': 0});
       // });
 
+      // get chromInfo from db
+      this.getChromInfo();
+
       // set all the inputs according to location
       this.setLocation();
       
@@ -646,7 +656,7 @@
         evnt.preventDefault();
         $(this).closest('li').remove();
       });
-
+  
     },
 
     events: {
@@ -672,6 +682,57 @@
           $("#bookmarkList").append(bookmark);
         }
       }
+    },
+
+    getChromInfo: function() {
+      var socket = this.model.get("socket");
+      socket.emit("getChromInfo");
+      socket.on("chromInfo", this.onChromInfo); 
+    },
+
+    onChromInfo: function(chromInfo) {
+      this.chromInfo = chromInfo;
+      // get list of genomes in chromInfo
+      var genomeList = _.pluck(chromInfo, 'genome');
+      // clear genome list
+      $('#loc-genome option').remove();
+      // get access to options
+      var genomeOptions = $("#loc-genome").prop('options');
+      _.each(genomeList, function(genomeName) {
+        genomeOptions[genomeOptions.length] = new Option(genomeName, genomeName);
+      });
+    },
+
+    onGenomeChange: function(evt) {
+      // get chosen value
+      var genome = $('#loc-genome').val();
+      var chroms = _.find(this.chromInfo, function(info){
+        return info.genome === genome;
+      }).chromosomes; 
+      var chromList = _.keys(chroms).sort();
+
+      // remove existing chromosome options 
+      $('#loc-chrom option').remove();
+      
+      // set chroms as options for #loc-chrom select
+      var chromOptions = $('#loc-chrom').prop('options');
+      _.each(chromList, function(chromName) {
+        chromOptions[chromOptions.length] = new Option(chromName, chromName); 
+      });
+    },
+
+    onChromChange: function() {
+      // get chosen genome and chromosome
+      var genome = $('#loc-genome').val();
+      var chrom = $('#loc-chrom').val();
+      // get size of chromosome in this genome
+      var chroms = _.find(this.chromInfo, function(info){
+        return info.genome === genome;
+      }).chromosomes; 
+      var size = chroms[chrom];
+      // set limits on start and end input
+      $('#loc-start').prop('max', size);
+      $('#loc-end').prop('max', size);
     },
 
     findFeature: function() {
@@ -702,22 +763,11 @@
     },
 
     setLocation: function() {
-      // fetch from mongo list of available reference genomes
-      var socket = this.model.get("socket");
-      socket.emit("getRefList");
-      // when reference list arrive setup the input
-      socket.on("refList", this.setRefGen);
-
       var pos = this.model.get("pos");
       $("#loc-genome").val(pos.genome);
       $("#loc-chrom").val(pos.chrom);
       $("#loc-start").val(pos.starts);
       $("#loc-end").val(pos.ends);
-    },
-
-    setRefGen: function (refList) {
-      console.log(refList);
-      // $('#loc-genome').autocomplete({source: refList});
     },
 
     openFilterDialog: function () {

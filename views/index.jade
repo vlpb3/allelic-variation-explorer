@@ -47,11 +47,11 @@ div(class="navbar navbar navbar-fixed-top", id="menu")
               div(class="input-prepend")
                 span(class="add-on")                 
                   | Start
-                input(class="input-small", type="number", id="loc-start")
+                input(class="input-small", type="number", min="1", id="loc-start")
               div(class="input-prepend")
                 span(class="add-on")
                   | End
-                input(class="input-small", type="number", id="loc-end")
+                input(class="input-small", type="number", min="1", id="loc-end")
                 button(class="btn loc-nav", type="submit", id="go")
                   | Go
           li

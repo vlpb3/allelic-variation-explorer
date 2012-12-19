@@ -126,9 +126,8 @@ function getRefList(callback) {
 }
 
 // fetch chromInfo for queried genome
-function getChromInfo(genome, callback) {
-  ChromInfo.find({
-    'genome': genome}, function(err, data) {
+function getChromInfo(callback) {
+  ChromInfo.find({}, function(err, data) {
       if (err) {throw err;}
       callback(data);
   });

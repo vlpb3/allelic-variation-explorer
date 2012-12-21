@@ -1,5 +1,5 @@
 (function ($, Backbone, window, _, io, clusterfck, BlobBuilder, location, d3,
-          saveAs, document, localStorage) {
+          saveAs, document, localStorage, Option) {
   'use strict';
   // all vars
   var AppRouter, ChoiceView, FilterDialog, MenuView, NavigateView,
@@ -598,16 +598,14 @@
       _.bindAll(this, "render", "setLocation",
                "openGoToFeatureDialog", "go", "findFeature", "openFilterDialog",
                "openHighlightSNPsDialog", "openMarkAccessionsDialog",
-               "onAddBookmark", "onSaveBookmark", "loadBookmarks",
-               "getChromInfo", "onChromInfo", "onGenomeChange",
-               "onChromChange");
+               "onAddBookmark", "onSaveBookmark", "loadBookmarks", "onGenomeChange",
+               "onChromChange", "setChromInfo");
 
       this.model.on("change:pos", this.setLocation);
       this.render();
     },
 
     render: function () {
-
 
       // create dialogs
       this.filterDialog = new FilterDialog({
@@ -624,7 +622,6 @@
         el: $("#markAccessionsDialog"),
         model: this.model
       });
-
       // change chromosome list on genome change
       $(document).on('change', '#loc-genome', this.onGenomeChange);
       // change chromosome sizes on genome or chromosome change
@@ -643,9 +640,6 @@
       //     'top': 0, 'left': 0, 'right': 0});
       // });
 
-      // get chromInfo from db
-      this.getChromInfo();
-
       // set all the inputs according to location
       this.setLocation();
       
@@ -656,7 +650,9 @@
         evnt.preventDefault();
         $(this).closest('li').remove();
       });
-  
+
+      // get chrominfo from model when it changes
+      this.model.on('change:chromInfo', this.setChromInfo);
     },
 
     events: {
@@ -668,6 +664,19 @@
       "click #addBookmark": "onAddBookmark"
     },
 
+    setChromInfo: function() {
+      this.chromInfo = this.model.get('chromInfo');
+      // get list of genomes in chromInfo
+      var genomeList = _.keys(this.chromInfo);
+      // clear genome list
+      $('#loc-genome option').remove();
+      // get access to options
+      var genomeOptions = $("#loc-genome").prop('options');
+      _.each(genomeList, function(genomeName) {
+        genomeOptions[genomeOptions.length] = new Option(genomeName, genomeName);
+      });
+    },
+    
     loadBookmarks: function() {
       var nStored = localStorage.length;
       var i;
@@ -684,32 +693,10 @@
       }
     },
 
-    getChromInfo: function() {
-      var socket = this.model.get("socket");
-      socket.emit("getChromInfo");
-      socket.on("chromInfo", this.onChromInfo); 
-    },
-
-    onChromInfo: function(chromInfo) {
-      this.chromInfo = chromInfo;
-      // get list of genomes in chromInfo
-      var genomeList = _.pluck(chromInfo, 'genome');
-      // clear genome list
-      $('#loc-genome option').remove();
-      // get access to options
-      var genomeOptions = $("#loc-genome").prop('options');
-      _.each(genomeList, function(genomeName) {
-        genomeOptions[genomeOptions.length] = new Option(genomeName, genomeName);
-      });
-    },
-
     onGenomeChange: function(evt) {
       // get chosen value
       var genome = $('#loc-genome').val();
-      var chroms = _.find(this.chromInfo, function(info){
-        return info.genome === genome;
-      }).chromosomes; 
-      var chromList = _.keys(chroms).sort();
+      var chromList = _.keys(this.chromInfo[genome]).sort();
 
       // remove existing chromosome options 
       $('#loc-chrom option').remove();
@@ -726,9 +713,7 @@
       var genome = $('#loc-genome').val();
       var chrom = $('#loc-chrom').val();
       // get size of chromosome in this genome
-      var chroms = _.find(this.chromInfo, function(info){
-        return info.genome === genome;
-      }).chromosomes; 
+      var chroms = this.chromInfo[genome]; 
       var size = chroms[chrom];
       // set limits on start and end input
       $('#loc-start').prop('max', size);
@@ -795,7 +780,6 @@
       $("#bookmarkList").append(bookmark);
       this.bookmarkDialog.dialog("close");
       localStorage.setItem('bookmark.' + name, href);
-
     }
 
   });
@@ -927,12 +911,23 @@
         "isLocusInRegion", "isFeatureInRegion", "calcHaplotypes",
       "goToFeature", "goToFeatureRegion",  "cluster", "importStrains",
       "getStrains", 'reloadData', 'savePosition', "loadLocation",
-      "getDisplaySNPs", "setDisplaySNPs");
-
-      this.loadLocation();
+      "getDisplaySNPs", "setDisplaySNPs", "getChromInfo", "onChromInfo");
 
       var appAddress = 'http://' + $('#hostip').val();
       this.set({socket: io.connect(appAddress)});
+
+      // when data come back
+      this.get("socket").on("data", this.importData);
+      this.get("socket").on("featureRegion", this.goToFeatureRegion);
+      this.get("socket").on("geneModels", this.importData);
+      this.get("socket").on("strains", this.importStrains);
+      this.get("socket").on("chromInfo", this.onChromInfo);
+
+      // ask db for information about chromosomes
+      this.getChromInfo();
+
+      // load old location from local storage
+      this.loadLocation();
 
       this.updateBufferData();
       this.getStrains();
@@ -942,11 +937,20 @@
         this.updatePosition();
         this.savePosition();
       });
-      // when data come back
-      this.get("socket").on("data", this.importData);
-      this.get("socket").on("featureRegion", this.goToFeatureRegion);
-      this.get("socket").on("geneModels", this.importData);
-      this.get("socket").on("strains", this.importStrains);
+    },
+
+    getChromInfo: function() {
+      var socket = this.get("socket");
+      socket.emit("getChromInfo");
+    },
+
+    onChromInfo: function(chromInfo) {
+      // reshape chromInfo into more userefriedly structure
+      var reshapedChromInfo = _.reduce(chromInfo, function(memo, gen) {
+        memo[gen.genome] = gen.chromosomes;
+        return memo;
+      }, {});
+      this.set('chromInfo', reshapedChromInfo);
     },
 
     getDisplaySNPs: function(){
@@ -2016,4 +2020,4 @@
   });
 
 }(jQuery, Backbone, window, _, io, clusterfck, BlobBuilder, location, d3,
-  saveAs, document, localStorage));
+  saveAs, document, localStorage, Option));

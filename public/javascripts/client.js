@@ -703,7 +703,7 @@
       // fill in chromosme options with data from chromIfo
       this.updateChromosomeOptions();
       // set the chromosome
-      $('#loc-chromosome').val(pos.chrom);
+      $('#loc-chrom').val(pos.chrom);
       // set starts and ends
       $('#loc-start').val(pos.starts);
       $('#loc-endA').val(pos.ends);

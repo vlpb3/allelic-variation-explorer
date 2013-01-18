@@ -1,5 +1,5 @@
 (function ($, Backbone, window, _, io, clusterfck, BlobBuilder, location, d3,
-          saveAs, document, localStorage) {
+          saveAs, document, localStorage, Option) {
   'use strict';
   // all vars
   var AppRouter, ChoiceView, FilterDialog, MenuView, NavigateView,
@@ -595,17 +595,18 @@
 
   MenuView = Backbone.View.extend({
     initialize: function () {
-      _.bindAll(this, "render", "setRefGen", "setLocation",
+      _.bindAll(this, "render", "setLocation",
                "openGoToFeatureDialog", "go", "findFeature", "openFilterDialog",
                "openHighlightSNPsDialog", "openMarkAccessionsDialog",
-               "onAddBookmark", "onSaveBookmark", "loadBookmarks");
+               "onAddBookmark", "onSaveBookmark", "loadBookmarks", "onGenomeChange",
+               "onChromChange", "setChromInfo", "updateGenomeOptions",
+               "updateChromosomeOptions", "onStartChange", "onEndChange");
 
       this.model.on("change:pos", this.setLocation);
       this.render();
     },
 
     render: function () {
-
 
       // create dialogs
       this.filterDialog = new FilterDialog({
@@ -622,7 +623,13 @@
         el: $("#markAccessionsDialog"),
         model: this.model
       });
-
+      // change chromosome list on genome change
+      $(document).on('change', '#loc-genome', this.onGenomeChange);
+      // change chromosome sizes on genome or chromosome change
+      $(document).on('change', '#loc-chrom', this.onChromChange);
+      $(document).on('change', '#loc-genome', this.onChromChange);
+      $(document).on('change', '#loc-start', this.onStartChange);
+      $(document).on('change', '#loc-end', this.onEndChange);
       // bind action to save bookmark button
       $(document).on("click", "#saveBookmark", this.onSaveBookmark);
       // bind action to Search button in goToFeature popover
@@ -636,21 +643,17 @@
       //     'top': 0, 'left': 0, 'right': 0});
       // });
 
-      this.setLocation();
-      var socket = this.model.get("socket");
-      socket.emit("getRefList");
-      socket.on("refList", this.setRefGen);
-
+     
       this.loadBookmarks();
-      $(document).on("click", ".bookmark", function(evnt) {
-        if ( evnt.metaKey ) {
-          var name = $(evnt.target).text();
-          localStorage.removeItem("bookmark." + name);
-          evnt.preventDefault();
-          $(this).closest('li').remove();}
-          // $("#menu").wijmenu("refresh");
+      $(document).on("click", ".delbookmark", function(evnt) {
+        var name = $(this).closest('li').text();
+        localStorage.removeItem("bookmark." + name);
+        evnt.preventDefault();
+        $(this).closest('li').remove();
       });
 
+      // get chrominfo from model when it changes
+      this.model.on('change:chromInfo', this.setChromInfo);
     },
 
     events: {
@@ -662,6 +665,50 @@
       "click #addBookmark": "onAddBookmark"
     },
 
+    updateGenomeOptions: function() {
+      // get list of genomes in chromInfo
+      var genomeList = _.keys(this.chromInfo);
+      // clear genome list
+      $('#loc-genome option').remove();
+      // get access to options
+      var genomeOptions = $("#loc-genome").prop('options');
+      // update them
+      _.each(genomeList, function(genomeName) {
+        genomeOptions[genomeOptions.length] = new Option(genomeName, genomeName);
+      });
+    },
+
+    updateChromosomeOptions: function() {
+      // get position
+      var pos = this.model.get('pos');
+      var chromList = _.keys(this.chromInfo[pos.genome]).sort();
+
+      // remove existing chromosome options 
+      $('#loc-chrom option').remove();
+      
+      // set chroms as options for #loc-chrom select
+      var chromOptions = $('#loc-chrom').prop('options');
+      _.each(chromList, function(chromName) {
+        chromOptions[chromOptions.length] = new Option(chromName, chromName); 
+      });
+    },
+
+    setChromInfo: function() {
+      var pos = this.model.get('pos');
+      this.chromInfo = this.model.get('chromInfo');
+      // fill in genome options with data from chromIfo
+      this.updateGenomeOptions(); 
+      // set the genome
+      $('#loc-genome').val(pos.genome);
+      // fill in chromosme options with data from chromIfo
+      this.updateChromosomeOptions();
+      // set the chromosome
+      $('#loc-chromosome').val(pos.chrom);
+      // set starts and ends
+      $('#loc-start').val(pos.starts);
+      $('#loc-endA').val(pos.ends);
+    },
+    
     loadBookmarks: function() {
       var nStored = localStorage.length;
       var i;
@@ -671,11 +718,48 @@
           var name = key.split('bookmark.')[1];
           var href = localStorage.getItem(key);
           var bookmark = "<li><a class='bookmark' href='" + href + "''>";
-          bookmark += name + "</a></li>";
+          bookmark += name + "<i class='icon-trash delbookmark pull-right'>";
+          bookmark += "</i></a></li>";
           $("#bookmarkList").append(bookmark);
-          // $("#menu").wijmenu("refresh");
         }
       }
+    },
+
+    onGenomeChange: function(evt) {
+      this.updateChromosomeOptions();
+      // select first chromosome on the list
+      $('#loc-chrom').prop('selectedIndex', 0);
+      // triger start and end to change accordingly
+    },
+
+    onChromChange: function() {
+      // get chosen genome and chromosome
+      var genome = $('#loc-genome').val();
+      var chrom = $('#loc-chrom').val();
+      // get size of chromosome in this genome
+      var chroms = this.chromInfo[genome]; 
+      var size = chroms[chrom];
+      // set limits on start and end input
+      $('#loc-start').prop('max', size);
+      $('#loc-end').prop('max', size);
+    },
+
+    onStartChange: function(){
+     // when start changes set minimal end value as start value   
+     var start = $('#loc-start').val();
+     $('#loc-end').prop('min', start);
+    },
+
+    onEndChange: function(){
+     // this is not implemented yet, have to think about it
+    },
+
+
+    setLocation: function() {
+      var pos = this.model.get('pos');
+      $('#loc-chromosome').val(pos.chrom);
+      $('#loc-start').val(pos.starts);
+      $('#loc-end').val(pos.ends);
     },
 
     findFeature: function() {
@@ -705,18 +789,6 @@
       this.model.set({"pos": pos});
     },
 
-    setLocation: function() {
-      var pos = this.model.get("pos");
-      $("#loc-genome").val(pos.genome);
-      $("#loc-chrom").val(pos.chrom);
-      $("#loc-start").val(pos.starts);
-      $("#loc-end").val(pos.ends);
-    },
-
-    setRefGen: function (refList) {
-      // $('#loc-genome').autocomplete({source: refList});
-    },
-
     openFilterDialog: function () {
       this.filterDialog.open();
     },
@@ -736,12 +808,12 @@
       var name = $("#bookmarkName").val();
       var href = window.location.href;
       var bookmark = "";
-      bookmark = "<li><a class='bookmark', tabindex='-1' href='" + href + "''>";
-      bookmark += name + "</a></li>";
+      bookmark = "<li><a class='bookmark' href='" + href + "''>";
+      bookmark += name + "<i class='icon-trash delbookmark pull-right'>";
+      bookmark += "</i></a></li>";
       $("#bookmarkList").append(bookmark);
       this.bookmarkDialog.dialog("close");
       localStorage.setItem('bookmark.' + name, href);
-
     }
 
   });
@@ -873,26 +945,55 @@
         "isLocusInRegion", "isFeatureInRegion", "calcHaplotypes",
       "goToFeature", "goToFeatureRegion",  "cluster", "importStrains",
       "getStrains", 'reloadData', 'savePosition', "loadLocation",
-      "getDisplaySNPs", "setDisplaySNPs");
-
-      this.loadLocation();
+      "getDisplaySNPs", "setDisplaySNPs", "getChromInfo", "onChromInfo",
+      "isPositionAvailable", "setStartingPosition");
 
       var appAddress = 'http://' + $('#hostip').val();
       this.set({socket: io.connect(appAddress)});
 
-      this.updateBufferData();
-      this.getStrains();
+      // when data come back
+      this.get("socket").on("data", this.importData);
+      this.get("socket").on("featureRegion", this.goToFeatureRegion);
+      this.get("socket").on("geneModels", this.importData);
+      this.get("socket").on("strains", this.importStrains);
+      this.get("socket").on("chromInfo", this.onChromInfo);
+
+      // ask db for information about chromosomes
+      this.getChromInfo();
 
       // update the model when position chnages
       this.on("change:pos", function() {
         this.updatePosition();
         this.savePosition();
       });
-      // when data come back
-      this.get("socket").on("data", this.importData);
-      this.get("socket").on("featureRegion", this.goToFeatureRegion);
-      this.get("socket").on("geneModels", this.importData);
-      this.get("socket").on("strains", this.importStrains);
+    },
+
+    getChromInfo: function() {
+      var socket = this.get("socket");
+      socket.emit("getChromInfo");
+    },
+
+    onChromInfo: function(chromInfoObject) {
+      // try to get location information from local storage
+      var pos = this.loadLocation();
+      // get chromInfo
+      // reshape it into more userefriedly structure
+      var chromInfo= _.reduce(chromInfoObject, function(memo, gen) {
+        memo[gen.genome] = gen.chromosomes;
+        return memo;
+      }, {});
+      if (pos && this.isPositionAvailable(pos, chromInfo)) {
+          // set this loaded postion  
+          this.set({"pos": pos});
+      }
+      else {
+        this.setStartingPosition(chromInfo);
+      }
+      this.set('chromInfo', chromInfo);
+      // load old location from local storage
+      this.loadLocation();
+      this.updateBufferData();
+      this.getStrains();
     },
 
     getDisplaySNPs: function(){
@@ -906,17 +1007,41 @@
     },
 
     loadLocation: function() {
+      // load loacation from local storage
       var pos = {};
-        pos.genome = localStorage.getItem("genome");
-        pos.chrom = localStorage.getItem("chrom");
-        pos.starts = parseInt(localStorage.getItem("starts"), 10);
-        pos.ends = parseInt(localStorage.getItem("ends"), 10);
-        if (!pos.genome) {
-        pos.genome = "TAIR10";
-        pos.chrom = "Chr1";
-        pos.starts = 10000;
-        pos.ends = 15000;
+      pos.genome = localStorage.getItem("genome");
+      if (! pos.genome) {
+        return null;
       }
+      pos.chrom = localStorage.getItem("chrom");
+      pos.starts = parseInt(localStorage.getItem("starts"), 10);
+      pos.ends = parseInt(localStorage.getItem("ends"), 10);
+      return(pos);
+    },    
+
+    isPositionAvailable: function(pos, chromInfo) {
+      var posAvailable = true;
+      var genomes = _.keys(chromInfo);
+      if ($.inArray(pos.genome, genomes) === -1) {
+        posAvailable = false;
+        var chromosomes = chromInfo[pos.genome];
+        if ($.inArray(pos.chromosome, chromosomes) === -1){
+          posAvailable = false;
+          var size = chromosomes[pos.chrom];
+          if ((pos.starts > size) || (pos.ends > size)){
+            posAvailable = false;
+          }
+        }
+      }
+      return(posAvailable) ;
+    },
+
+    setStartingPosition: function(chromInfo) {
+      var pos = {};
+      pos.genome = _.keys(chromInfo)[0];
+      pos.chrom = _.keys(chromInfo[pos.genome])[0];
+      pos.ends = chromInfo[pos.genome][pos.chrom];
+      pos.starts = pos.ends - 1000;
       this.set({"pos": pos});
     },
 
@@ -1962,4 +2087,4 @@
   });
 
 }(jQuery, Backbone, window, _, io, clusterfck, BlobBuilder, location, d3,
-  saveAs, document, localStorage));
+  saveAs, document, localStorage, Option));

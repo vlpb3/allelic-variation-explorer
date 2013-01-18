@@ -46,6 +46,10 @@ body,
   width: 570px;
   height: 20em;
 }
+#loc-genome,
+#loc-chrom {
+  margin-top: 0px;
+}
 .nav-row {
   text-align: center;
 }
@@ -80,9 +84,6 @@ rect {
 }
 .dimmed-snp {
   opacity: 0.1;
-}
-div#hjaf {
-  outline: 1px dashed #f00;
 }
 .geneLabel {
   font: 9px sans-serif;

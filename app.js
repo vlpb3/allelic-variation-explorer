@@ -70,7 +70,6 @@ io.sockets.on('connection', function(socket) {
               socket.emit('featureNotFound',
               "region out of range!");
             } else {
-              // console.log(data)
               socket.emit('data', data);
             }
         });
@@ -100,6 +99,13 @@ io.sockets.on('connection', function(socket) {
     socket.on('getRefList', function() {
       seqdb.getRefList(function(data) {
         socket.emit('refList', data);
+      });
+    });
+
+    socket.on('getChromInfo', function() {
+      seqdb.getChromInfo(function(data) {
+        console.log(data);
+        socket.emit('chromInfo', data);
       });
     });
 

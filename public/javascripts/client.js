@@ -2,7 +2,7 @@
           saveAs, document, localStorage, Option) {
   'use strict';
   // all vars
-  var AppRouter, ChoiceView, FilterDialog, MenuView, NavigateView,
+  var AppRouter, OptionsDialog, ChoiceView, FilterDialog, MenuView, NavigateView,
       HighlightSNPsDialog, MarkAccessionsDialog;
   // router stuff
 
@@ -48,6 +48,25 @@
   });
 
   // Views
+  OptionsDialog = Backbone.View.extend({
+    initialize: function() {
+      _.bindAll(this, "render", "open");
+    },
+
+    render: function() {
+      var form = $("#optionsForm");
+      
+    },
+
+    open: function() {
+      this.optionsDialog = $('#optionsDialog').dialog({
+          title: "Options",
+          minWidth: 500,
+          zIndex: 90000
+        });
+      }
+  });
+
   FilterDialog = Backbone.View.extend({
    initialize: function() {
      _.bindAll(this, "render", "open", "drawTable", "onExcludeSelected",
@@ -57,10 +76,14 @@
    },
 
    render: function() {
-      $(document).on("click", "#filterDialog .exclude-selected", this.onExcludeSelected);
-      $(document).on("click", "#filterDialog .include-selected", this.onIncludeSelected);
-      $(document).on("click", "#filterDialog .select-all", this.onSelectAll);
-      $(document).on("click", "#filterDialog .toggle-selection", this.onToggleSelection);
+      $(document).on("click", "#filterDialog .exclude-selected",
+                      this.onExcludeSelected);
+      $(document).on("click", "#filterDialog .include-selected",
+                      this.onIncludeSelected);
+      $(document).on("click", "#filterDialog .select-all",
+                      this.onSelectAll);
+      $(document).on("click", "#filterDialog .toggle-selection",
+                      this.onToggleSelection);
    },
 
    open: function() {
@@ -609,6 +632,11 @@
     render: function () {
 
       // create dialogs
+      this.optionsDialog = new OptionsDialog({
+        el: $('#optionsDialog'),
+        model: $(this.model)
+      });
+
       this.filterDialog = new FilterDialog({
         el: $("#filterDialog"),
         model: this.model
@@ -659,6 +687,7 @@
     events: {
       "click #go": "go",
       "click #goToFeature": "openGoToFeatureDialog",
+      "click #options": "openOptionsDialog",
       "click #filter": "openFilterDialog",
       "click #highlightSNPs": "openHighlightSNPsDialog",
       "click #markAccessions": "openMarkAccessionsDialog",
@@ -767,6 +796,10 @@
       var name = $("#feature-name").val();
       var flanks = parseInt($("#feature-flanks").val(), 10);
       this.model.goToFeature(genome, name, flanks);
+    },
+
+    openOptionsDialog: function() {
+      this.optionsDialog.open();   
     },
 
     openGoToFeatureDialog: function() {

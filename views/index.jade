@@ -86,7 +86,7 @@ div(class="navbar navbar navbar-fixed-top", id="menu")
             a()
               i(class="icon-info-sign") 
           li
-            a()
+            a(id="options")
               i(class="icon-cog") 
 
 
@@ -108,6 +108,21 @@ div(class="navbar navbar navbar-fixed-top", id="menu")
   div#graphs
     div(id="tree")
     div(id="chart")
+
+div#optionsDialog.ui-helper-hidden
+  p 
+    form#optionsForm.form-horizontal
+      label.checkbox
+        | Hide clustering tree
+        input(type="checkbox")
+      div.control-group
+        label.control-label(for="maxDispalyed")
+          | Max displayed
+        div.controls
+          input#maxDispalyed.input-small(type="number")
+      span.help-block
+          | Select attribute columns to appear in filtring window: 
+      
 
 div#haplDialog(class="ui-helper-hidden")
   p

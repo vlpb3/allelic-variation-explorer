@@ -51,11 +51,10 @@
   OptionsDialog = Backbone.View.extend({
     initialize: function() {
       _.bindAll(this, "render", "open");
+      this.render();
     },
 
     render: function() {
-      var form = $("#optionsForm");
-      
     },
 
     open: function() {
@@ -64,6 +63,10 @@
           minWidth: 500,
           zIndex: 90000
         });
+      // get feature data
+      var attrs = this.model.getDisplaySNPs()[0].attributes;
+      console.log(attrs);
+      var form = $("#optionsForm");
       }
   });
 
@@ -630,11 +633,10 @@
     },
 
     render: function () {
-
       // create dialogs
       this.optionsDialog = new OptionsDialog({
         el: $('#optionsDialog'),
-        model: $(this.model)
+        model: this.model
       });
 
       this.filterDialog = new FilterDialog({
@@ -671,7 +673,7 @@
       //     'top': 0, 'left': 0, 'right': 0});
       // });
 
-     
+
       this.loadBookmarks();
       $(document).on("click", ".delbookmark", function(evnt) {
         var name = $(this).closest('li').text();
@@ -712,13 +714,13 @@
       var pos = this.model.get('pos');
       var chromList = _.keys(this.chromInfo[pos.genome]).sort();
 
-      // remove existing chromosome options 
+      // remove existing chromosome options
       $('#loc-chrom option').remove();
-      
+
       // set chroms as options for #loc-chrom select
       var chromOptions = $('#loc-chrom').prop('options');
       _.each(chromList, function(chromName) {
-        chromOptions[chromOptions.length] = new Option(chromName, chromName); 
+        chromOptions[chromOptions.length] = new Option(chromName, chromName);
       });
     },
 
@@ -726,7 +728,7 @@
       var pos = this.model.get('pos');
       this.chromInfo = this.model.get('chromInfo');
       // fill in genome options with data from chromIfo
-      this.updateGenomeOptions(); 
+      this.updateGenomeOptions();
       // set the genome
       $('#loc-genome').val(pos.genome);
       // fill in chromosme options with data from chromIfo
@@ -737,7 +739,7 @@
       $('#loc-start').val(pos.starts);
       $('#loc-endA').val(pos.ends);
     },
-    
+
     loadBookmarks: function() {
       var nStored = localStorage.length;
       var i;
@@ -766,7 +768,7 @@
       var genome = $('#loc-genome').val();
       var chrom = $('#loc-chrom').val();
       // get size of chromosome in this genome
-      var chroms = this.chromInfo[genome]; 
+      var chroms = this.chromInfo[genome];
       var size = chroms[chrom];
       // set limits on start and end input
       $('#loc-start').prop('max', size);
@@ -774,7 +776,7 @@
     },
 
     onStartChange: function(){
-     // when start changes set minimal end value as start value   
+     // when start changes set minimal end value as start value
      var start = $('#loc-start').val();
      $('#loc-end').prop('min', start);
     },
@@ -799,7 +801,7 @@
     },
 
     openOptionsDialog: function() {
-      this.optionsDialog.open();   
+      this.optionsDialog.open();
     },
 
     openGoToFeatureDialog: function() {
@@ -1016,7 +1018,7 @@
         return memo;
       }, {});
       if (pos && this.isPositionAvailable(pos, chromInfo)) {
-          // set this loaded postion  
+          // set this loaded postion
           this.set({"pos": pos});
       }
       else {
@@ -1050,16 +1052,20 @@
       pos.starts = parseInt(localStorage.getItem("starts"), 10);
       pos.ends = parseInt(localStorage.getItem("ends"), 10);
       return(pos);
-    },    
+    },
 
     isPositionAvailable: function(pos, chromInfo) {
       var posAvailable = true;
       var genomes = _.keys(chromInfo);
       if ($.inArray(pos.genome, genomes) === -1) {
         posAvailable = false;
+      }
+      else {
         var chromosomes = chromInfo[pos.genome];
         if ($.inArray(pos.chromosome, chromosomes) === -1){
           posAvailable = false;
+        }
+        else {
           var size = chromosomes[pos.chrom];
           if ((pos.starts > size) || (pos.ends > size)){
             posAvailable = false;
@@ -2086,7 +2092,7 @@
         return "SNP " + d.base;}
       else {
         return "SNP IUPAC";}
-    } 
+    }
 
   });
 

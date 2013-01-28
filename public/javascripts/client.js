@@ -63,10 +63,20 @@
           minWidth: 500,
           zIndex: 90000
         });
+      // clean ald attributes
+      $('.attr-form').remove();
+      // get access to the form
+      var form = $("#attrsList");
       // get feature data
-      var attrs = this.model.getDisplaySNPs()[0].attributes;
-      console.log(attrs);
-      var form = $("#optionsForm");
+
+      var attrs = _.keys(this.model.getDisplaySNPs()[0].attributes);
+      var attrFormHtml = _.reduce(attrs, function(memo, attr) {
+         var formLine = "<label class='checkbox attr-form'>" + attr;
+         formLine += "<input type='checkbox' name=" + attr + "></label>";
+         return memo += formLine;
+      }, "");
+      
+      form.append(attrFormHtml);
       }
   });
 

@@ -112,18 +112,34 @@ div(class="navbar navbar navbar-fixed-top", id="menu")
 div#optionsDialog.ui-helper-hidden
   p 
     form#optionsForm.form-horizontal
-      label.checkbox
-        | Hide clustering tree
-        input(type="checkbox")
-      div.control-group
-        label.control-label(for="maxDispalyed")
-          | Max displayed
-        div.controls
-          input#maxDispalyed.input-small(type="number")
-      span.help-block
-          | Select attribute columns to appear in filtring window: 
-      
 
+      div.control-group
+        div.well
+          span.help-block
+            | choose maximal displayed stretch.
+            | choosing a big strech migth affect ave performance.
+          label.control-label(for="maxdispalyed")
+            | range limit:
+          div.controls
+            input#rangelimit.input-small(type="number")
+        div.well
+          span.help-block
+            | Hide clustering tree to gain more space for haplotype visualization.
+          label.checkbox
+            | Hide clustering tree
+            input(type="checkbox")
+        div.well
+          span.help-block
+            | Select attribute columns to appear in filtring window. 
+          span#attrsList
+    div.control-group
+      div.btn-group.pull-right
+        button#cancelOptions.btn.btn-warning
+          | Cancel
+        button#saveOptions.btn.btn-success
+          | Save 
+
+    
 div#haplDialog(class="ui-helper-hidden")
   p
     b Strains:

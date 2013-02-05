@@ -991,7 +991,7 @@
       "goToFeature", "goToFeatureRegion",  "cluster", "importStrains",
       "getStrains", 'reloadData', 'savePosition', "loadLocation",
       "getDisplaySNPs", "setDisplaySNPs", "getChromInfo", "onChromInfo",
-      "isPositionAvailable", "setStartingPosition");
+      "positionIsAvailable", "setStartingPosition");
 
       var appAddress = 'http://' + $('#hostip').val();
       this.set({socket: io.connect(appAddress)});
@@ -1019,17 +1019,23 @@
     },
 
     onChromInfo: function(chromInfoObject) {
-      // try to get location information from local storage
-      var pos = this.loadLocation();
       // get chromInfo
-      // reshape it into more userefriedly structure
+      // and reshape it into more userefriedly structure
       var chromInfo= _.reduce(chromInfoObject, function(memo, gen) {
         memo[gen.genome] = gen.chromosomes;
         return memo;
       }, {});
-      if (pos && this.isPositionAvailable(pos, chromInfo)) {
-          // set this loaded postion
-          this.set({"pos": pos});
+      // check if there is already set position
+      // (this might be the case if it's been set by routing)
+      var pos = this.get("pos");
+      if (!this.positionIsAvailable(pos, chromInfo)) {
+        // if this is not a valid position
+        // try to get it from local storage
+        pos = this.loadLocation();
+      }
+      if (pos && this.positionIsAvailable(pos, chromInfo)) {
+        // set this loaded postion
+        this.set({"pos": pos});
       }
       else {
         this.setStartingPosition(chromInfo);
@@ -1064,15 +1070,15 @@
       return(pos);
     },
 
-    isPositionAvailable: function(pos, chromInfo) {
+    positionIsAvailable: function(pos, chromInfo) {
       var posAvailable = true;
       var genomes = _.keys(chromInfo);
       if ($.inArray(pos.genome, genomes) === -1) {
         posAvailable = false;
       }
       else {
-        var chromosomes = chromInfo[pos.genome];
-        if ($.inArray(pos.chromosome, chromosomes) === -1){
+        var chromosomes = _.keys(chromInfo[pos.genome]);
+        if ($.inArray(pos.chrom, chromosomes) === -1){
           posAvailable = false;
         }
         else {
@@ -1082,15 +1088,15 @@
           }
         }
       }
-      return(posAvailable) ;
+      return(posAvailable); 
     },
 
     setStartingPosition: function(chromInfo) {
       var pos = {};
       pos.genome = _.keys(chromInfo)[0];
-      pos.chrom = _.keys(chromInfo[pos.genome])[0];
-      pos.ends = chromInfo[pos.genome][pos.chrom];
-      pos.starts = pos.ends - 1000;
+      pos.chrom = _.keys(chromInfo[pos.genome]).sort()[0];
+      pos.ends = 5000;
+      pos.starts = 1;
       this.set({"pos": pos});
     },
 

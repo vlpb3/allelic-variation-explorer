@@ -50,11 +50,15 @@
   // Views
   OptionsDialog = Backbone.View.extend({
     initialize: function() {
-      _.bindAll(this, "render", "open");
+      _.bindAll(this, "render", "open", "onCancelOptions","onSaveOptions");
       this.render();
     },
 
     render: function() {
+      $(document).on("click", "#cancelOptions",
+                     this.onCancelOptions);
+      $(document).on("click", "#saveOptions",
+                     this.onSaveOptions);
     },
 
     open: function() {
@@ -77,6 +81,14 @@
       }, "");
       
       form.append(attrFormHtml);
+      },
+
+      onCancelOptions: function() {
+        console.log("canceling");
+      },
+
+      onSaveOptions: function() {
+        console.log("saving options");
       }
   });
 

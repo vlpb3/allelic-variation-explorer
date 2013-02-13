@@ -92,7 +92,6 @@
       var filterAttrs = this.model.get("filterAttrs");
       _.each(filterAttrs, function(attr) {
         var queryString = "input[name='" + attr + "']";
-        console.log(queryString);
         $(queryString).attr('checked', true);
       });
     },
@@ -1419,11 +1418,12 @@
   var VisView = Backbone.View.extend({
 
     initialize: function() {
-      _.bindAll(this, "render", "draw", "drawTraits", "drawGeneModels", "drawHaplotpes",
-        "drawScaleBars", "drawTree", "turnOffHaplotypes", "isLeaf",
-        "leaf2haplotype", "turnOnHaplotypes",
-        "onSNPmouseOver", "onSNPmouseOut", "onSNPClick", "onHaplCLick",
-       "drawLegend", "unHighlightSNPs", "markHaplotypes");
+      _.bindAll(this, "render", "draw", "drawTraits", "drawGeneModels",
+                "drawHaplotpes", "drawScaleBars", "drawTree",
+                "turnOffHaplotypes", "isLeaf", "leaf2haplotype",
+                "turnOnHaplotypes", "onSNPmouseOver", "onSNPmouseOut",
+                "onSNPClick", "onHaplCLick", "drawLegend", "unHighlightSNPs",
+                "markHaplotypes", "toggleTree");
 
       this.trackH = 20;
       this.glyphH = 12;
@@ -1436,6 +1436,7 @@
       this.top = 20;
       this.bottom = 4;
       this.model.on('change:displayData:clusters', this.draw);
+      this.model.on('change:treeOn', this.toggleTree);
       // this.model.bind('change:rangeExceeded', this.draw);
       var that = this;
       $(window).resize(function(ev) {
@@ -1451,6 +1452,8 @@
       // allign properly elements
       var winWidth = $(window).width();
       this.width = winWidth/2 - this.left - this.right - this.padding;
+      // check if treeOn or not
+      var treeOn = this.model.get("treeOn");
       $("#tree").css("width", winWidth/2 - this.padding);
       $("#chart").css("width", winWidth/2 - this.padding);
 
@@ -1474,6 +1477,20 @@
       return this;
     },
 
+    toggleTree: function() {
+      var treeOn = this.model.get("treeOn");
+      var winWidth = $(window).width();
+      if (treeOn) {
+        $("#tree").css("width", winWidth/2 - this.padding);
+        $("#chart").css("width", winWidth/2 - this.padding);
+      }
+      else {
+        $("#chart").css("width", winWidth - this.padding);
+        d3.select("#chart")
+          .attr("width", this.winWidth + this.padding);
+      }
+      $('#tree').toggle();
+    },
 
     unHighlightSNPs: function() {
       var snps = this.model.get('displayData').SNPs;

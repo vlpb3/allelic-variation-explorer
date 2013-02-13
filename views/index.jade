@@ -118,24 +118,22 @@ div#optionsDialog.ui-helper-hidden
           span.help-block
             | choose maximal displayed stretch.
             | choosing a big strech migth affect ave performance.
-          label.control-label(for="maxdispalyed")
+          label.control-label(for="rangeLimit")
             | range limit:
           div.controls
-            input#rangelimit.input-small(type="number")
+            input#rangeLimit.input-small(type="number", name="rangeLimit")
         div.well
-          span.help-block
+          span#treeCheckbox.help-block
             | Hide clustering tree to gain more space for haplotype visualization.
-          label.checkbox
-            | Hide clustering tree
-            input(type="checkbox")
+            label.checkbox(for="treeOn")
+              | Show clustering tree
+              input(type="checkbox", name="treeOn")
+
         div.well
           span.help-block
             | Select attribute columns to appear in filtring window. 
           span#attrsList
-    div.control-group
-      div.btn-group.pull-right
-        button#cancelOptions.btn.btn-warning
-          | Cancel
+    div.btn-group.pull-right
         button#saveOptions.btn.btn-success
           | Save 
 

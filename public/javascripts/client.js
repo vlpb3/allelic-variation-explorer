@@ -50,13 +50,12 @@
   // Views
   OptionsDialog = Backbone.View.extend({
     initialize: function() {
-      _.bindAll(this, "render", "open", "onCancelOptions","onSaveOptions");
+      _.bindAll(this, "render", "open","setFilterAttrs","setTreeVisibility",
+               "setRangeLimit", "onSaveOptions");
       this.render();
     },
 
     render: function() {
-      $(document).on("click", "#cancelOptions",
-                     this.onCancelOptions);
       $(document).on("click", "#saveOptions",
                      this.onSaveOptions);
     },
@@ -75,21 +74,59 @@
 
       var attrs = _.keys(this.model.getDisplaySNPs()[0].attributes);
       var attrFormHtml = _.reduce(attrs, function(memo, attr) {
-         var formLine = "<label class='checkbox attr-form'>" + attr;
+         var formLine = "<label class='checkbox attr-form' ";
+         formLine += "for='" + attr + "'>" + attr;
          formLine += "<input type='checkbox' name=" + attr + "></label>";
          return memo += formLine;
       }, "");
-      
+
       form.append(attrFormHtml);
-      },
 
-      onCancelOptions: function() {
-        console.log("canceling");
-      },
+      // set form fields according to dataModel
+      var rangeLimit = this.model.get("rangeLimit");
+      $("#rangeLimit").val(rangeLimit);
+      var treeOn = this.model.get("treeOn");
+      if (treeOn) {
+        $('input[name=treeOn]').attr('checked', true);
+      } else {$('input[name=treeOn]').attr('checked', false);}
+      var filterAttrs = this.model.get("filterAttrs");
+      _.each(filterAttrs, function(attr) {
+        var queryString = "input[name='" + attr + "']";
+        console.log(queryString);
+        $(queryString).attr('checked', true);
+      });
+    },
 
-      onSaveOptions: function() {
-        console.log("saving options");
-      }
+    setFilterAttrs: function() {
+      // get list of checked attributes
+      var checked = [];
+      $("#attrsList input:checked").each(
+        function (index,item) {
+          checked.push(item.name);
+        });
+      // set them in the model
+      this.model.set({"filterAttrs": checked});
+    },
+
+    setTreeVisibility: function() {
+      var checked = $("#treeCheckbox input:checked");
+      var treeOn;
+      if (checked.length > 0) {
+        treeOn = true;
+      } else {treeOn = false;}
+      this.model.set({"treeOn": treeOn});
+    },
+
+    setRangeLimit: function() {
+      var rangeLimit = $("#rangeLimit").val();
+      this.model.set({"rangeLimit": rangeLimit});
+    },
+
+    onSaveOptions: function() {
+      this.setRangeLimit();
+      this.setTreeVisibility();
+      this.setFilterAttrs();
+    }
   });
 
   FilterDialog = Backbone.View.extend({
@@ -976,6 +1013,8 @@
         "ends": 0
       },
       "strains": [],
+      "filterAttrs": [],
+      "treeOn": true,
       "bufferData": {
         genome: "",
         starts: 0,
@@ -1100,7 +1139,7 @@
           }
         }
       }
-      return(posAvailable); 
+      return(posAvailable);
     },
 
     setStartingPosition: function(chromInfo) {

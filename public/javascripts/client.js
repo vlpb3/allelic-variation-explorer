@@ -71,8 +71,8 @@
       // get access to the form
       var form = $("#attrsList");
       // get feature data
-
       var attrs = _.keys(this.model.getDisplaySNPs()[0].attributes);
+      attrs = _.without(attrs, 'included');
       var attrFormHtml = _.reduce(attrs, function(memo, attr) {
          var formLine = "<label class='checkbox attr-form' ";
          formLine += "for='" + attr + "'>" + attr;
@@ -282,20 +282,20 @@
       $(this.filterDialog).find("p:first")
       .html("<table class='filterTable'></table>");
 
+      // fetch columns chosen in settings
+      var attrs = this.model.get("filterAttrs");
       // create table header
+      var columns = [{"sTitle": "Chrom"},
+                     {"sTitle": "Pos"},
+                     {"sTitle": "Score"},
+                     {"sTitle": "included"}];
+      _.each(attrs, function(attr) {
+        columns.push({"sTitle": attr});
+      });
       this.dTable = $('.filterTable').dataTable({
         "bJQueryUI": true,
         "sPaginationType": "full_numbers",
-        "aoColumns": [
-          {"sTitle": "ID"},
-          {"sTitle": "Change"},
-          {"sTitle": "Chrom"},
-          {"sTitle": "Pos"},
-          {"sTitle": "Score"},
-          {"sTitle": "Accession"},
-          {"sTitle": "Location"},
-          {"sTitle": "included"}
-      ]});
+        "aoColumns": columns});
       // input data into a table
       var data = [];
       _.each(SNPs, function(snp) {
@@ -319,15 +319,14 @@
           location = snp.attributes.variant_location || "unknown";
         }
         var row = [
-          snp.attributes.ID,
-          snp.attributes.Change,
           snp.seqid,
           snp.start,
           snp.score,
-          snp.attributes.Strain,
-          location,
           includedString
         ];
+        _.each(attrs, function(attr) {
+          row.push(snp.attributes[attr]);
+        });
         data.push(row);
       }, this);
 
@@ -1478,18 +1477,6 @@
     },
 
     toggleTree: function() {
-      var treeOn = this.model.get("treeOn");
-      var winWidth = $(window).width();
-      if (treeOn) {
-        $("#tree").css("width", winWidth/2 - this.padding);
-        $("#chart").css("width", winWidth/2 - this.padding);
-      }
-      else {
-        $("#chart").css("width", winWidth - this.padding);
-        d3.select("#chart")
-          .attr("width", this.winWidth + this.padding);
-      }
-      $('#tree').toggle();
     },
 
     unHighlightSNPs: function() {

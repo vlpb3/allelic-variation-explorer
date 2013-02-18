@@ -350,9 +350,22 @@
       tfoot += "</tr><tfoot>";
       this.dTable.append(tfoot);
       var table = this.dTable;
-      // activate filtering
+
+      // activate filtering with regexp 
       $("tfoot input").keyup(function() {
-        table.fnFilter(this.value, $("tfoot input").index(this));  
+        table.fnFilter(this.value, $("tfoot input").index(this), true);  
+      });
+      var asInitVals = [];
+      $("tfoot input").each(function(i) {
+        asInitVals[i] = this.value;    
+      });
+      $("tfoot input").focus(function() {
+        $(this).toggleClass("search_init");
+        this.value = "";
+      });
+      $("tfoot input").blur(function (i) {
+        $(this).toggleClass("search_init");
+        this.value = asInitVals[$("tfoot input").index(this)];
       });
     }
   });

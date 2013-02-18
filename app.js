@@ -38,14 +38,16 @@ app.configure('production', function(){
 // fetch server ip adress
 var platform = os.platform();
 var interfaces = os.networkInterfaces();
-
+var hostip = "localhost";
 if (platform === "linux"){
-  var hostip = interfaces.eth0[0].address;
+  if (interfaces.eth0) {
+    hostip = interfaces.eth0[0].address;
+  } else {
+    hostip = interfaces.wlan0[0].address;
+  }
 } else if (platform === "darwin"){
-  if (interfaces.en0 === undefined)
-    {var hostip = 'localhost';}
-  else
-    {var hostip = interfaces.en0[1].address;}
+  if (interfaces.en0)
+    hostip = interfaces.en0[1].address;
 }
 console.log(hostip);
 

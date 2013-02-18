@@ -284,17 +284,20 @@
 
       // fetch columns chosen in settings
       var attrs = this.model.get("filterAttrs");
-      // create table header
-      var columns = [{"sTitle": "Chrom"},
-                     {"sTitle": "Pos"},
-                     {"sTitle": "Score"},
-                     {"sTitle": "included"}];
+      // put all column names in one array
+      var colNames = ["Chrom", "Pos", "Score", "included"];
       _.each(attrs, function(attr) {
-        columns.push({"sTitle": attr});
+         colNames.push(attr);
+      });
+      // create table header
+      var columns = [];
+      _.each(colNames, function(name) {
+        columns.push({"sTitle": name});
       });
       this.dTable = $('.filterTable').dataTable({
         "bJQueryUI": true,
         "sPaginationType": "full_numbers",
+        "oLanguage": {"sSearch": "Search all columns:"},
         "aoColumns": columns});
       // input data into a table
       var data = [];
@@ -335,7 +338,22 @@
       this.dTable.$('tr').click( function() {
         $(this).toggleClass('rselect');
       });
-
+      
+      // append search boxes in table footer
+      var tfoot = "<tfoot><tr>";
+      _.each(colNames, function(name) {
+        tfoot += "<th rowspan='1' colspan='1'>";
+        tfoot += "<input type='text' name='" + name + "' ";
+        tfoot += "value='Search " + name + "' class='search_init input-small'>";
+        tfoot += "</th>";
+      });
+      tfoot += "</tr><tfoot>";
+      this.dTable.append(tfoot);
+      var table = this.dTable;
+      // activate filtering
+      $("tfoot input").keyup(function() {
+        table.fnFilter(this.value, $("tfoot input").index(this));  
+      });
     }
   });
 

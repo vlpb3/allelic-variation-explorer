@@ -72,7 +72,7 @@
       var form = $("#attrsList");
       // get feature data
       var attrs = _.keys(this.model.getDisplaySNPs()[0].attributes);
-      attrs = _.without(attrs, 'included');
+      attrs = _.without(attrs, 'included', 'ID');
       var attrFormHtml = _.reduce(attrs, function(memo, attr) {
          var formLine = "<label class='checkbox attr-form' ";
          formLine += "for='" + attr + "'>" + attr;
@@ -131,8 +131,7 @@
   FilterDialog = Backbone.View.extend({
    initialize: function() {
      _.bindAll(this, "render", "open", "drawTable", "onExcludeSelected",
-               "onIncludeSelected", "onSelectAll", "onToggleSelection",
-               "updateTable");
+               "onIncludeSelected", "onSelectAll", "onToggleSelection");
      this.render();
    },
 
@@ -164,59 +163,6 @@
      this.drawTable();
    },
 
-   updateTable: function() {
-     var SNPs = this.model.getDisplaySNPs();
-     SNPs = _.map(SNPs, function(snp) {
-       if (snp.attributes.included === undefined) {
-         snp.attributes.included = true;
-       }
-       return snp;
-     });
-
-     var data = [];
-     _.each(SNPs, function(snp) {
-       var includedString = "";
-
-       if (snp.attributes.included) {
-         includedString = "<span class=included-row>";
-         includedString += snp.attributes.included;
-         includedString += "</span>";
-       }
-       else {
-         includedString = "<span class=excluded-row>";
-         includedString += snp.attributes.included;
-         includedString += "</span>";
-       }
-
-       var location;
-       if (snp.attributes.variant_location === undefined) {
-         location = "unknown";
-       }
-       else {
-         location = snp.attributes.variant_location || "unknown";
-       }
-
-       var row = [
-         snp.attributes.ID,
-         snp.attributes.Change,
-         snp.seqid,
-         snp.start,
-         snp.score,
-         snp.attributes.Strain,
-         location,
-         includedString
-       ];
-       data.push(row);
-     }, this);
-
-     this.dTable.fnClearTable();
-     this.dTable.fnAddData(data);
-
-     this.dTable.$('tr').click( function() {
-       $(this).toggleClass('rselect');
-     });
-   },
-
    onExcludeSelected: function() {
       // get IDs of selected SNPs
       var dTable = this.dTable;
@@ -232,9 +178,11 @@
         }
         return snp;
       });
+
       // update model
       this.model.setDisplaySNPs(SNPs);
-      this.updateTable();
+      this.drawTable();
+
       this.model.updateDisplayData();
     },
 
@@ -254,7 +202,8 @@
       });
       // update model
       this.model.setDisplaySNPs(SNPs);
-      this.updateTable();
+      this.drawTable();
+
       this.model.updateDisplayData();
     },
 
@@ -285,7 +234,7 @@
       // fetch columns chosen in settings
       var attrs = this.model.get("filterAttrs");
       // put all column names in one array
-      var colNames = ["Chrom", "Pos", "Score", "included"];
+      var colNames = ["ID", "Chrom", "Pos", "Score", "included"];
       _.each(attrs, function(attr) {
          colNames.push(attr);
       });
@@ -322,6 +271,7 @@
           location = snp.attributes.variant_location || "unknown";
         }
         var row = [
+          snp.attributes.ID,
           snp.seqid,
           snp.start,
           snp.score,
@@ -338,7 +288,7 @@
       this.dTable.$('tr').click( function() {
         $(this).toggleClass('rselect');
       });
-      
+
       // append search boxes in table footer
       var tfoot = "<tfoot><tr>";
       _.each(colNames, function(name) {
@@ -351,13 +301,13 @@
       this.dTable.append(tfoot);
       var table = this.dTable;
 
-      // activate filtering with regexp 
+      // activate filtering with regexp
       $("tfoot input").keyup(function() {
-        table.fnFilter(this.value, $("tfoot input").index(this), true);  
+        table.fnFilter(this.value, $("tfoot input").index(this), true);
       });
       var asInitVals = [];
       $("tfoot input").each(function(i) {
-        asInitVals[i] = this.value;    
+        asInitVals[i] = this.value;
       });
       $("tfoot input").focus(function() {
         $(this).toggleClass("search_init");

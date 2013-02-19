@@ -22,7 +22,7 @@ link(rel="stylesheet", type="text/css", href="stylesheets/style.css")
 // hidden variable with ip adress of server
 input(type="hidden", id="hostip", value=hostip)
 
-div(class="navbar navbar navbar-fixed-top", id="menu")
+div(class="navbar", id="menu")
   div(class="navbar-inner")
     div(class="container-fluid")
       a(class="btn btn-navbar", data-toggle="collapse", data-target=".nav-collapse")
@@ -76,7 +76,8 @@ div(class="navbar navbar navbar-fixed-top", id="menu")
             a(id="bookmarks", class="dropdown-toggle", data-toggle="dropdown")
               | Bookmarks
               b(class="caret")
-            ul(id="bookmarkList", class="dropdown-menu", aria-labelledby="dropdownMenu", role="menu")
+                ul(id="bookmarkList", class="dropdown-menu",
+                   aria-labelledby="dropdownMenu", role="menu")
 
         ul(class="nav pull-right")
           li
@@ -86,29 +87,57 @@ div(class="navbar navbar navbar-fixed-top", id="menu")
             a()
               i(class="icon-info-sign") 
           li
-            a()
+            a(id="options")
               i(class="icon-cog") 
 
+div(class="container-fluid")
+  div(class="row-fluid")
+    p(class="lead")
+      div(class="offset5", id="navi")
+        div(class="control-group")
+          div(class="btn-group")
+            a(class="btn", id="goLeft")
+              i(class="icon-chevron-left")
+            a(class="btn", id="zoomOut")
+              i(class="icon-zoom-out")
+            a(class="btn", id="zoomIn")
+              i(class="icon-zoom-in")
+            a(class="btn", id="goRight")
+              i(class="icon-chevron-right")
 
-  div(class="container-fluid")
-    div(class="row-fluid")
-      p(class="lead")
-        div(class="offset5", id="navi")
-          div(class="control-group")
-            div(class="btn-group")
-              a(class="btn", id="goLeft")
-                i(class="icon-chevron-left")
-              a(class="btn", id="zoomOut")
-                i(class="icon-zoom-out")
-              a(class="btn", id="zoomIn")
-                i(class="icon-zoom-in")
-              a(class="btn", id="goRight")
-                i(class="icon-chevron-right")
+div#graphs
+  div(id="tree")
+  div(id="chart")
 
-  div#graphs
-    div(id="tree")
-    div(id="chart")
+div#optionsDialog.ui-helper-hidden
+  p 
+    form#optionsForm.form-horizontal
 
+      div.control-group
+        div.well
+          span.help-block
+            | choose maximal displayed stretch.
+            | choosing a big strech migth affect ave performance.
+          label.control-label(for="rangeLimit")
+            | range limit:
+          div.controls
+            input#rangeLimit.input-small(type="number", name="rangeLimit")
+        div.well
+          span#treeCheckbox.help-block
+            | Hide clustering tree to gain more space for haplotype visualization.
+            label.checkbox(for="treeOn")
+              | Show clustering tree
+              input(type="checkbox", name="treeOn")
+
+        div.well
+          span.help-block
+            | Select attribute columns to appear in filtring window. 
+          span#attrsList
+    div.btn-group.pull-right
+        button#saveOptions.btn.btn-success
+          | Save 
+
+    
 div#haplDialog(class="ui-helper-hidden")
   p
     b Strains:

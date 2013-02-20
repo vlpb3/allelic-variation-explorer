@@ -51,13 +51,53 @@
   OptionsDialog = Backbone.View.extend({
     initialize: function() {
       _.bindAll(this, "render", "open","setFilterAttrs","setTreeVisibility",
-               "setRangeLimit", "onSaveOptions");
+               "setRangeLimit", "onSaveOptions", "loadOptionsFromStorage");
       this.render();
     },
+
+    optionsSet: false,
 
     render: function() {
       $(document).on("click", "#saveOptions",
                      this.onSaveOptions);
+
+      this.loadOptionsFromStorage();
+    },
+
+    loadOptionsFromStorage: function(){
+      // load options from local storage (if available)
+
+      // load filter attributes
+      var attrs_string = localStorage.getItem("filterAttrs");
+      if (attrs_string !== null) {
+        var saved_attrs = attrs_string.split(",");
+
+        // remove ones that are not available
+        // var attrs = _.keys(this.model.getDisplaySNPs()[0].attributes);
+        // attrs = _.without(attrs, 'included', 'ID');
+        // var filterAttrs = _.intersection(saved_attrs, attrs);
+
+        // set them in the model
+        // this.model.set("filterAttrs", filterAttrs);
+        this.model.set({"filterAttrs": saved_attrs});
+      }
+
+      // load rangeLimit and treeOn and set in model if valid
+      var rangeLimit_string = localStorage.getItem("rangeLimit");
+      if (rangeLimit_string !== null) {
+        var rangeLimit = parseInt(rangeLimit_string, 10);
+        this.model.set({"rangeLimit": rangeLimit});
+      }
+      var treeOn_string = localStorage.getItem("treeOn");
+      if (treeOn_string !== null) {
+        var treeOn = treeOn_string == "true" ? true : false;
+
+        this.model.set({"treeOn": treeOn});
+      } else {
+        this.model.set({"treeOn": true});
+      }
+
+      this.optionsSet = true;
     },
 
     open: function() {
@@ -66,6 +106,11 @@
           minWidth: 500,
           zIndex: 90000
         });
+
+      // load options from storage once
+      // if (!this.optionsSet) {
+      //   this.loadOptionsFromStorage();
+      // }
       // clean ald attributes
       $('.attr-form').remove();
       // get access to the form
@@ -105,6 +150,9 @@
         });
       // set them in the model
       this.model.set({"filterAttrs": checked});
+
+      // save it also to local storage
+      localStorage.setItem("filterAttrs", checked);
     },
 
     setTreeVisibility: function() {
@@ -114,11 +162,17 @@
         treeOn = true;
       } else {treeOn = false;}
       this.model.set({"treeOn": treeOn});
+
+      // save it also to local storage
+      localStorage.setItem("treeOn", treeOn);
     },
 
     setRangeLimit: function() {
       var rangeLimit = $("#rangeLimit").val();
       this.model.set({"rangeLimit": rangeLimit});
+
+      // save it also to local storage
+      localStorage.setItem("rangeLimit", rangeLimit);
     },
 
     onSaveOptions: function() {
@@ -1454,6 +1508,10 @@
       .attr("transform", "translate(" + this.left + "," + this.top + ")");
       // this.draw();
 
+
+      if (!this.model.get("treeOn")) {
+        this.toggleTree();
+      }
       return this;
     },
 
@@ -1546,21 +1604,13 @@
       .range([0, width]);
 
       var displayData = this.model.get("displayData");
-      this.svg.selectAll('.message').remove();
+      // this.svg.selectAll('.message').remove();
 
       this.drawTraits(displayData);
       this.drawGeneModels(displayData);
-      // testing this
-      // if (!rangeExceeded) {
-      //   this.turnOnHaplotypes();
-      //   this.drawTree();
-      //   this.drawHaplotpes();
-      // } else {
-      //   this.turnOffHaplotypes();
-      // }
-      this.drawScaleBars();
       this.drawTree();
       this.drawHaplotpes();
+      this.drawScaleBars();
       this.drawLegend();
     },
 

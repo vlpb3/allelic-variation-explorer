@@ -1435,7 +1435,7 @@
       // check if treeOn or not
       var treeOn = this.model.get("treeOn");
       $("#tree").css("width", winWidth/2 - this.padding);
-      $("#chart").css("width", winWidth/2 - this.padding);
+      $("#chart").css("width", this.width/2 - this.padding);
 
       // browser div
       this.svg = d3.select("#chart").append("svg:svg")
@@ -1458,6 +1458,19 @@
     },
 
     toggleTree: function() {
+      var winWidth = $(window).width();
+      var newWidth = winWidth - this.padding;
+      $("#tree").toggle();
+      if ($("#tree").is(":visible")) {
+        this.width = winWidth/2 - this.left - this.right - this.padding;
+        $("#chart").css("width", this.width/2 - this.padding);
+      } else {
+        this.width = winWidth;
+        $("#chart").css("width", this.width);
+        d3.select(".chart").attr("width", newWidth);
+      }
+
+      this.model.updatePosition();
     },
 
     unHighlightSNPs: function() {
@@ -1488,7 +1501,8 @@
       .transition().duration(200)
       .style("opacity", function(d) {
         var highlightedPositions = _.keys(highlighted);
-        var isInHighlightedPosition = _.include(highlightedPositions, String(d.x));
+        var isInHighlightedPosition = _.include(highlightedPositions,
+                                                String(d.x));
         if (isInHighlightedPosition) {
           var highlightedStrains = highlighted[String(d.x)];
           if ( (_.intersection(d.strains, highlightedStrains).length > 0) ||
@@ -1497,7 +1511,8 @@
             }
         }
         var unhighlightedPositions = _.keys(unhighlighted);
-        var isInUnhighlightedPosition = _.include(unhighlightedPositions, String(d.x));
+        var isInUnhighlightedPosition = _.include(unhighlightedPositions,
+                                                  String(d.x));
         if (isInUnhighlightedPosition) {
           var unhighlightedStrains = unhighlighted[String(d.x)];
           if (_.intersection(d.strains, unhighlightedStrains).length > 0) {
@@ -1535,14 +1550,17 @@
 
       this.drawTraits(displayData);
       this.drawGeneModels(displayData);
-      if (!rangeExceeded) {
-        this.turnOnHaplotypes();
-        this.drawTree();
-        this.drawHaplotpes();
-      } else {
-        this.turnOffHaplotypes();
-      }
+      // testing this
+      // if (!rangeExceeded) {
+      //   this.turnOnHaplotypes();
+      //   this.drawTree();
+      //   this.drawHaplotpes();
+      // } else {
+      //   this.turnOffHaplotypes();
+      // }
       this.drawScaleBars();
+      this.drawTree();
+      this.drawHaplotpes();
       this.drawLegend();
     },
 
@@ -1699,7 +1717,8 @@
       .attr("fill", "steelblue");
       CDSRect.exit().remove();
 
-      // calculate new freePos by calculating the max number of gene models per locus
+      // calculate new freePos by calculating the max number
+      // of gene models per locus
       var allFeatures = UTR5s.concat(CDSs).concat(UTR3s);
       var maxModels = _.reduce(allFeatures, function(memo, f) {
         var nModel = f.attributes.Parent.split(",")[0].split(".")[1];
@@ -1747,8 +1766,11 @@
       }
 
       // draw haplotypes
-      var haplotypeBars = this.svg.selectAll('.hap, .refHap').data(this.leaves);
-      haplotypeBars.attr('y', function(d) { return d.x + freePos - trackH/2;})
+      var haplotypeBars = this.svg.selectAll('.hap, .refHap')
+      .attr('width', width)
+      .data(this.leaves);
+      haplotypeBars
+      .attr('y', function(d) { return d.x + freePos - trackH/2;})
         .attr('class', function(d) {
           if (d.strains[0] === "refStrain" ) {
             return 'refHap';

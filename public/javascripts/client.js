@@ -1334,7 +1334,6 @@
 
       // calculate haplotypes from SNPs in the region
       this.calcHaplotypes();
-
       // cluster haplotypes
       this.cluster();
     },
@@ -1369,6 +1368,11 @@
       var SNPs = _.select(displayData.SNPs, function(snp) {
         return (snp.attributes.included || snp.attributes.included === undefined);
       });
+
+      // if there are no snps do nothing
+      if (SNPs.length < 1) {
+        return;
+      }
 
       // create strains object
       var strains = _.reduce(SNPs, function(memo, snp) {
@@ -1606,11 +1610,20 @@
       var displayData = this.model.get("displayData");
       // this.svg.selectAll('.message').remove();
 
+      this.drawScaleBars();
       this.drawTraits(displayData);
       this.drawGeneModels(displayData);
+
+      // if there is no snps don't try to cluster and plot haplotypes
+      var snps = this.model.get("displayData").SNPs;
+      if (snps.length < 1) {
+        $("#alerts").show();
+        return;
+      } else {
+        $("#alerts").hide();
+      }
       this.drawTree();
       this.drawHaplotpes();
-      this.drawScaleBars();
       this.drawLegend();
     },
 

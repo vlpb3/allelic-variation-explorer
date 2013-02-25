@@ -296,7 +296,10 @@ def annotate_snps(((loc, snps), data_dir)):
 
 def snps_by_location(args):
     """
-    Group SNPs by their location.
+    Group and annotate SNPs by their location.
+
+    Best is to use snpEff or other tools, but for quick course results
+    this function can be used.
     """
     t0 = time.time()
 
@@ -312,13 +315,37 @@ def snps_by_location(args):
     results = pool.map(subset_features, zip(featuretypes, annotation_list))
     features_by_type = {ftype: feature for (ftype, feature) in results}
 
-    # create intron intervals
-    genes, exons = features_by_type['gene'], features_by_type['exon']
-    introns = bt(genes).subtract(bt(exons)).sort().merge().remove_invalid()
-    features_by_type['intron'] = introns.saveas().fn
+    # clean up features_by_type by removing empty bts from dict
+    for k in features_by_type.keys():
+        if (not bt(features_by_type[k]).count()):
+            del features_by_type[k]
 
-    # after getting introns, exons are not needed any more, we'll use CDSs
-    del features_by_type['exon']
+    available_features = features_by_type.keys()
+
+    # create intron intervals if there are gene annotations
+    if ('gene' in available_features):
+        genes = features_by_type['gene']
+
+        # if there are exons use them to determine introns
+        if ('exon' in available_features):
+            exons = features_by_type['exon']
+            introns = bt(genes).subtract(bt(exons))
+            introns = introns.sort().merge().remove_invalid()
+            features_by_type['intron'] = introns.saveas().fn
+            # after getting introns, exons are not needed any more
+            del features_by_type['exon']
+
+        # otherwise use 'CDS' and UTR information
+        else:
+            needed_set = set(['CDS', 'three_prime_UTR', 'five_prime_UTR'])
+            if (needed_set.issubset(features_by_type.keys())):
+                cdss = features_by_type['CDS']
+                utr3s = features_by_type['three_prime_UTR']
+                utr5s = features_by_type['five_prime_UTR']
+                introns = bt(genes).subtract(bt(cdss)).subtract(bt(utr3s))
+                introns = introns.subtract(bt(utr5s)).sort().merge()
+                introns = introns.remove_invalid()
+                features_by_type['intron'] = introns.saveas().fn
 
     # group snps by feature overlap
     pool_size = len(features_by_type.keys())
@@ -329,32 +356,41 @@ def snps_by_location(args):
                        features_list, snps_list))
     snps_by_location = {ftype: feature for (ftype, feature) in results}
 
-    # find intergenic snps
-    s = bt(snps)
-    genes = bt(features_by_type['gene'])
-    intergenic = s.intersect(bt(genes), v=True).saveas().fn
-    snps_by_location['intergenic'] = intergenic
-    # anntoate snps and save them as gff files
-    data_dir = os.path.dirname(args.snps[0].name)
-
     # remove 'gene' snps, they're not needed anymore
-    del snps_by_location['gene']
+    try:
+        del snps_by_location['gene']
+    except:
+        # there where no 'gene' snps
+        pass
 
     # remove duplicate SNPs
-    intronic = bt(snps_by_location['intron'])
-    cdss = bt(snps_by_location['CDS'])
-    utr5s = bt(snps_by_location['five_prime_UTR'])
-    utr3s = bt(snps_by_location['three_prime_UTR'])
-    intronic = intronic.intersect(cdss, v=True)
-    intronic = intronic.intersect(utr5s, v=True)
-    intronic = intronic.intersect(utr3s, v=True)
-    snps_by_location['intron'] = intronic.saveas().fn
-    utr5s = utr5s.intersect(cdss, v=True)
-    snps_by_location['five_prime_UTR'] = utr5s.saveas().fn
-    utr3s = utr3s.intersect(cdss, v=True)
-    snps_by_location['three_prime_UTR'] = utr3s.saveas().fn
+    available_locs = snps_by_location.keys()
+    if ('intron' in available_locs):
+        intronic = bt(snps_by_location['intron'])
+        if ('CDS' in available_locs):
+            cdss = bt(snps_by_location['CDS'])
+            intronic = intronic.intersect(cdss, v=True)
+        if ('five_prime_UTR' in available_locs):
+            utr5s = bt(snps_by_location['five_prime_UTR'])
+            intronic = intronic.intersect(utr5s, v=True)
+        if ('three_prime_UTR' in available_locs):
+            utr3s = bt(snps_by_location['three_prime_UTR'])
+            intronic = intronic.intersect(utr3s, v=True)
+        snps_by_location['intron'] = intronic.saveas().fn
+
+    if ('CDS' in available_locs):
+        cdss = bt(snps_by_location['CDS'])
+        if ('five_prime_UTR' in available_locs):
+            utr5s = bt(snps_by_location['five_prime_UTR'])
+            utr5s = utr5s.intersect(cdss, v=True)
+            snps_by_location['five_prime_UTR'] = utr5s.saveas().fn
+        if ('three_prime_UTR' in available_locs):
+            utr3s = bt(snps_by_location['three_prime_UTR'])
+            utr3s = utr3s.intersect(cdss, v=True)
+            snps_by_location['three_prime_UTR'] = utr3s.saveas().fn
 
     # annotate snps
+    data_dir = os.path.dirname(args.snps[0].name)
     pool_size = len(snps_by_location.keys())
     pool = multiprocessing.Pool(pool_size)
     dd_list = repeat(data_dir, times=pool_size)
@@ -363,6 +399,7 @@ def snps_by_location(args):
     t1 = time.time()
     t = t1 - t0
     logging.info("time elapsed: %d" % t)
+
 
 
 def main():

@@ -1371,6 +1371,8 @@
 
       // if there are no snps do nothing
       if (SNPs.length < 1) {
+        displayData.haplotypes = {};
+        this.set({"displayData": displayData});
         return;
       }
 
@@ -1618,7 +1620,6 @@
       var snps = this.model.get("displayData").SNPs;
       if (snps.length < 1) {
         $("#alerts").show();
-        return;
       } else {
         $("#alerts").hide();
       }
@@ -2024,7 +2025,7 @@
       var leaves = _.select(nodes, this.isLeaf);
       if (_.size(leaves) > 1) {
         this.leaves = _.map(leaves, this.leaf2haplotype);
-      }
+      } else {this.leaves = [];}
     },
 
     drawLegend: function(){

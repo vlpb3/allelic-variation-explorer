@@ -10,144 +10,54 @@ Below you can find installation instructions with all necessary libraries.
 
 1. install few first prerequisites
 	
-		sudo aptitude install git build-essential python-dev
+		sudo aptitude install python-dev unzip
 
-2. install BEDTools
+3. install BEDTools
+	
+	run following commands in shell
 
-	Follow instructions at http://code.google.com/p/bedtools. There is a version available in ubuntu repository, but it's usually not the most recent one. I recommend compiling as described at [BEDTools website](http://code.google.com/p/bedtools/#Installation)
+		curl -O http://bedtools.googlecode.com/files
+		BEDTools.v2.17.0.tar.gz
+		tar xvzf BEDTools.v2.17.0.tar.gz
+		cd bedtools-2.17.0
+		make
+		cp bin/* /usr/local/bin/
 
-	To compile it, you need to install zlib1g-dev first
+3. install MongoDB
+	
+	follow instructions for ubuntu at:
+	http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/
+	after installation mongod process should be running and database should be located at /var/lib/mongodb
 
-		sudo aptitude install zlib1g-dev
-		
-3. install pip (pip installs packages)
 
-		sudo aptitude install python-pip
 4. install virtualenv
 
-	Before installing all python stuff i recommend installing pythonenv, so that you can install python libraries separately form system ones.
+	create directory for virtualenvs
 	
-		sudo pip install virtualenv
-		virtualenv ave-env
-		source ave-env/bin/activate
-		
-5. install needed python libraries
+		mkdir ~/venvs
 
-		pip install cython
-		pip install pybedtools
-		pip install numpy
-		pip install biopython
-	
-6. install mongodb
+	download and unpack python-virtualenv
 
-	Follow instructions on [MongoDB website](http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/).
-	
-7. install pymongo -- python mongo driver
+		wget https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.8.4.tar.gz
+		tar xvzf virtualenv-1.8.4.tar.gz
+		cd virtualenv-1.8.4
 
-		pip install pymongo
-		
-8. install [node.js](http://nodejs.org/) -- server side javascript
+	create virtual environment for ave and activate it
 
-	Download package from the [node.js website](http://nodejs.org/download/).
-	
-	Unpack and install.
-	
-		tar xvzf node-<version>.tar.gz
-		cd node-<version>
-		./configure
-		make
-		sudo make install
-		
+		python virtualenv.py --no-site-packages ~/venvs/ave_env
+		source ~/venvs/ave_env/bin/activate
 
-###Centos 5.8
+5. install node.js
 
-1. install few first prerequisites
+	follow instructions at:
+	https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager
 
-		sudo yum install gcc zlib-devel openssl-devel cpio
-		sudo yum install expat-devel gettext-devel
-		
-2. install git
 
-	Git needs to be compiled from source.
-	
-	Get the package from [Google Code Website](http://code.google.com/p/git-core/downloads/list). Adjust the url with the latest version number.
-	
-		wget http://git-core.googlecode.com/files/git-1.7.12.1.tar.gz
-		
-	Unpack and install.
-	
-		tar xvzf git-<version>.tar.gz
-		cd git-<version>
-		./configure
-		make
-		sudo make install
-		
-3. install BEDTools with dependencies
-
-		sudo yum install gcc-c++
-		
-	Install BEDTools according to [Installation Instructions](http://code.google.com/p/bedtools/#Installation)
-	
-	
-4. install Python
-
-	Python in CentOS 5.8 is old. Install newest version from 2.7 branch (not 3), separately from system python, so that it does not mess centos.
-	
-	Get the source from [Python Website](http://www.python.org/download/).
-	
-	Unpack and install.
-	
-		tar xvzf Python-<version>.tgz
-		cd Python-<version>
-		./configure --prefix=/home/user/alt_python
-		make
-		make install
-		
-	Use virtualenv to get whole python environment separate from system python.
-	
-	Get virtualenv script from github repository and install virtualenv with alternative python version.
-	
-		wget https://raw.github.com/pypa/virtualenv/master/virtualenv.py 
-		/home/user/alt_python/bin/python virtualenv.py -p /home/user/ave-env
-		
-	Activate the environment
-	
-		source /home/user/ave-env/bin/activate
-		
-5. install important python libraries
-	
-	Remember to install these **after** activating the virtualenv environment.
-	
-		pip install cython
-		pip install numpy
-		pip install biopython
-		pip install pybedtools
-		
-6. install mongodb
-	
-	Follow the instructions on [MongoDB website](http://docs.mongodb.org/manual/tutorial/install-mongodb-on-redhat-centos-or-fedora-linux/). If `mongos start` (as suggested at website howto) does not work, try `/sbin/mongod start`.
-	
-7. instal mongodb python drivers
-
-		pip install pymongo
-	
-8. install [node.js](http://nodejs.org/) -- server side javascript
-	
-	Dowload package from the [website](http://nodejs.org/download/).
-	
-	Unpack and install.
-	
-		tar xvzf node-<version>.tar.gz
-		cd node-<version>.tar.gz
-		./configure
-		make
-		sudo python tools/install.py install
-		
 setting up AVE
 --------------
 
 These instructions are independent of the operating system.
-It is important to work in virtualenv (`source ~/ave-env/bin/activate', as explained above).
+It is important to work in virtualenv (`source ~/venvs/ave_env/bin/activate', as explained above).
 
 1. Download the application.
 2. Unpack the code and checkout the latest version branch
@@ -159,14 +69,15 @@ It is important to work in virtualenv (`source ~/ave-env/bin/activate', as expla
 	
 		npm install
 		
+4. install python libraries
+
+	from within ave directory run (make sure that ave virtualenv is activated):
+
+		pip install -r requirements.txt
+
 4. Setup the db
 
-	You can setup the db with example mongodump from ave website. To do it download seqdb.tar.gz package.
-	Unpack it and run
-	
-		mongorestore ./seqdb
-
-	To setup the db with your own data you can use provided script. You will need:
+	To setup the db with your own data, all Arabidopsis example data you can use provided script. You will need:
 	- reference sequence in fasta format
 		
 		make sure that name of the chromosome (or some other meaningful identifier) is provided as fasta identifier (the string just after ">"). Like in the example for Chromosome 1 sequence:
@@ -176,6 +87,42 @@ It is important to work in virtualenv (`source ~/ave-env/bin/activate', as expla
 			
 	- gene annotations in [gff3 format](http://www.sequenceontology.org/gff3.shtml)
 	- SNP annotations in [gff3 format](http://www.sequenceontology.org/gff3.shtml)
+	- chromInfo.txt file containing information about chromosome names and sizes, for example for Arabidopis:
+		
+			Chr1 30427671
+			Chr2 19698289
+			Chr3 23459830
+			Chr4 18585056
+			Chr5 26975502
+			ChrC 154478
+			ChrM 366924
+
+	identifiers in first column must match identifiers in fasta and gff files
+
+	- to simplify, configuration json file can be used, it should be valid json file ([json validator](http://jsonlint.com/)), it should look like following:
+	
+			 {
+	  		"genome": "TAIR10",
+	  		"ref": [
+	    	"/path/to/data/annots/TAIR10_chr1.fas",
+	    	"/path/to/data/annots/TAIR10_chr2.fas",
+	    	"/path/to/data/annots/TAIR10_chr3.fas",
+	    	"/path/to/data/annots/TAIR10_chr4.fas",
+	    	"/path/to/data/annots/TAIR10_chr5.fas",
+	    	"/path/to/data/annots/TAIR10_chrC.fas",
+	    	"/path/to/data/annots/TAIR10_chrM.fas"
+	  		],
+	  		"annot": [
+	    	"/path/to/data/annots/TAIR10_GFF3_genes.gff",
+	    	"/path/to/data/annots/snps/CDS_snps.gff",
+	    	"/path/to/data/annots/snps/three_prime_UTR_snps.gff",
+	    	"/path/to/data/annots/snps/five_prime_UTR_snps.gff"
+	  		],
+	  		"chromInfo": "/path/to/data/annots/chromInfo.txt"
+			}
+
+	
+	Please validate gff files before importing them. This can be done at [genome tools webiste](http://genometools.org/cgi-bin/gff3validator.cgi)
 	
 		SNPs should be annotated like in this example
 		columns 1-7:
@@ -201,8 +148,13 @@ It is important to work in virtualenv (`source ~/ave-env/bin/activate', as expla
 		
 	You can annotate the SNPs in gff file with SNPs location. To do it run
 	
-		python ./ave_tools.py snps_by_location --annot gene_annotation.gff \
+		python ./ave_tools.py group_snps_by_loc --annot gene_annotation.gff \
 		--snps snp_file1.gff --snp_file2.gff
+
+	or
+
+		python ./ave_tools.py group_snps_by_loc --annot gene_annotation.gff \
+		--snps *.gff
 		
 	The script generates new gff files, one for each snp location, with annotated location in last column:
 	
@@ -221,6 +173,10 @@ It is important to work in virtualenv (`source ~/ave-env/bin/activate', as expla
 	
 	after `--annot` provide a list of files with gene/trait/snp annotations
 	
+	or use confgiuration file:
+
+		python ./ave_tools.py import --config conf.json
+
 		
 starting up AVE
 ---------------

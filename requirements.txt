@@ -1,0 +1,7 @@
+Cython==0.18
+argparse==1.2.1
+biopython==1.61
+numpy==1.7.0
+pybedtools==0.6.2
+pymongo==2.4.2
+wsgiref==0.1.2

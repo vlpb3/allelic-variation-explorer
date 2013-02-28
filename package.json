@@ -1,6 +1,6 @@
 {
   "name": "ave",
-  "version": "0.3",
+  "version": "0.3.0",
   "author": "Mateusz Kuzak <mateusz.kuzak@gmail.com>",
   "private": "true",
   "dependencies": {

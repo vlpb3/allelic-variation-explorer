@@ -67,6 +67,7 @@ It is important to work in virtualenv (`source ~/venvs/ave_env/bin/activate', as
 4. install python libraries
 
 	from within ave directory run (make sure that ave virtualenv is activated):
+			
 		pip install -U cython
 		pip install -r requirements.txt
 

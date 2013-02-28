@@ -1612,7 +1612,6 @@
       var displayData = this.model.get("displayData");
       // this.svg.selectAll('.message').remove();
 
-      this.drawScaleBars();
       this.drawTraits(displayData);
       this.drawGeneModels(displayData);
 
@@ -1625,6 +1624,7 @@
       }
       this.drawTree();
       this.drawHaplotpes();
+      this.drawScaleBars();
       this.drawLegend();
     },
 

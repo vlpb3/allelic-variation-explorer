@@ -10,14 +10,13 @@ Below you can find installation instructions with all necessary libraries.
 
 1. install few first prerequisites
 	
-		sudo aptitude install python-dev unzip
+		sudo aptitude install build-essential python-dev curl unzip 
 
 3. install BEDTools
 	
 	run following commands in shell
 
-		curl -O http://bedtools.googlecode.com/files
-		BEDTools.v2.17.0.tar.gz
+		curl -O http://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz
 		tar xvzf BEDTools.v2.17.0.tar.gz
 		cd bedtools-2.17.0
 		make
@@ -49,8 +48,7 @@ Below you can find installation instructions with all necessary libraries.
 
 5. install node.js
 
-	follow instructions at:
-	https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager
+	follow instructions at [node.js website](https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager)
 
 
 setting up AVE
@@ -60,10 +58,7 @@ These instructions are independent of the operating system.
 It is important to work in virtualenv (`source ~/venvs/ave_env/bin/activate', as explained above).
 
 1. Download the application.
-2. Unpack the code and checkout the latest version branch
-	
-		tar xvzf ave.tar.gz
-		cd ave
+2. Unpack ave and enter ave directory
 		
 3. install node packages
 	

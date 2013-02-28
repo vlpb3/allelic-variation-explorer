@@ -67,7 +67,7 @@ It is important to work in virtualenv (`source ~/venvs/ave_env/bin/activate', as
 4. install python libraries
 
 	from within ave directory run (make sure that ave virtualenv is activated):
-
+		pip install -U cython
 		pip install -r requirements.txt
 
 4. Setup the db
@@ -141,7 +141,7 @@ It is important to work in virtualenv (`source ~/venvs/ave_env/bin/activate', as
 		
 		`ID` is any unique identifier for this SNP
 		
-	You can annotate the SNPs in gff file with SNPs location. To do it run
+	You can annotate the SNPs in gff file with SNPs location.
 	
 		python ./ave_tools.py group_snps_by_loc --annot gene_annotation.gff \
 		--snps snp_file1.gff --snp_file2.gff

@@ -25,8 +25,8 @@ Below you can find installation instructions with all necessary libraries.
 
 3. install MongoDB
 	
-	follow instructions for ubuntu at:
-	http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/
+	follow instructions for ubuntu at [mongodb website](http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/)
+	
 	after installation mongod process should be running and database should be located at /var/lib/mongodb
 
 

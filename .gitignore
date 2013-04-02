@@ -13,3 +13,6 @@ data/**
 node_modules/**
 npm-debug.log
 .monitor
+
+# python compiled
+.pyc

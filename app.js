@@ -42,8 +42,10 @@ var hostip = "localhost";
 if (platform === "linux"){
   if (interfaces.eth0) {
     hostip = interfaces.eth0[0].address;
-  } else {
+  } else if (interfaces.wlan0){
     hostip = interfaces.wlan0[0].address;
+  } else {
+    hostip = interfaces.wlan1[0].address;
   }
 } else if (platform === "darwin"){
   if (interfaces.en0)

@@ -840,7 +840,7 @@
         if (key.indexOf('bookmark.') >= 0) {
           var name = key.split('bookmark.')[1];
           var href = localStorage.getItem(key);
-          var bookmark = "<li><a class='bookmark' href='" + href + "''>";
+          var bookmark = "<li><a class='bookmark' href='" + href + "'>";
           bookmark += name + "<i class='icon-trash delbookmark pull-right'>";
           bookmark += "</i></a></li>";
           $("#bookmarkList").append(bookmark);
@@ -935,7 +935,7 @@
       var name = $("#bookmarkName").val();
       var href = window.location.href;
       var bookmark = "";
-      bookmark = "<li><a class='bookmark' href='" + href + "''>";
+      bookmark = "<li><a class='bookmark' href=" + href + ">";
       bookmark += name + "<i class='icon-trash delbookmark pull-right'>";
       bookmark += "</i></a></li>";
       $("#bookmarkList").append(bookmark);
@@ -1987,7 +1987,8 @@
       cluster.separation(function(a, b) { return 1; });
       cluster.children(function(d) {
         if (d) {
-          return (d.children = _.compact([d.left , d.right]));
+          var children = d.children = _.compact([d.left , d.right]);
+          return (children);
         }
       });
 

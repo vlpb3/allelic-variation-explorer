@@ -989,36 +989,35 @@
 
     goLeft: function() {
       var pos = this.model.get("pos"),
-          step = Math.floor((pos.ends - pos.starts) / this.step),
-          starts = pos.starts - step,
-          ends = pos.ends - step,
-          update = {
-            pos: {
-              "genome": pos.genome,
-              "starts": starts,
-              "ends": ends,
-              "chrom": pos.chrom
-            }
-          };
-
-      starts = starts > 0 ? starts : 0;
+        step = Math.floor((pos.ends - pos.starts) / this.step),
+        starts = pos.starts - step,
+        ends = pos.ends - step,
+      starts = starts > 0 ? starts : 1;
+      var update = {
+        pos: {
+          "genome": pos.genome,
+          "starts": starts,
+          "ends": ends,
+          "chrom": pos.chrom
+        }
+      };
       this.model.set(update);
     },
 
     zoomOut: function() {
       var pos = this.model.get("pos"),
-          step = Math.floor((pos.ends - pos.starts) / 2),
-          starts = pos.starts - step,
-          ends = pos.ends + step,
-          update = {
-            pos: {
-              "genome": pos.genome,
-              "starts": starts,
-              "ends": ends,
-              "chrom": pos.chrom
-            }
-          };
-      starts = starts > 0 ? starts : 0;
+        step = Math.floor((pos.ends - pos.starts) / 2),
+        starts = pos.starts - step,
+        ends = pos.ends + step,
+      starts = starts > 0 ? starts : 1;
+      var update = {
+        pos: {
+          "genome": pos.genome,
+          "starts": starts,
+          "ends": ends,
+          "chrom": pos.chrom
+        }
+      };
       this.model.set(update);
     },
 

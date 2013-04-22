@@ -74,8 +74,7 @@ It is important to work in virtualenv (`source ~/venvs/ave_env/bin/activate', as
 4. Setup the db
 
 	To setup the db with your own data, all Arabidopsis example data you can use provided script. You will need:
-	
-	- reference sequence in fasta format
+	* reference sequence in fasta format
 		
 		make sure that name of the chromosome
 		(or some other meaningful identifier) is provided as fasta
@@ -84,9 +83,7 @@ It is important to work in virtualenv (`source ~/venvs/ave_env/bin/activate', as
 			
 			>Chr1 CHROMOSOME dumped from ADB: Jun/20/09 14:53
 			CCCTAAACCCTAAACCCTAAACCCTAAACCTCTGAATCCTTAATCCCTA
-			
-	
-	- gene annotations in [gff3 format](http://www.sequenceontology.org/gff3.shtml)
+	* gene annotations in [gff3 format](http://www.sequenceontology.org/gff3.shtml)
 	- SNP annotations in [gff3 format](http://www.sequenceontology.org/gff3.shtml)
 	- chromInfo.txt file containing information about chromosome names and sizes, for example for Arabidopis:
 		
@@ -99,8 +96,7 @@ It is important to work in virtualenv (`source ~/venvs/ave_env/bin/activate', as
 			ChrM 366924
 
 		identifiers in first column must match identifiers in fasta and gff files
-
-	- to simplify, configuration json file can be used, it should be valid json file ([json validator](http://jsonlint.com/)), it should look like following:
+	* to simplify, configuration json file can be used, it should be valid json file ([json validator](http://jsonlint.com/)), it should look like following:
 	
 			 {
 	  		"genome": "TAIR10",
@@ -125,27 +121,27 @@ It is important to work in virtualenv (`source ~/venvs/ave_env/bin/activate', as
 	
 	Please validate gff files before importing them. This can be done at [genome tools webiste](http://genometools.org/cgi-bin/gff3validator.cgi)
 	
-		SNPs should be annotated like in this example
-		columns 1-7:
+	SNPs should be annotated like in this example
+	columns 1-7:
 		
-			Chr1 1001Genomes SNP_adal_3	138 138 3 . .
+		Chr1 1001Genomes SNP_adal_3	138 138 3 . .
 		
-		column 8 (key value pairs):
+	column 8 (key value pairs):
 			
-			Change=T:C;Strain=adal_3;Project=GMINordborg2010;ID=9323.138
+		Change=T:C;Strain=adal_3;Project=GMINordborg2010;ID=9323.138
 			
 		
-		First column should correspond to seq id from fasta file provided as reference.
+	First column should correspond to seq id from fasta file provided as reference.
 		
-		In last column:
+	In last column:
 		
-		`Change` follows `reference:variant` order
+	`Change` follows `reference:variant` order
 		
-		`Strain` is the name of the strain/accession/ecotype in which this SNP have been called.
+	`Strain` is the name of the strain/accession/ecotype in which this SNP have been called.
 		
-		`Project` is the sequencing project
+	`Project` is the sequencing project
 		
-		`ID` is any unique identifier for this SNP
+	`ID` is any unique identifier for this SNP
 		
 	You can annotate the SNPs in gff file with SNPs location.
 	

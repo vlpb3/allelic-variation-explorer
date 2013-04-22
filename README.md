@@ -74,13 +74,18 @@ It is important to work in virtualenv (`source ~/venvs/ave_env/bin/activate', as
 4. Setup the db
 
 	To setup the db with your own data, all Arabidopsis example data you can use provided script. You will need:
+	
 	- reference sequence in fasta format
 		
-		make sure that name of the chromosome (or some other meaningful identifier) is provided as fasta identifier (the string just after ">"). Like in the example for Chromosome 1 sequence:
+		make sure that name of the chromosome
+		(or some other meaningful identifier) is provided as fasta
+		identifier (the string just after ">").
+		Like in the example for Chromosome 1 sequence:
 			
 			>Chr1 CHROMOSOME dumped from ADB: Jun/20/09 14:53
 			CCCTAAACCCTAAACCCTAAACCCTAAACCTCTGAATCCTTAATCCCTA
 			
+	
 	- gene annotations in [gff3 format](http://www.sequenceontology.org/gff3.shtml)
 	- SNP annotations in [gff3 format](http://www.sequenceontology.org/gff3.shtml)
 	- chromInfo.txt file containing information about chromosome names and sizes, for example for Arabidopis:
@@ -93,7 +98,7 @@ It is important to work in virtualenv (`source ~/venvs/ave_env/bin/activate', as
 			ChrC 154478
 			ChrM 366924
 
-	identifiers in first column must match identifiers in fasta and gff files
+		identifiers in first column must match identifiers in fasta and gff files
 
 	- to simplify, configuration json file can be used, it should be valid json file ([json validator](http://jsonlint.com/)), it should look like following:
 	
@@ -184,6 +189,6 @@ run:
 Access app from within web browser (preferably latest chrome). Ip address and port is provided in app.js output.
 
 
-important ifo
+important info
 -------------
 Example SNP annotations have been obtained from [1001 Genomes Project](http://1001genomes.org/). Please read the Data Usage Policy at the project website.

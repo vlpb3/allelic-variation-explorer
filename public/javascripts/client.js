@@ -207,11 +207,10 @@
       zIndex: 90000
      });
 
-     var updateTable = this.updateTable;
-
+     var drawTable = this.drawTable;
      this.model.on("change:pos", function () {
        if ( $("#filterDialog").dialog("isOpen") === true) {
-         updateTable();
+         drawTable();
        }
      });
      this.drawTable();
@@ -377,8 +376,7 @@
   HighlightSNPsDialog = Backbone.View.extend({
     initialize: function() {
       _.bindAll(this, "render", "open", "onHighlightSelected", "onSelectAll",
-        "onToggleSelection", "onUnHighlightSelected", "drawTable", "onClose",
-        "updateTable");
+        "onToggleSelection", "onUnHighlightSelected", "drawTable", "onClose");
       this.render();
     },
 
@@ -393,7 +391,7 @@
         this.onToggleSelection);
     },
 
-    updateTable: function() {
+    drawTable: function() {
       var SNPs = this.model.getDisplaySNPs();
       SNPs = _.map(SNPs, function(snp) {
         if (snp.attributes.highlighted === undefined) {
@@ -408,9 +406,34 @@
       this.model.setDisplaySNPs(SNPs);
       this.model.updateDisplayData();
 
-      SNPs = _.filter(SNPs, function(snp) {
-        return snp.attributes.included;
+      SNPs = _.map(SNPs, function(snp) {
+        if (snp.attributes.included === undefined) {
+          snp.attributes.included = true;
+        }
+        return snp;
       });
+
+      $(this.highlightSNPsDialog).find("p:first")
+      .html("<table class='highlightSNPsTable'></table>");
+      // fetch columns chosen in settings
+      var attrs = this.model.get("filterAttrs");
+      // put all column names in one array
+      var colNames = ["ID", "Chrom", "Pos", "Score", "highlighted"];
+      _.each(attrs, function(attr) {
+         colNames.push(attr);
+      });
+
+      // create table header
+      var columns = [];
+      _.each(colNames, function(name) {
+        columns.push({"sTitle": name});
+      });
+      this.dTable = $('.highlightSNPsTable').dataTable({
+        "bJQueryUI": true,
+        "sPaginationType": "full_numbers",
+        "oLanguage": {"sSearch": "Search all columns:"},
+        "aoColumns": columns});
+      // input data into a table
 
       var data = [];
       _.each(SNPs, function(snp) {
@@ -433,16 +456,16 @@
           location = snp.attributes.variant_location || "unknown";
         }
 
-        var row = [
-         snp.attributes.ID,
-         snp.attributes.Change,
-         snp.seqid,
-         snp.start,
-         snp.score,
-         snp.attributes.Strain,
-         location,
-         highlightedString
+          var row = [
+          snp.attributes.ID,
+          snp.seqid,
+          snp.start,
+          snp.score,
+          highlightedString
         ];
+        _.each(attrs, function(attr) {
+          row.push(snp.attributes[attr]);
+        });
         data.push(row);
       }, this);
 
@@ -474,13 +497,13 @@
         close: this.onClose
       });
 
-      var updateTable = this.updateTable;
+      var drawTable = this.drawTable;
       this.model.on("change:pos", function() {
         if( $('#highlightSNPsDialog').dialog("isOpen") === true) {
-          updateTable();
+          drawTable();
         }
-      });
-      this.drawTable();
+      }); 
+     this.drawTable();
     },
 
     onHighlightSelected: function() {
@@ -497,7 +520,7 @@
         return snp;
       });
       this.model.setDisplaySNPs(SNPs);
-      this.updateTable();
+      this.drawTable();
       this.model.updateDisplayData();
     },
 
@@ -515,7 +538,7 @@
         return snp;
       });
       this.model.setDisplaySNPs(SNPs);
-      this.updateTable();
+      this.drawTable();
       this.model.updateDisplayData();
     },
 
@@ -529,81 +552,81 @@
       $(rows).toggleClass('rselect');
     },
 
-    drawTable: function() {
-      var SNPs = this.model.getDisplaySNPs();
-      SNPs = _.map(SNPs, function(snp) {
-        if (snp.attributes.highlighted === undefined) {
-          snp.attributes.highlighted = false;
-        }
-        if (snp.attributes.included === undefined) {
-          snp.attributes.included = true;
-        }
-        return snp;
-      });
+    // upTable: function() {
+    //   var SNPs = this.model.getDisplaySNPs();
+    //   SNPs = _.map(SNPs, function(snp) {
+    //     if (snp.attributes.highlighted === undefined) {
+    //       snp.attributes.highlighted = false;
+    //     }
+    //     if (snp.attributes.included === undefined) {
+    //       snp.attributes.included = true;
+    //     }
+    //     return snp;
+    //   });
 
-      this.model.setDisplaySNPs(SNPs);
-      this.model.updateDisplayData();
+    //   this.model.setDisplaySNPs(SNPs);
+    //   this.model.updateDisplayData();
 
-      SNPs = _.filter(SNPs, function(snp) {
-        return snp.attributes.included;
-      });
+    //   SNPs = _.filter(SNPs, function(snp) {
+    //     return snp.attributes.included;
+    //   });
 
-      $(this.highlightSNPsDialog).find("p:first")
-        .html("<table class='highlightSNPsTable'></table>");
+    //   $(this.highlightSNPsDialog).find("p:first")
+    //     .html("<table class='highlightSNPsTable'></table>");
 
-      this.dTable = $(".highlightSNPsTable").dataTable({
-        "bJQueryUI": true,
-        "sPaginationType": "full_numbers",
-        "aoColumns": [
-          {"sTitle": "ID"},
-          {"sTitle": "Change"},
-          {"sTitle": "Chrom"},
-          {"sTitle": "Pos"},
-          {"sTitle": "Score"},
-          {"sTitle": "Accession"},
-          {"sTitle": "Location"},
-          {"sTitle": "highlighted"}
-        ]
-      });
+    //   this.dTable = $(".highlightSNPsTable").dataTable({
+    //     "bJQueryUI": true,
+    //     "sPaginationType": "full_numbers",
+    //     "aoColumns": [
+    //       {"sTitle": "ID"},
+    //       {"sTitle": "Change"},
+    //       {"sTitle": "Chrom"},
+    //       {"sTitle": "Pos"},
+    //       {"sTitle": "Score"},
+    //       {"sTitle": "Accession"},
+    //       {"sTitle": "Location"},
+    //       {"sTitle": "highlighted"}
+    //     ]
+    //   });
 
-      var data = [];
-      _.each(SNPs, function(snp) {
-        var highlightedString = "";
-        if (snp.attributes.highlighted) {
-          highlightedString = "<span class=highlighted-row>";
-          highlightedString += snp.attributes.highlighted;
-          highlightedString += "</span>";
-        } else {
-          highlightedString = "<span class=unHighlighted-row>";
-          highlightedString += snp.attributes.highlighted;
-          highlightedString += "</span>";}
+    //   var data = [];
+    //   _.each(SNPs, function(snp) {
+    //     var highlightedString = "";
+    //     if (snp.attributes.highlighted) {
+    //       highlightedString = "<span class=highlighted-row>";
+    //       highlightedString += snp.attributes.highlighted;
+    //       highlightedString += "</span>";
+    //     } else {
+    //       highlightedString = "<span class=unHighlighted-row>";
+    //       highlightedString += snp.attributes.highlighted;
+    //       highlightedString += "</span>";}
 
-        var location;
-        if (snp.attributes.variant_location === undefined) {
-          location = "unknown";
-        }
-        else {
-          location = snp.attributes.variant_location || "unknown";
-        }
+    //     var location;
+    //     if (snp.attributes.variant_location === undefined) {
+    //       location = "unknown";
+    //     }
+    //     else {
+    //       location = snp.attributes.variant_location || "unknown";
+    //     }
 
-        var row = [
-         snp.attributes.ID,
-         snp.attributes.Change,
-         snp.seqid,
-         snp.start,
-         snp.score,
-         snp.attributes.Strain,
-         location,
-         highlightedString
-        ];
-        data.push(row);
-      }, this);
+    //     var row = [
+    //      snp.attributes.ID,
+    //      snp.attributes.Change,
+    //      snp.seqid,
+    //      snp.start,
+    //      snp.score,
+    //      snp.attributes.Strain,
+    //      location,
+    //      highlightedString
+    //     ];
+    //     data.push(row);
+    //   }, this);
 
-      this.dTable.fnAddData(data);
-      this.dTable.$('tr').click( function() {
-        $(this).toggleClass('rselect');
-      });
-    }
+    //   this.dTable.fnAddData(data);
+    //   this.dTable.$('tr').click( function() {
+    //     $(this).toggleClass('rselect');
+    //   });
+    // }
   });
 
   MarkAccessionsDialog = Backbone.View.extend({
@@ -2135,24 +2158,6 @@
     },
 
     onSNPClick: function(d, i) {
-      // find all SNPs at this position in this haplotype
-      var SNPlist = _.filter(this.allSNPs, function(snp) {
-        return _.include(d.strains, snp.attributes.Strain) && d.x === snp.start;
-      });
-      var tableHead = "<table class='SNPtable'><thead><tr><th>ID</th><th>Change</th><th>Chrom</th><th>Pos</th><th>Score</th><th>Accession</th></tr></thead><tbody>";
-      var SNPString = _.reduce(SNPlist, function(memo, snp) {
-          var a = snp.attributes;
-          memo += "<tr>";
-          memo += "<td>" + a.ID + "</td>";
-          memo += "<td>" + a.Change + "</td>";
-          memo += "<td>" + snp.seqid + "</td>";
-          memo += "<td>" + snp.start + "</td>";
-          memo += "<td>" + snp.score + "</td>";
-          memo += "<td>" + a.Strain + "</td>";
-          memo += "</tr>";
-          return memo;
-        }, tableHead);
-      SNPString += "</tbody></table>";
       // open a dialog for dipalying info about the SNP
       var SNPDialog = $('#SNPDialog').clone().dialog({
          title: "Single Nucleotide Polymorphism",
@@ -2162,11 +2167,67 @@
           $(this).remove();
          }
       });
-      $(SNPDialog).find("p:first").append("</br> " + SNPString);
-      $('.SNPtable tr').click( function() {
-          $(this).toggleClass('rselect');
+      // find all SNPs at this position in this haplotype
+      var SNPs = _.filter(this.allSNPs, function(snp) {
+        return _.include(d.strains, snp.attributes.Strain) && d.x === snp.start;
+      });
+      // fetch columns chosen in settings
+      var attrs = this.model.get("filterAttrs");
+      var colNames = ["ID", "Chrom", "Pos", "Score"];
+      _.each(attrs, function(attr) {
+         colNames.push(attr);
+      });
+      var columns = [];
+      _.each(colNames, function(name) {
+        columns.push({"sTitle": name});
+      });
+      $(SNPDialog).find("p:first")
+      .html("<table class='SNPTable'></table>");
+
+      this.dTable = $('.SNPTable').dataTable({
+        "bJQueryUI": true,
+        "sPaginationType": "full_numbers",
+        "oLanguage": {"sSearch": "Search all columns:"},
+        "aoColumns": columns});
+
+      var data = [];
+      _.each(SNPs, function(snp) {
+        var highlightedString = "";
+        if (snp.attributes.highlighted) {
+          highlightedString = "<span class=highlighted-row>";
+          highlightedString += snp.attributes.highlighted;
+          highlightedString += "</span>";
+        } else {
+          highlightedString = "<span class=unHighlighted-row>";
+          highlightedString += snp.attributes.highlighted;
+          highlightedString += "</span>";
+        }
+
+        var location;
+        if (snp.attributes.variant_location === undefined) {
+          location = "unknown";
+        }
+        else {
+          location = snp.attributes.variant_location || "unknown";
+        }
+
+          var row = [
+          snp.attributes.ID,
+          snp.seqid,
+          snp.start,
+          snp.score,
+        ];
+        _.each(attrs, function(attr) {
+          row.push(snp.attributes[attr]);
         });
-      $('.SNPtable').dataTable();
+        data.push(row);
+      }, this);
+
+      this.dTable.fnClearTable();
+      this.dTable.fnAddData(data);
+      this.dTable.$('tr').click( function() {
+        $(this).toggleClass('rselect');
+      });
     },
 
     onHaplCLick: function(d, i) {

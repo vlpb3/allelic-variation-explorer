@@ -11,7 +11,7 @@ Below you can find installation instructions with all necessary libraries.
 1. install few first prerequisites
 	
 		sudo aptitude install build-essential python-dev curl 
-		suod aptitude install software-properties-common unzip 
+		sudo aptitude install software-properties-common unzip 
 
 3. install BEDTools
 	

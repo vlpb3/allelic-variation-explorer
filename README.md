@@ -10,7 +10,8 @@ Below you can find installation instructions with all necessary libraries.
 
 1. install few first prerequisites
 	
-		sudo aptitude install build-essential python-dev curl unzip 
+		sudo aptitude install build-essential python-dev curl 
+		suod aptitude install software-properties-common unzip 
 
 3. install BEDTools
 	
@@ -36,10 +37,10 @@ Below you can find installation instructions with all necessary libraries.
 		mkdir ~/venvs
 
 	download and unpack python-virtualenv
-
-		wget https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.8.4.tar.gz
-		tar xvzf virtualenv-1.8.4.tar.gz
-		cd virtualenv-1.8.4
+    
+        wget https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.9.1.tar.gz
+		tar xvzf virtualenv-1.9.1.tar.gz
+		cd virtualenv-1.9.1
 
 	create virtual environment for ave and activate it
 

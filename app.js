@@ -67,6 +67,8 @@ io.set('log level', 1);
 io.sockets.on('connection', function(socket) {
 
     socket.on('getData', function(region) {
+        console.log("fetching data from: ");
+        console.log("region");
         seqdb.getRegion(region, function(err, data){
             if (err) {throw err;}
             if (data.refseq === "") {
@@ -74,6 +76,8 @@ io.sockets.on('connection', function(socket) {
               socket.emit('featureNotFound',
               "region out of range!");
             } else {
+              console.log("data arrived!");
+              console.log(data);
               socket.emit('data', data);
             }
         });

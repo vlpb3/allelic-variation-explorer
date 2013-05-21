@@ -550,7 +550,7 @@
     onToggleSelection: function() {
       var rows = this.dTable.$('tr');
       $(rows).toggleClass('rselect');
-    },
+    }
 
     // upTable: function() {
     //   var SNPs = this.model.getDisplaySNPs();
@@ -990,9 +990,9 @@
     goLeft: function() {
       var pos = this.model.get("pos"),
         step = Math.floor((pos.ends - pos.starts) / this.step),
-        starts = pos.starts - step,
+        s = pos.starts - step,
         ends = pos.ends - step,
-      starts = starts > 0 ? starts : 1;
+      starts = s > 0 ? s : 1;
       var update = {
         pos: {
           "genome": pos.genome,
@@ -1007,9 +1007,9 @@
     zoomOut: function() {
       var pos = this.model.get("pos"),
         step = Math.floor((pos.ends - pos.starts) / 2),
-        starts = pos.starts - step,
+        s = pos.starts - step,
         ends = pos.ends + step,
-      starts = starts > 0 ? starts : 1;
+      starts = s > 0 ? s : 1;
       var update = {
         pos: {
           "genome": pos.genome,
@@ -1404,8 +1404,8 @@
         var idx = snp.start;
         var variant = snp.attributes.Change.split(":")[1];
         var refBase = snp.attributes.Change.split(":")[0];
-        var variantArr = (memo[strain] || []);
-        var refArr = (memo.refStrain || []);
+        var variantArr = (memo[strain] || {});
+        var refArr = (memo.refStrain || {});
         variantArr[idx] = variant;
         refArr[idx] = refBase;
         memo[strain] = variantArr;
@@ -1423,7 +1423,7 @@
       // group strains by snps
       var haplotypes = {};
       _.each(strains, function(strainSNPs, strainName, strains) {
-        var haplID = _.zip(_.keys(strainSNPs), _.compact(strainSNPs)).join();
+        var haplID = _.pairs(strainSNPs).join();
         var haplotype = (haplotypes[haplID] || []);
         haplotype.push({name: strainName, snps: strainSNPs});
         haplotypes[haplID] = haplotype;
@@ -2214,7 +2214,7 @@
           snp.attributes.ID,
           snp.seqid,
           snp.start,
-          snp.score,
+          snp.score
         ];
         _.each(attrs, function(attr) {
           row.push(snp.attributes[attr]);

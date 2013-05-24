@@ -2168,7 +2168,8 @@
       });
       // find all SNPs at this position in this haplotype
       var SNPs = _.filter(this.allSNPs, function(snp) {
-        return _.include(d.strains, snp.attributes.Strain) && d.x === snp.start;
+        var x = parseInt(d.x, 10);
+        return _.contains(d.strains, snp.attributes.Strain) && x === snp.start;
       });
       // fetch columns chosen in settings
       var attrs = this.model.get("filterAttrs");

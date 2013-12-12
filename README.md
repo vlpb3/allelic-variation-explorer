@@ -37,10 +37,9 @@ Below you can find installation instructions with all necessary libraries.
 		mkdir ~/venvs
 
 	download and unpack python-virtualenv
-    
-        wget https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.9.1.tar.gz
-		tar xvzf virtualenv-1.9.1.tar.gz
-		cd virtualenv-1.9.1
+    	wget https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.10.1.tar.gz
+		tar xvzf virtualenv-1.10.1.tar.gz
+		cd virtualenv-1.10.1
 
 	create virtual environment for ave and activate it
 
@@ -97,7 +96,7 @@ It is important to work in virtualenv (`source ~/venvs/ave_env/bin/activate', as
 			ChrM 366924
 
 		identifiers in first column must match identifiers in fasta and gff files
-	* to simplify, configuration json file can be used, it should be valid json file ([json validator](http://jsonlint.com/)), it should look like following:
+	* currently configuration uses json file, it should be valid json format ([json validator](http://jsonlint.com/)), it should look like following:
 	
 			 {
 	  		"genome": "TAIR10",
@@ -123,6 +122,7 @@ It is important to work in virtualenv (`source ~/venvs/ave_env/bin/activate', as
 	Please validate gff files before importing them. This can be done at [genome tools webiste](http://genometools.org/cgi-bin/gff3validator.cgi)
 	
 	SNPs should be annotated like in this example
+	("SNP_" in col 3 is important for fature to be recognised as snp)
 	columns 1-7:
 		
 		Chr1 1001Genomes SNP_adal_3	138 138 3 . .
@@ -159,19 +159,7 @@ It is important to work in virtualenv (`source ~/venvs/ave_env/bin/activate', as
 		Project=GMINordborg2010;Strain=ale_stenar_44_4;variant_location=CDS;
 		ID=992.6992;Change=T:C
 		
-	To import data into the database run:
-	
-		python ./ave_tools.py import --genome TAIR10 --ref \
-		reference.fas --annot gene_annotations.gff snps_annotations.gff
-		
-	
-	after `--genome` provide a name of the genome which was used to map the reads and call variants against
-	
-	after `--ref` provide a list of fasta files with reference sequence
-	
-	after `--annot` provide a list of files with gene/trait/snp annotations
-	
-	or use confgiuration file:
+	To import data into the database use config file (conf.json):
 
 		python ./ave_tools.py import --config conf.json
 

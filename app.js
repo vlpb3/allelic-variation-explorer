@@ -39,6 +39,14 @@ app.configure('production', function(){
 var platform = os.platform();
 var interfaces = os.networkInterfaces();
 var hostip = "localhost";
+for (var i in interfaces) {
+  var iface = interfaces[i][0];
+  if (iface.family=='IPv4' && iface.internal==false){
+    hostip = iface.address;
+  }
+}
+
+
 if (platform === "linux"){
   if (interfaces.eth0) {
     hostip = interfaces.eth0[0].address;

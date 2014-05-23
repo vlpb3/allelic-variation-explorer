@@ -27,7 +27,7 @@ app.configure(function(){
 
 app.configure('development', function(){
     app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
-    server.listen(8787);
+    server.listen(3838);
 });
 
 app.configure('production', function(){

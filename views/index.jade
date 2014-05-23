@@ -13,9 +13,10 @@ link(rel="stylesheet", type="text/css", href="stylesheets/custom-theme/jquery-ui
 link(rel="stylesheet", type="text/css", href="stylesheets/jquery.dataTables.css")
 
 // bootstrap stuff
-link(rel="stylesheet", type="text/css", href="stylesheets/bootstrap.min.css")
-link(rel="stylesheet", type="text/css", href="stylesheets/bootstrap-responsive.min.css")
-
+//link(rel="stylesheet", type="text/css", href="stylesheets/bootstrap.min.css")
+//link(rel="stylesheet", type="text/css", href="stylesheets/bootstrap-theme.min.css")
+link(rel="stylesheet", type="text/css", href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css")
+link(rel="stylesheet", type="text/css", href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css")
 
 // app css
 link(rel="stylesheet", type="text/css", href="stylesheets/style.css")
@@ -23,38 +24,33 @@ link(rel="stylesheet", type="text/css", href="stylesheets/style.css")
 // hidden variable with ip adress of server
 input(type="hidden", id="hostip", value=hostip)
 
-div(class="navbar", id="menu")
-  div(class="navbar-inner")
+nav(class="navbar navbar-default", id="menu", role="navigation")
     div(class="container-fluid")
-      a(class="btn btn-navbar", data-toggle="collapse", data-target=".nav-collapse")
-        span(class="icon-bar")
-        span(class="icon-bar")
-        span(class="icon-bar")
-        span(class="icon-bar")
-      a(class="brand pull-left")
-        | Allelic Variation Explorer
-      div(class="nav-collapse collapse")
-        ul(class="nav pull-left")
+      div(class="navbar-header")
+        button(type="button", class="navbar-toggle", data-toggle="collapse", data-target="#nav-collapse")
+          span(class="icon-bar")
+          span(class="icon-bar")
+          span(class="icon-bar")
+          span(class="icon-bar")
+        a(class="navbar-brand", href="#")
+          | Allelic Variation Explorer
+      div(class="navbar-collapse collapse", id="nav-collapse")
+        ul(class="nav navbar-nav")
           li
-            form(class="navbar-form form-inline")
-              div(class="input-prepend")
-                span(class="add-on")
-                  | Genome 
-                select(class="input-small", type="text", id="loc-genome")
-              div(class="input-prepend")
-                span(class="add-on")
-                  | Chrom 
-                select(class="input-small", type="text", id="loc-chrom")
-              div(class="input-prepend")
-                span(class="add-on")                 
-                  | Start
-                input(class="input-small", type="number", min="1", id="loc-start")
-              div(class="input-prepend")
-                span(class="add-on")
-                  | End
-                input(class="input-small", type="number", min="1", id="loc-end")
-                button(class="btn loc-nav", type="submit", id="go")
-                  | Go
+            form(class="navbar-form navbar-left navbar-input-group")
+              div(class="form-group")
+                span(class="navbar-input-group-addon") Genome 
+                select(class="form-control", type="text", id="loc-genome")
+              div(class="form-group")
+                span(class="navbar-input-group-addon") Chrom 
+                select(class="form-control", type="text", id="loc-chrom")
+              div(class="form-group")
+                span(class="navbar-input-group-addon") Start
+                input(class="form-control", type="number", min="1", id="loc-start")
+              div(class="form-group")
+                span(class="navbar-input-group-addon") End
+                input(class="form-control", type="number", min="1", id="loc-end")
+              button(class="btn btn-default", type="submit", id="go") Go
           li
             a(id="goToFeature")
               | Go to
@@ -91,20 +87,18 @@ div(class="navbar", id="menu")
             a(id="options")
               i(class="icon-cog") 
 
-div(class="container-fluid")
-  div(class="row-fluid")
-    p(class="lead")
-      div(class="offset5", id="navi")
-        div(class="control-group")
-          div(class="btn-group")
-            a(class="btn", id="goLeft")
-              i(class="icon-chevron-left")
-            a(class="btn", id="zoomOut")
-              i(class="icon-zoom-out")
-            a(class="btn", id="zoomIn")
-              i(class="icon-zoom-in")
-            a(class="btn", id="goRight")
-              i(class="icon-chevron-right")
+div(class="row")
+  div(class="col-md-offset-5", id="navi")
+    div(class="control-group")
+      div(class="btn-group")
+        a(class="btn", id="goLeft")
+          i(class="glyphicon glyphicon-chevron-left")
+        a(class="btn", id="zoomOut")
+          i(class="glyphicon glyphicon-zoom-out")
+        a(class="btn", id="zoomIn")
+          i(class="glyphicon glyphicon-zoom-in")
+        a(class="btn", id="goRight")
+          i(class="glyphicon glyphicon-chevron-right")
 
 div#alerts.alert.alert-block.ui-helper-hidden
   | there are no snps in this region
@@ -240,7 +234,8 @@ script(type="text/javascript", src="//ajax.googleapis.com/ajax/libs/jqueryui/1.1
 script(type="text/javascript", src="javascripts/jquery.dataTables.min.js")
 
 // bootstrap
-script(type="text/javascript", src="javascripts/bootstrap.min.js")
+// script(type="text/javascript", src="javascripts/bootstrap.min.js")
+script(type="text/javascript", src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js")
 
 // underscore and backbone
 script(type="text/javascript", src="javascripts/underscore-v1.4.4-min.js")

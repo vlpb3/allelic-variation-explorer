@@ -296,7 +296,7 @@
       _.each(colNames, function(name) {
         columns.push({"sTitle": name});
       });
-      this.dTable = $('.filterTable').dataTable({
+      this.dTable = $('.filterTable').DataTable({
         "bJQueryUI": true,
         "sPaginationType": "full_numbers",
         "oLanguage": {"sSearch": "Search all columns:"},
@@ -428,7 +428,7 @@
       _.each(colNames, function(name) {
         columns.push({"sTitle": name});
       });
-      this.dTable = $('.highlightSNPsTable').dataTable({
+      this.dTable = $('.highlightSNPsTable').DataTable({
         "bJQueryUI": true,
         "sPaginationType": "full_numbers",
         "oLanguage": {"sSearch": "Search all columns:"},
@@ -502,7 +502,7 @@
         if( $('#highlightSNPsDialog').dialog("isOpen") === true) {
           drawTable();
         }
-      }); 
+      });
      this.drawTable();
     },
 

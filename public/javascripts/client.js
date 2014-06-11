@@ -204,7 +204,7 @@
      this.filterDialog = $("#filterDialog").dialog({
        title: "Filter input data",
        minWidth: 700,
-      zIndex: 90000
+       zIndex: 90000
      });
 
      var drawTable = this.drawTable;
@@ -271,7 +271,6 @@
     },
 
     drawTable: function() {
-      // $("#filterDialog .dataTables_wrapper").remove();
       // fetch SNP data and prepare a table
       var SNPs = this.model.getDisplaySNPs();
       SNPs = _.map(SNPs, function(snp) {
@@ -288,20 +287,23 @@
       var attrs = this.model.get("filterAttrs");
       // put all column names in one array
       var colNames = ["ID", "Chrom", "Pos", "Score", "included"];
-      _.each(attrs, function(attr) {
-         colNames.push(attr);
-      });
+      colNames.concat(attrs);
+
       // create table header
       var columns = [];
       _.each(colNames, function(name) {
         columns.push({"sTitle": name});
       });
+
       this.dTable = $('.filterTable').DataTable({
         "bJQueryUI": true,
         "sPaginationType": "full_numbers",
         "oLanguage": {"sSearch": "Search all columns:"},
         "aoColumns": columns});
-      // input data into a table
+
+      var dTable = this.dTable;
+
+      // prepare data for putting into the table
       var data = [];
       _.each(SNPs, function(snp) {
         var includedString = "";
@@ -336,39 +338,36 @@
         data.push(row);
       }, this);
 
-      this.dTable.fnAddData(data);
-      // whn a row is clicked select/unselect it
-      this.dTable.$('tr').click( function() {
+      // insert data into the table
+      dTable.rows.add(data);
+
+      // when a row is clicked select/unselect it
+      dTable.$('tr').click( function() {
         $(this).toggleClass('rselect');
       });
 
-      // append search boxes in table footer
-      var tfoot = "<tfoot><tr>";
-      _.each(colNames, function(name) {
-        tfoot += "<th rowspan='1' colspan='1'>";
-        tfoot += "<input type='text' name='" + name + "' ";
-        tfoot += "value='Search " + name + "' class='search_init input-small'>";
-        tfoot += "</th>";
-      });
-      tfoot += "</tr><tfoot>";
-      this.dTable.append(tfoot);
-      var table = this.dTable;
+      // create table footer with shearch boxes
+      var table = document.getElementsByClassName('filterTable')[0];
+      var footer = table.createTFoot();
+      var row = footer.insertRow(0);
 
-      // activate filtering with regexp
-      $("tfoot input").keyup(function() {
-        table.fnFilter(this.value, $("tfoot input").index(this), true);
+      var ths = _.map(colNames, function(cn) {
+        var thString = "<th>" + cn + "</th>";
+        return(thString);
       });
-      var asInitVals = [];
-      $("tfoot input").each(function(i) {
-        asInitVals[i] = this.value;
+      $('.filterTable tfoot tr').append(ths.join());
+      $('.filterTable tfoot th').each( function() {
+        var title = $('.filterTable thead th').eq( $(this).index() ).text();
+        $(this).html('<input type="text" placeholder="Search ' + title + '"/>');
       });
-      $("tfoot input").focus(function() {
-        $(this).toggleClass("search_init");
-        this.value = "";
-      });
-      $("tfoot input").blur(function (i) {
-        $(this).toggleClass("search_init");
-        this.value = asInitVals[$("tfoot input").index(this)];
+
+      dTable.draw();
+
+      // apply the filter connected with search boxes
+      dTable.columns().eq( 0 ).each( function(colIdx) {
+        $('.filterTable tfoot input').eq(colIdx).on('change', function() {
+          dTable.column(colIdx).search(this.value).draw();
+        });
       });
     }
   });
@@ -470,7 +469,7 @@
       }, this);
 
       this.dTable.fnClearTable();
-      this.dTable.fnAddData(data);
+      this.dTable.rows.add(data);
       this.dTable.$('tr').click( function() {
         $(this).toggleClass('rselect');
       });
@@ -725,7 +724,7 @@
             accession,
             highlightedString
           ];
-          this.dTable.fnAddData(row);
+          this.dTable.row.add(row);
       }, this);
       this.dTable.$('tr').click( function() {
         $(this).toggleClass('rselect');
@@ -2224,7 +2223,7 @@
       }, this);
 
       this.dTable.fnClearTable();
-      this.dTable.fnAddData(data);
+      this.dTable.rows.add(data);
       this.dTable.$('tr').click( function() {
         $(this).toggleClass('rselect');
       });

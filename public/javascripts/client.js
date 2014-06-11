@@ -365,8 +365,8 @@
 
       // apply the filter connected with search boxes
       dTable.columns().eq( 0 ).each( function(colIdx) {
-        $('.filterTable tfoot input').eq(colIdx).on('change', function() {
-          dTable.column(colIdx).search(this.value).draw();
+        $('.filterTable tfoot input').eq(colIdx).on('keyup click', function() {
+          dTable.column(colIdx).search(this.value, true).draw();
         });
       });
     }

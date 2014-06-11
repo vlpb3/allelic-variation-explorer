@@ -365,8 +365,8 @@
 
       // apply the filter connected with search boxes
       dTable.columns().eq( 0 ).each( function(colIdx) {
-        $('.filterTable tfoot input').eq(colIdx).on('keyup click', function() {
-          dTable.column(colIdx).search(this.value, true).draw();
+        $('.filterTable tfoot input').eq(colIdx).on('change', function() {
+          dTable.column(colIdx).search(this.value).draw();
         });
       });
     }
@@ -418,22 +418,23 @@
       var attrs = this.model.get("filterAttrs");
       // put all column names in one array
       var colNames = ["ID", "Chrom", "Pos", "Score", "highlighted"];
-      _.each(attrs, function(attr) {
-         colNames.push(attr);
-      });
+      colNames = colNames.concat(attrs);
 
       // create table header
       var columns = [];
       _.each(colNames, function(name) {
         columns.push({"sTitle": name});
       });
+
       this.dTable = $('.highlightSNPsTable').DataTable({
         "bJQueryUI": true,
         "sPaginationType": "full_numbers",
         "oLanguage": {"sSearch": "Search all columns:"},
         "aoColumns": columns});
-      // input data into a table
 
+      var dTable = this.dTable;
+
+      // input data into a table
       var data = [];
       _.each(SNPs, function(snp) {
         var highlightedString = "";
@@ -462,14 +463,17 @@
           snp.score,
           highlightedString
         ];
+
         _.each(attrs, function(attr) {
           row.push(snp.attributes[attr]);
         });
+
         data.push(row);
       }, this);
 
-      this.dTable.fnClearTable();
+      this.dTable.clear();
       this.dTable.rows.add(data);
+      this.dTable.draw();
       this.dTable.$('tr').click( function() {
         $(this).toggleClass('rselect');
       });
@@ -507,11 +511,12 @@
 
     onHighlightSelected: function() {
       var dTable = this.dTable;
-      var highlighted = [];
-      this.dTable.$('.rselect').each(
-        function() { highlighted.push(dTable.fnGetData(this, 0));}
-      );
+      // get IDs of chosen SNPs
+      var highlighted = _.map(this.dTable.$('.rselect'), function(selected){
+        return($(selected).find('td:eq(0)').html());
+      });
       var SNPs= this.model.getDisplaySNPs();
+
       SNPs = _.map(SNPs, function(snp) {
         if(_.include(highlighted, snp.attributes.ID)) {
           snp.attributes.highlighted = true;
@@ -525,10 +530,12 @@
 
     onUnHighlightSelected: function() {
       var dTable = this.dTable;
-      var unHighlighted = [];
-      this.dTable.$(".rselect").each(
-        function() {unHighlighted.push(dTable.fnGetData(this, 0));}
-      );
+
+      // get IDs of chosen SNPs
+      var unHighlighted = _.map(this.dTable.$('.rselect'), function(selected){
+        return($(selected).find('td:eq(0)').html());
+      });
+
       var SNPs= this.model.getDisplaySNPs();
       SNPs = _.map(SNPs, function(snp) {
         if (_.include(unHighlighted, snp.attributes.ID)) {

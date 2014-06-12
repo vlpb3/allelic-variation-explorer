@@ -557,81 +557,6 @@
       $(rows).toggleClass('rselect');
     }
 
-    // upTable: function() {
-    //   var SNPs = this.model.getDisplaySNPs();
-    //   SNPs = _.map(SNPs, function(snp) {
-    //     if (snp.attributes.highlighted === undefined) {
-    //       snp.attributes.highlighted = false;
-    //     }
-    //     if (snp.attributes.included === undefined) {
-    //       snp.attributes.included = true;
-    //     }
-    //     return snp;
-    //   });
-
-    //   this.model.setDisplaySNPs(SNPs);
-    //   this.model.updateDisplayData();
-
-    //   SNPs = _.filter(SNPs, function(snp) {
-    //     return snp.attributes.included;
-    //   });
-
-    //   $(this.highlightSNPsDialog).find("p:first")
-    //     .html("<table class='highlightSNPsTable'></table>");
-
-    //   this.dTable = $(".highlightSNPsTable").dataTable({
-    //     "bJQueryUI": true,
-    //     "sPaginationType": "full_numbers",
-    //     "aoColumns": [
-    //       {"sTitle": "ID"},
-    //       {"sTitle": "Change"},
-    //       {"sTitle": "Chrom"},
-    //       {"sTitle": "Pos"},
-    //       {"sTitle": "Score"},
-    //       {"sTitle": "Accession"},
-    //       {"sTitle": "Location"},
-    //       {"sTitle": "highlighted"}
-    //     ]
-    //   });
-
-    //   var data = [];
-    //   _.each(SNPs, function(snp) {
-    //     var highlightedString = "";
-    //     if (snp.attributes.highlighted) {
-    //       highlightedString = "<span class=highlighted-row>";
-    //       highlightedString += snp.attributes.highlighted;
-    //       highlightedString += "</span>";
-    //     } else {
-    //       highlightedString = "<span class=unHighlighted-row>";
-    //       highlightedString += snp.attributes.highlighted;
-    //       highlightedString += "</span>";}
-
-    //     var location;
-    //     if (snp.attributes.variant_location === undefined) {
-    //       location = "unknown";
-    //     }
-    //     else {
-    //       location = snp.attributes.variant_location || "unknown";
-    //     }
-
-    //     var row = [
-    //      snp.attributes.ID,
-    //      snp.attributes.Change,
-    //      snp.seqid,
-    //      snp.start,
-    //      snp.score,
-    //      snp.attributes.Strain,
-    //      location,
-    //      highlightedString
-    //     ];
-    //     data.push(row);
-    //   }, this);
-
-    //   this.dTable.fnAddData(data);
-    //   this.dTable.$('tr').click( function() {
-    //     $(this).toggleClass('rselect');
-    //   });
-    // }
   });
 
   MarkAccessionsDialog = Backbone.View.extend({
@@ -663,10 +588,10 @@
 
     onMarkSelected: function() {
       var dTable = this.dTable;
-      var selected = [];
-      this.dTable.$('.rselect').each(
-        function() { selected.push(dTable.fnGetData(this, 0));}
-      );
+      var selected = _.map(this.dTable.$(".rselect"), function(selected){
+        return($(selected).find('td:eq(0)').html());
+      });
+
       var displayData = this.model.get("displayData");
       displayData.markedAccessions = selected;
       this.model.set("displayData", displayData);
@@ -676,10 +601,10 @@
 
     onUnmarkSelected: function() {
       var dTable = this.dTable;
-      var selected = [];
-      this.dTable.$('.rselect').each(
-        function() { selected.push(dTable.fnGetData(this, 0));}
-      );
+      var selected = _.map(this.dTable.$(".rselect"), function(selected){
+        return($(selected).find('td:eq(0)').html());
+      });
+
       var displayData = this.model.get("displayData");
       var markedAccessions = displayData.markedAccessions;
       markedAccessions = _.difference(markedAccessions, selected);
@@ -706,7 +631,7 @@
       $(this.markAccessionsDialog).find("p:first")
       .html("<table class='accessionsTable'></table>");
 
-      this.dTable = $(".accessionsTable").dataTable({
+      this.dTable = $(".accessionsTable").DataTable({
         "bJQueryUI": true,
         "sPaginationType": "full_numbers",
         "aoColumns": [
@@ -715,7 +640,7 @@
         ]
       });
 
-      _.each(allAccessions, function(accession) {
+      var rows = _.map(allAccessions, function(accession) {
         var highlightedString = "";
         var isMarked = _.include(markedAccessions, accession);
         if (isMarked) {
@@ -730,11 +655,14 @@
             accession,
             highlightedString
           ];
-          this.dTable.row.add(row);
+          return(row);
       }, this);
+
+      this.dTable.rows.add(rows);
       this.dTable.$('tr').click( function() {
         $(this).toggleClass('rselect');
       });
+      this.dTable.draw();
     }
   });
 

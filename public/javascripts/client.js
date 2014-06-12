@@ -204,7 +204,7 @@
      this.filterDialog = $("#filterDialog").dialog({
        title: "Filter input data",
        minWidth: 700,
-      zIndex: 90000
+       zIndex: 90000
      });
 
      var drawTable = this.drawTable;
@@ -219,10 +219,11 @@
    onExcludeSelected: function() {
       // get IDs of selected SNPs
       var dTable = this.dTable;
-      var excluded = [];
-      this.dTable.$(".rselect").each(
-        function() {excluded.push(dTable.fnGetData(this, 0));}
-      );
+
+      var excluded = _.map(this.dTable.$(".rselect"), function(selected) {
+        return($(selected).find('td:eq(0)').html());
+      });
+
      // annotate excluded SNPs
       var SNPs = this.model.getDisplaySNPs();
       SNPs = _.map(SNPs, function(snp) {
@@ -241,10 +242,10 @@
 
     onIncludeSelected: function() {
       var dTable = this.dTable;
-      var included = [];
-      this.dTable.$(".rselect").each(
-        function() {included.push(dTable.fnGetData(this, 0));}
-      );
+      var included = _.map(this.dTable.$(".rselect"), function(selected){
+        return($(selected).find('td:eq(0)').html());
+      });
+
       // annotate excluded SNPs
       var SNPs = this.model.getDisplaySNPs();
       SNPs = _.map(SNPs, function(snp) {
@@ -271,7 +272,6 @@
     },
 
     drawTable: function() {
-      // $("#filterDialog .dataTables_wrapper").remove();
       // fetch SNP data and prepare a table
       var SNPs = this.model.getDisplaySNPs();
       SNPs = _.map(SNPs, function(snp) {
@@ -288,20 +288,23 @@
       var attrs = this.model.get("filterAttrs");
       // put all column names in one array
       var colNames = ["ID", "Chrom", "Pos", "Score", "included"];
-      _.each(attrs, function(attr) {
-         colNames.push(attr);
-      });
+      colNames.concat(attrs);
+
       // create table header
       var columns = [];
       _.each(colNames, function(name) {
         columns.push({"sTitle": name});
       });
-      this.dTable = $('.filterTable').dataTable({
+
+      this.dTable = $('.filterTable').DataTable({
         "bJQueryUI": true,
         "sPaginationType": "full_numbers",
         "oLanguage": {"sSearch": "Search all columns:"},
         "aoColumns": columns});
-      // input data into a table
+
+      var dTable = this.dTable;
+
+      // prepare data for putting into the table
       var data = [];
       _.each(SNPs, function(snp) {
         var includedString = "";
@@ -336,39 +339,36 @@
         data.push(row);
       }, this);
 
-      this.dTable.fnAddData(data);
-      // whn a row is clicked select/unselect it
-      this.dTable.$('tr').click( function() {
+      // insert data into the table
+      dTable.rows.add(data);
+
+      // when a row is clicked select/unselect it
+      dTable.$('tr').click( function() {
         $(this).toggleClass('rselect');
       });
 
-      // append search boxes in table footer
-      var tfoot = "<tfoot><tr>";
-      _.each(colNames, function(name) {
-        tfoot += "<th rowspan='1' colspan='1'>";
-        tfoot += "<input type='text' name='" + name + "' ";
-        tfoot += "value='Search " + name + "' class='search_init input-small'>";
-        tfoot += "</th>";
-      });
-      tfoot += "</tr><tfoot>";
-      this.dTable.append(tfoot);
-      var table = this.dTable;
+      // create table footer with shearch boxes
+      var table = document.getElementsByClassName('filterTable')[0];
+      var footer = table.createTFoot();
+      var row = footer.insertRow(0);
 
-      // activate filtering with regexp
-      $("tfoot input").keyup(function() {
-        table.fnFilter(this.value, $("tfoot input").index(this), true);
+      var ths = _.map(colNames, function(cn) {
+        var thString = "<th>" + cn + "</th>";
+        return(thString);
       });
-      var asInitVals = [];
-      $("tfoot input").each(function(i) {
-        asInitVals[i] = this.value;
+      $('.filterTable tfoot tr').append(ths.join());
+      $('.filterTable tfoot th').each( function() {
+        var title = $('.filterTable thead th').eq( $(this).index() ).text();
+        $(this).html('<input type="text" placeholder="Search ' + title + '"/>');
       });
-      $("tfoot input").focus(function() {
-        $(this).toggleClass("search_init");
-        this.value = "";
-      });
-      $("tfoot input").blur(function (i) {
-        $(this).toggleClass("search_init");
-        this.value = asInitVals[$("tfoot input").index(this)];
+
+      dTable.draw();
+
+      // apply the filter connected with search boxes
+      dTable.columns().eq( 0 ).each( function(colIdx) {
+        $('.filterTable tfoot input').eq(colIdx).on('change', function() {
+          dTable.column(colIdx).search(this.value).draw();
+        });
       });
     }
   });
@@ -419,22 +419,23 @@
       var attrs = this.model.get("filterAttrs");
       // put all column names in one array
       var colNames = ["ID", "Chrom", "Pos", "Score", "highlighted"];
-      _.each(attrs, function(attr) {
-         colNames.push(attr);
-      });
+      colNames = colNames.concat(attrs);
 
       // create table header
       var columns = [];
       _.each(colNames, function(name) {
         columns.push({"sTitle": name});
       });
-      this.dTable = $('.highlightSNPsTable').dataTable({
+
+      this.dTable = $('.highlightSNPsTable').DataTable({
         "bJQueryUI": true,
         "sPaginationType": "full_numbers",
         "oLanguage": {"sSearch": "Search all columns:"},
         "aoColumns": columns});
-      // input data into a table
 
+      var dTable = this.dTable;
+
+      // input data into a table
       var data = [];
       _.each(SNPs, function(snp) {
         var highlightedString = "";
@@ -463,14 +464,17 @@
           snp.score,
           highlightedString
         ];
+
         _.each(attrs, function(attr) {
           row.push(snp.attributes[attr]);
         });
+
         data.push(row);
       }, this);
 
-      this.dTable.fnClearTable();
-      this.dTable.fnAddData(data);
+      this.dTable.clear();
+      this.dTable.rows.add(data);
+      this.dTable.draw();
       this.dTable.$('tr').click( function() {
         $(this).toggleClass('rselect');
       });
@@ -502,17 +506,18 @@
         if( $('#highlightSNPsDialog').dialog("isOpen") === true) {
           drawTable();
         }
-      }); 
+      });
      this.drawTable();
     },
 
     onHighlightSelected: function() {
       var dTable = this.dTable;
-      var highlighted = [];
-      this.dTable.$('.rselect').each(
-        function() { highlighted.push(dTable.fnGetData(this, 0));}
-      );
+      // get IDs of chosen SNPs
+      var highlighted = _.map(this.dTable.$('.rselect'), function(selected){
+        return($(selected).find('td:eq(0)').html());
+      });
       var SNPs= this.model.getDisplaySNPs();
+
       SNPs = _.map(SNPs, function(snp) {
         if(_.include(highlighted, snp.attributes.ID)) {
           snp.attributes.highlighted = true;
@@ -526,10 +531,10 @@
 
     onUnHighlightSelected: function() {
       var dTable = this.dTable;
-      var unHighlighted = [];
-      this.dTable.$(".rselect").each(
-        function() {unHighlighted.push(dTable.fnGetData(this, 0));}
-      );
+      var unHighlighted = _.map(this.dTable.$('.rselect'), function(selected){
+        return($(selected).find('td:eq(0)').html());
+      });
+
       var SNPs= this.model.getDisplaySNPs();
       SNPs = _.map(SNPs, function(snp) {
         if (_.include(unHighlighted, snp.attributes.ID)) {
@@ -552,81 +557,6 @@
       $(rows).toggleClass('rselect');
     }
 
-    // upTable: function() {
-    //   var SNPs = this.model.getDisplaySNPs();
-    //   SNPs = _.map(SNPs, function(snp) {
-    //     if (snp.attributes.highlighted === undefined) {
-    //       snp.attributes.highlighted = false;
-    //     }
-    //     if (snp.attributes.included === undefined) {
-    //       snp.attributes.included = true;
-    //     }
-    //     return snp;
-    //   });
-
-    //   this.model.setDisplaySNPs(SNPs);
-    //   this.model.updateDisplayData();
-
-    //   SNPs = _.filter(SNPs, function(snp) {
-    //     return snp.attributes.included;
-    //   });
-
-    //   $(this.highlightSNPsDialog).find("p:first")
-    //     .html("<table class='highlightSNPsTable'></table>");
-
-    //   this.dTable = $(".highlightSNPsTable").dataTable({
-    //     "bJQueryUI": true,
-    //     "sPaginationType": "full_numbers",
-    //     "aoColumns": [
-    //       {"sTitle": "ID"},
-    //       {"sTitle": "Change"},
-    //       {"sTitle": "Chrom"},
-    //       {"sTitle": "Pos"},
-    //       {"sTitle": "Score"},
-    //       {"sTitle": "Accession"},
-    //       {"sTitle": "Location"},
-    //       {"sTitle": "highlighted"}
-    //     ]
-    //   });
-
-    //   var data = [];
-    //   _.each(SNPs, function(snp) {
-    //     var highlightedString = "";
-    //     if (snp.attributes.highlighted) {
-    //       highlightedString = "<span class=highlighted-row>";
-    //       highlightedString += snp.attributes.highlighted;
-    //       highlightedString += "</span>";
-    //     } else {
-    //       highlightedString = "<span class=unHighlighted-row>";
-    //       highlightedString += snp.attributes.highlighted;
-    //       highlightedString += "</span>";}
-
-    //     var location;
-    //     if (snp.attributes.variant_location === undefined) {
-    //       location = "unknown";
-    //     }
-    //     else {
-    //       location = snp.attributes.variant_location || "unknown";
-    //     }
-
-    //     var row = [
-    //      snp.attributes.ID,
-    //      snp.attributes.Change,
-    //      snp.seqid,
-    //      snp.start,
-    //      snp.score,
-    //      snp.attributes.Strain,
-    //      location,
-    //      highlightedString
-    //     ];
-    //     data.push(row);
-    //   }, this);
-
-    //   this.dTable.fnAddData(data);
-    //   this.dTable.$('tr').click( function() {
-    //     $(this).toggleClass('rselect');
-    //   });
-    // }
   });
 
   MarkAccessionsDialog = Backbone.View.extend({
@@ -658,10 +588,10 @@
 
     onMarkSelected: function() {
       var dTable = this.dTable;
-      var selected = [];
-      this.dTable.$('.rselect').each(
-        function() { selected.push(dTable.fnGetData(this, 0));}
-      );
+      var selected = _.map(this.dTable.$(".rselect"), function(selected){
+        return($(selected).find('td:eq(0)').html());
+      });
+
       var displayData = this.model.get("displayData");
       displayData.markedAccessions = selected;
       this.model.set("displayData", displayData);
@@ -671,10 +601,10 @@
 
     onUnmarkSelected: function() {
       var dTable = this.dTable;
-      var selected = [];
-      this.dTable.$('.rselect').each(
-        function() { selected.push(dTable.fnGetData(this, 0));}
-      );
+      var selected = _.map(this.dTable.$(".rselect"), function(selected){
+        return($(selected).find('td:eq(0)').html());
+      });
+
       var displayData = this.model.get("displayData");
       var markedAccessions = displayData.markedAccessions;
       markedAccessions = _.difference(markedAccessions, selected);
@@ -701,7 +631,7 @@
       $(this.markAccessionsDialog).find("p:first")
       .html("<table class='accessionsTable'></table>");
 
-      this.dTable = $(".accessionsTable").dataTable({
+      this.dTable = $(".accessionsTable").DataTable({
         "bJQueryUI": true,
         "sPaginationType": "full_numbers",
         "aoColumns": [
@@ -710,7 +640,7 @@
         ]
       });
 
-      _.each(allAccessions, function(accession) {
+      var rows = _.map(allAccessions, function(accession) {
         var highlightedString = "";
         var isMarked = _.include(markedAccessions, accession);
         if (isMarked) {
@@ -725,11 +655,14 @@
             accession,
             highlightedString
           ];
-          this.dTable.fnAddData(row);
+          return(row);
       }, this);
+
+      this.dTable.rows.add(rows);
       this.dTable.$('tr').click( function() {
         $(this).toggleClass('rselect');
       });
+      this.dTable.draw();
     }
   });
 
@@ -2224,7 +2157,7 @@
       }, this);
 
       this.dTable.fnClearTable();
-      this.dTable.fnAddData(data);
+      this.dTable.rows.add(data);
       this.dTable.$('tr').click( function() {
         $(this).toggleClass('rselect');
       });

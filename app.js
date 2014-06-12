@@ -27,7 +27,7 @@ app.configure(function(){
 
 app.configure('development', function(){
     app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
-    server.listen(8787);
+    server.listen(3838);
 });
 
 app.configure('production', function(){
@@ -39,17 +39,11 @@ app.configure('production', function(){
 var platform = os.platform();
 var interfaces = os.networkInterfaces();
 var hostip = "localhost";
-if (platform === "linux"){
-  if (interfaces.eth0) {
-    hostip = interfaces.eth0[0].address;
-  } else if (interfaces.wlan0){
-    hostip = interfaces.wlan0[0].address;
-  } else {
-    hostip = interfaces.wlan1[0].address;
+for (var i in interfaces) {
+  var iface = interfaces[i][0];
+  if (iface.family=='IPv4' && iface.internal==false){
+    hostip = iface.address;
   }
-} else if (platform === "darwin"){
-  if (interfaces.en0)
-    hostip = interfaces.en0[1].address;
 }
 console.log(hostip);
 

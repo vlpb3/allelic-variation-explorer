@@ -3,6 +3,7 @@ syntax: glob
 *.swp
 *.DS_Store
 *.swo
+tags
 
 # data files
 data/**
@@ -12,3 +13,6 @@ data/**
 node_modules/**
 npm-debug.log
 .monitor
+
+# python compiled
+*.pyc

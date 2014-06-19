@@ -1,21 +1,30 @@
-(function ($) {
+(function ($, Backbone, window, _, io, clusterfck, BlobBuilder, location, d3,
+          saveAs, document, localStorage, Option) {
+  'use strict';
+  // all vars
+  var AppRouter, OptionsDialog, ChoiceView, FilterDialog, MenuView, NavigateView,
+      HighlightSNPsDialog, MarkAccessionsDialog;
   // router stuff
-  var AppRouter = Backbone.Router.extend({
 
-    initialize: function(options) {
-      _.bindAll(this, "moveModel", "navigateTo");
+   AppRouter = Backbone.Router.extend({
+
+    initialize: function (options) {
+      _.bindAll(this, "moveModel", "navigateTo", "navigateToInitial");
       this.model = options.model;
 
       // this.navigateTo();
       // when model changes, navigate to new place
       this.model.on("change:pos", this.navigateTo);
+
+      // setup initial location
+      this.navigateToInitial();
     },
 
     routes: {
       "goto/:genome/:ch/start:s/end:e": "moveModel"
     },
 
-    moveModel: function(genome, ch, s, e) {
+    moveModel: function (genome, ch, s, e) {
       var pos = {
         "genome": genome,
         "chrom": ch,
@@ -25,115 +34,887 @@
       this.model.set({"pos": pos});
     },
 
-    navigateTo: function(){
-      var pos = this.model.get("pos");
-      var path = "goto/" + pos.genome + "/" + pos.chrom + "/start" +
+    navigateTo: function () {
+      var pos, path;
+      pos = this.model.get("pos");
+      path = "goto/" + pos.genome + "/" + pos.chrom + "/start" +
         pos.starts + "/end" + pos.ends;
       this.navigate(path);
+    },
+
+    navigateToInitial: function() {
+      // this.navigateTo();
     }
   });
 
   // Views
-  // view for choosing the region to display
-  var choiceView = Backbone.View.extend({
-
+  OptionsDialog = Backbone.View.extend({
     initialize: function() {
-
-      _.bindAll(this, "render", "updateModel", "goToFeature",
-      "onFeatureNotFound", "setRefList");
-
+      _.bindAll(this, "render", "open","setFilterAttrs","setTreeVisibility",
+               "setRangeLimit", "onSaveOptions", "loadOptionsFromStorage");
       this.render();
-      // get values form the model
-      $("#radioRegion").click();
-      var pos = this.model.get("pos");
-      $('#refgen').val(pos.genome);
-      $("#chrom").val(pos.chrom);
-      $("#start").val(pos.starts);
-      $("#end").val(pos.ends);
-      
-      var socket = this.model.get("socket");
-      socket.on("featureNotFound", this.onFeatureNotFound);
-      socket.on("refList", this.setRefList);
     },
 
-    events: {
-      "click #go" : "updateModel",
-      "click #search": "goToFeature"
+    optionsSet: false,
+
+    render: function() {
+      $(document).on("click", "#saveOptions",
+                     this.onSaveOptions);
+
+      this.loadOptionsFromStorage();
     },
 
-    updateModel: function() {
-      var update = {
-        "pos": {
-          "genome": $('#refgen').val(),
-          "chrom": $("#chrom").val(),
-          "starts": parseInt($("#start").val(), 10),
-          "ends": parseInt($("#end").val(), 10)
-        }
-      };
-      $("#searchMessage").text("");
-      this.model.set(update);
+    loadOptionsFromStorage: function(){
+      // load options from local storage (if available)
+
+      // load filter attributes
+      var attrs_string = localStorage.getItem("filterAttrs");
+      if (attrs_string !== null) {
+        var saved_attrs = attrs_string.split(",");
+
+        // remove ones that are not available
+        // var attrs = _.keys(this.model.getDisplaySNPs()[0].attributes);
+        // attrs = _.without(attrs, 'included', 'ID');
+        // var filterAttrs = _.intersection(saved_attrs, attrs);
+
+        // set them in the model
+        // this.model.set("filterAttrs", filterAttrs);
+        this.model.set({"filterAttrs": saved_attrs});
+      }
+
+      // load rangeLimit and treeOn and set in model if valid
+      var rangeLimit_string = localStorage.getItem("rangeLimit");
+      if (rangeLimit_string !== null) {
+        var rangeLimit = parseInt(rangeLimit_string, 10);
+        this.model.set({"rangeLimit": rangeLimit});
+      }
+      var treeOn_string = localStorage.getItem("treeOn");
+      if (treeOn_string !== null) {
+        var treeOn = treeOn_string == "true" ? true : false;
+
+        this.model.set({"treeOn": treeOn});
+      } else {
+        this.model.set({"treeOn": true});
+      }
+
+      this.optionsSet = true;
     },
 
-    onFeatureNotFound: function(info){
-      $("#searchMessage").text("\t " + info);
-    },
+    open: function() {
+      this.optionsDialog = $('#optionsDialog').dialog({
+          title: "Options",
+          minWidth: 500,
+          zIndex: 90000
+        });
 
-    goToFeature: function() {
-      $("#searchMessage").text("");
-      var name = $("#name").val();
-      var flank = parseInt($("#flank").val(), 10);
-      this.model.goToFeature(name, flank);
-    },
-    
-    setRefList: function(refList) {
-      $('#refgen').autocomplete({
-        source: refList  
+      // load options from storage once
+      // if (!this.optionsSet) {
+      //   this.loadOptionsFromStorage();
+      // }
+      // clean ald attributes
+      $('.attr-form').remove();
+      // get access to the form
+      var form = $("#attrsList");
+      // get feature data
+      var attrs = _.keys(this.model.getDisplaySNPs()[0].attributes);
+      attrs = _.without(attrs, 'included', 'ID');
+      var attrFormHtml = _.reduce(attrs, function(memo, attr) {
+         var formLine = "<label class='checkbox attr-form' ";
+         formLine += "for='" + attr + "'>" + attr;
+         formLine += "<input type='checkbox' name=" + attr + "></label>";
+         return memo += formLine;
+      }, "");
+
+      form.append(attrFormHtml);
+
+      // set form fields according to dataModel
+      var rangeLimit = this.model.get("rangeLimit");
+      $("#rangeLimit").val(rangeLimit);
+      var treeOn = this.model.get("treeOn");
+      if (treeOn) {
+        $('input[name=treeOn]').attr('checked', true);
+      } else {$('input[name=treeOn]').attr('checked', false);}
+      var filterAttrs = this.model.get("filterAttrs");
+      _.each(filterAttrs, function(attr) {
+        var queryString = "input[name='" + attr + "']";
+        $(queryString).attr('checked', true);
       });
-      $('#refgen').val(refList[0]);
+    },
+
+    setFilterAttrs: function() {
+      // get list of checked attributes
+      var checked = [];
+      $("#attrsList input:checked").each(
+        function (index,item) {
+          checked.push(item.name);
+        });
+      // set them in the model
+      this.model.set({"filterAttrs": checked});
+
+      // save it also to local storage
+      localStorage.setItem("filterAttrs", checked);
+    },
+
+    setTreeVisibility: function() {
+      var checked = $("#treeCheckbox input:checked");
+      var treeOn;
+      if (checked.length > 0) {
+        treeOn = true;
+      } else {treeOn = false;}
+      this.model.set({"treeOn": treeOn});
+
+      // save it also to local storage
+      localStorage.setItem("treeOn", treeOn);
+    },
+
+    setRangeLimit: function() {
+      var rangeLimit = $("#rangeLimit").val();
+      this.model.set({"rangeLimit": rangeLimit});
+
+      // save it also to local storage
+      localStorage.setItem("rangeLimit", rangeLimit);
+    },
+
+    onSaveOptions: function() {
+      this.setRangeLimit();
+      this.setTreeVisibility();
+      this.setFilterAttrs();
+    }
+  });
+
+  FilterDialog = Backbone.View.extend({
+   initialize: function() {
+     _.bindAll(this, "render", "open", "drawTable", "onExcludeSelected",
+               "onIncludeSelected", "onSelectAll", "onToggleSelection");
+     this.render();
+   },
+
+   render: function() {
+      $(document).on("click", "#filterDialog .exclude-selected",
+                      this.onExcludeSelected);
+      $(document).on("click", "#filterDialog .include-selected",
+                      this.onIncludeSelected);
+      $(document).on("click", "#filterDialog .select-all",
+                      this.onSelectAll);
+      $(document).on("click", "#filterDialog .toggle-selection",
+                      this.onToggleSelection);
+   },
+
+   open: function() {
+     this.filterDialog = $("#filterDialog").dialog({
+       title: "Filter input data",
+       minWidth: 700,
+       zIndex: 90000
+     });
+
+     var drawTable = this.drawTable;
+     this.model.on("change:pos", function () {
+       if ( $("#filterDialog").dialog("isOpen") === true) {
+         drawTable();
+       }
+     });
+     this.drawTable();
+   },
+
+   onExcludeSelected: function() {
+      // get IDs of selected SNPs
+      var dTable = this.dTable;
+
+      var excluded = _.map(this.dTable.$(".rselect"), function(selected) {
+        return($(selected).find('td:eq(0)').html());
+      });
+
+     // annotate excluded SNPs
+      var SNPs = this.model.getDisplaySNPs();
+      SNPs = _.map(SNPs, function(snp) {
+        if (_.include(excluded, snp.attributes.ID)) {
+          snp.attributes.included = false;
+        }
+        return snp;
+      });
+
+      // update model
+      this.model.setDisplaySNPs(SNPs);
+      this.drawTable();
+
+      this.model.updateDisplayData();
+    },
+
+    onIncludeSelected: function() {
+      var dTable = this.dTable;
+      var included = _.map(this.dTable.$(".rselect"), function(selected){
+        return($(selected).find('td:eq(0)').html());
+      });
+
+      // annotate excluded SNPs
+      var SNPs = this.model.getDisplaySNPs();
+      SNPs = _.map(SNPs, function(snp) {
+        if (_.include(included, snp.attributes.ID)) {
+          snp.attributes.included = true;
+        }
+        return snp;
+      });
+      // update model
+      this.model.setDisplaySNPs(SNPs);
+      this.drawTable();
+
+      this.model.updateDisplayData();
+    },
+
+    onSelectAll: function() {
+      var rows = this.dTable.$('tr', {"filter": "applied"});
+      $(rows).addClass('rselect');
+    },
+
+    onToggleSelection: function() {
+      var rows = this.dTable.$('tr');
+      $(rows).toggleClass('rselect');
+    },
+
+    drawTable: function() {
+      // fetch SNP data and prepare a table
+      var SNPs = this.model.getDisplaySNPs();
+      SNPs = _.map(SNPs, function(snp) {
+        if (snp.attributes.included === undefined) {
+          snp.attributes.included = true;
+        }
+        return snp;
+      });
+
+      $(this.filterDialog).find("p:first")
+      .html("<table class='filterTable'></table>");
+
+      // fetch columns chosen in settings
+      var attrs = this.model.get("filterAttrs");
+      // put all column names in one array
+      var colNames = ["ID", "Chrom", "Pos", "Score", "included"];
+      colNames.concat(attrs);
+
+      // create table header
+      var columns = [];
+      _.each(colNames, function(name) {
+        columns.push({"sTitle": name});
+      });
+
+      this.dTable = $('.filterTable').DataTable({
+        "bJQueryUI": true,
+        "sPaginationType": "full_numbers",
+        "oLanguage": {"sSearch": "Search all columns:"},
+        "aoColumns": columns});
+
+      var dTable = this.dTable;
+
+      // prepare data for putting into the table
+      var data = [];
+      _.each(SNPs, function(snp) {
+        var includedString = "";
+
+        if (snp.attributes.included) {
+          includedString = "<span class=included-row>";
+          includedString += snp.attributes.included;
+          includedString += "</span>";
+        }
+        else {
+          includedString = "<span class=excluded-row>";
+          includedString += snp.attributes.included;
+          includedString += "</span>";
+        }
+        var location;
+        if (snp.attributes.variant_location === undefined) {
+          location = "unknown";
+        }
+        else {
+          location = snp.attributes.variant_location || "unknown";
+        }
+        var row = [
+          snp.attributes.ID,
+          snp.seqid,
+          snp.start,
+          snp.score,
+          includedString
+        ];
+        _.each(attrs, function(attr) {
+          row.push(snp.attributes[attr]);
+        });
+        data.push(row);
+      }, this);
+
+      // insert data into the table
+      dTable.rows.add(data);
+
+      // when a row is clicked select/unselect it
+      dTable.$('tr').click( function() {
+        $(this).toggleClass('rselect');
+      });
+
+      // create table footer with shearch boxes
+      var table = document.getElementsByClassName('filterTable')[0];
+      var footer = table.createTFoot();
+      var row = footer.insertRow(0);
+
+      var ths = _.map(colNames, function(cn) {
+        var thString = "<th>" + cn + "</th>";
+        return(thString);
+      });
+      $('.filterTable tfoot tr').append(ths.join());
+      $('.filterTable tfoot th').each( function() {
+        var title = $('.filterTable thead th').eq( $(this).index() ).text();
+        $(this).html('<input type="text" placeholder="Search ' + title + '"/>');
+      });
+
+      dTable.draw();
+
+      // apply the filter connected with search boxes
+      dTable.columns().eq( 0 ).each( function(colIdx) {
+        $('.filterTable tfoot input').eq(colIdx).on('change', function() {
+          dTable.column(colIdx).search(this.value, true).draw();
+        });
+      });
+    }
+  });
+
+  HighlightSNPsDialog = Backbone.View.extend({
+    initialize: function() {
+      _.bindAll(this, "render", "open", "onHighlightSelected", "onSelectAll",
+        "onToggleSelection", "onUnHighlightSelected", "drawTable", "onClose");
+      this.render();
     },
 
     render: function() {
+      $(document).on("click", "#highlightSNPsDialog .highlight-selected",
+        this.onHighlightSelected);
+      $(document).on("click", "#highlightSNPsDialog .unhighlight-selected",
+        this.onUnHighlightSelected);
+      $(document).on("click", "#highlightSNPsDialog .select-all",
+        this.onSelectAll);
+      $(document).on("click", "#highlightSNPsDialog .toggle-selection",
+        this.onToggleSelection);
+    },
 
-      // get buttons displayed properly
-      $("#radio").buttonset();
-
-      // hide both searchbox sets at the beginning
-      $("#regionSearch").hide();
-      $("#featureSearch").hide();
-
-      // bind actions to these button sets
-      $("#radioRegion").click(function(){
-        $("#regionSearch").show();
-        $("#featureSearch").hide();
+    drawTable: function() {
+      var SNPs = this.model.getDisplaySNPs();
+      SNPs = _.map(SNPs, function(snp) {
+        if (snp.attributes.highlighted === undefined) {
+          snp.attributes.highlighted = false;
+        }
+        if (snp.attributes.included === undefined) {
+          snp.attributes.included = true;
+        }
+        return snp;
       });
 
-      $("#radioFeature").click(function(){
-        $("#featureSearch").show();
-        $("#regionSearch").hide();
-      });
-      // ask for list of reference genomes
-      this.model.get("socket").emit("getRefList");
+      this.model.setDisplaySNPs(SNPs);
+      this.model.updateDisplayData();
 
-      return this;
+      SNPs = _.map(SNPs, function(snp) {
+        if (snp.attributes.included === undefined) {
+          snp.attributes.included = true;
+        }
+        return snp;
+      });
+
+      $(this.highlightSNPsDialog).find("p:first")
+      .html("<table class='highlightSNPsTable'></table>");
+      // fetch columns chosen in settings
+      var attrs = this.model.get("filterAttrs");
+      // put all column names in one array
+      var colNames = ["ID", "Chrom", "Pos", "Score", "highlighted"];
+      colNames = colNames.concat(attrs);
+
+      // create table header
+      var columns = [];
+      _.each(colNames, function(name) {
+        columns.push({"sTitle": name});
+      });
+
+      this.dTable = $('.highlightSNPsTable').DataTable({
+        "bJQueryUI": true,
+        "sPaginationType": "full_numbers",
+        "oLanguage": {"sSearch": "Search all columns:"},
+        "aoColumns": columns});
+
+      var dTable = this.dTable;
+
+      // input data into a table
+      var data = [];
+      _.each(SNPs, function(snp) {
+        var highlightedString = "";
+        if (snp.attributes.highlighted) {
+          highlightedString = "<span class=highlighted-row>";
+          highlightedString += snp.attributes.highlighted;
+          highlightedString += "</span>";
+        } else {
+          highlightedString = "<span class=unHighlighted-row>";
+          highlightedString += snp.attributes.highlighted;
+          highlightedString += "</span>";
+        }
+
+        var location;
+        if (snp.attributes.variant_location === undefined) {
+          location = "unknown";
+        }
+        else {
+          location = snp.attributes.variant_location || "unknown";
+        }
+
+          var row = [
+          snp.attributes.ID,
+          snp.seqid,
+          snp.start,
+          snp.score,
+          highlightedString
+        ];
+
+        _.each(attrs, function(attr) {
+          row.push(snp.attributes[attr]);
+        });
+
+        data.push(row);
+      }, this);
+
+      this.dTable.clear();
+      this.dTable.rows.add(data);
+      this.dTable.draw();
+      this.dTable.$('tr').click( function() {
+        $(this).toggleClass('rselect');
+      });
+
+    },
+
+    onClose: function() {
+      var bufferData = this.model.get("bufferData");
+      var SNPs = bufferData.SNPs;
+      SNPs = _.map(SNPs, function(snp) {
+        snp.attributes.highlighted = undefined;
+        return snp;
+      });
+      bufferData.SNPs = SNPs;
+      this.model.set("bufferData", bufferData);
+      this.model.updateDisplayData();
+    },
+
+    open: function() {
+      this.highlightSNPsDialog = $("#highlightSNPsDialog").dialog({
+        title: "Highlight SNPs",
+        minWidth: 700,
+        zIndex: 90000,
+        close: this.onClose
+      });
+
+      var drawTable = this.drawTable;
+      this.model.on("change:pos", function() {
+        if( $('#highlightSNPsDialog').dialog("isOpen") === true) {
+          drawTable();
+        }
+      });
+     this.drawTable();
+    },
+
+    onHighlightSelected: function() {
+      var dTable = this.dTable;
+      // get IDs of chosen SNPs
+      var highlighted = _.map(this.dTable.$('.rselect'), function(selected){
+        return($(selected).find('td:eq(0)').html());
+      });
+      var SNPs= this.model.getDisplaySNPs();
+
+      SNPs = _.map(SNPs, function(snp) {
+        if(_.include(highlighted, snp.attributes.ID)) {
+          snp.attributes.highlighted = true;
+        }
+        return snp;
+      });
+      this.model.setDisplaySNPs(SNPs);
+      this.drawTable();
+      this.model.updateDisplayData();
+    },
+
+    onUnHighlightSelected: function() {
+      var dTable = this.dTable;
+      var unHighlighted = _.map(this.dTable.$('.rselect'), function(selected){
+        return($(selected).find('td:eq(0)').html());
+      });
+
+      var SNPs= this.model.getDisplaySNPs();
+      SNPs = _.map(SNPs, function(snp) {
+        if (_.include(unHighlighted, snp.attributes.ID)) {
+          snp.attributes.highlighted = false;
+        }
+        return snp;
+      });
+      this.model.setDisplaySNPs(SNPs);
+      this.drawTable();
+      this.model.updateDisplayData();
+    },
+
+    onSelectAll: function() {
+      var rows = this.dTable.$('tr', {"filter": "applied"});
+      $(rows).addClass('rselect');
+    },
+
+    onToggleSelection: function() {
+      var rows = this.dTable.$('tr');
+      $(rows).toggleClass('rselect');
     }
 
   });
 
-  var NavigateView = Backbone.View.extend({
-
+  MarkAccessionsDialog = Backbone.View.extend({
     initialize: function() {
-      _.bindAll(this, "render", "updateString",
-      "goLeft", "zoomOut", "zoomIn", "goRight");
-      this.step = 5;
+      _.bindAll(this, "render", "open", "onMarkSelected", "onSelectAll",
+      "onToggleSelection", "onUnmarkSelected", "drawTable");
       this.render();
-      this.updateString();
-      this.model.on("change:pos", this.updateString);
     },
 
     render: function() {
-      var winWidth = $(window).width();
-      $("#navigate").css("left", winWidth/2 - 95);
-      $("#navigate").css("width", winWidth/2);
+      $(document).on("click", "#markAccessionsDialog .mark-selected",
+      this.onMarkSelected);
+      $(document).on("click", "#markAccessionsDialog .unmark-selected",
+      this.onUnmarkSelected);
+      $(document).on("click", "#markAccessionsDialog .select-all",
+      this.onSelectAll);
+      $(document).on("click", "#markAccessionsDialog .toggle-selection",
+      this.onToggleSelection);
+    },
+
+    open: function() {
+      this.markAccessionsDialog = $("#markAccessionsDialog").dialog({
+        title: "Mark Accessions",
+        minWidth: 700,
+        zIndex: 90000
+      });
+      this.drawTable();
+    },
+
+    onMarkSelected: function() {
+      var dTable = this.dTable;
+      var selected = _.map(this.dTable.$(".rselect"), function(selected){
+        return($(selected).find('td:eq(0)').html());
+      });
+
+      var displayData = this.model.get("displayData");
+      displayData.markedAccessions = selected;
+      this.model.set("displayData", displayData);
+      this.drawTable();
+      this.model.updateDisplayData();
+    },
+
+    onUnmarkSelected: function() {
+      var dTable = this.dTable;
+      var selected = _.map(this.dTable.$(".rselect"), function(selected){
+        return($(selected).find('td:eq(0)').html());
+      });
+
+      var displayData = this.model.get("displayData");
+      var markedAccessions = displayData.markedAccessions;
+      markedAccessions = _.difference(markedAccessions, selected);
+      displayData.markedAccessions = markedAccessions;
+      this.model.set("displayData", displayData);
+      this.drawTable();
+      this.model.updateDisplayData();
+    },
+
+    onSelectAll: function() {
+      var rows = this.dTable.$('tr', {"filter": "applied"});
+      $(rows).addClass('rselect');
+    },
+
+    onToggleSelection: function() {
+      var rows = this.dTable.$('tr');
+      $(rows).toggleClass('rselect');
+    },
+
+    drawTable: function() {
+      $("#markAccessionsDialog .dataTables_wrapper").remove();
+      var markedAccessions = this.model.get("displayData").markedAccessions;
+      var allAccessions = this.model.get("strains");
+      $(this.markAccessionsDialog).find("p:first")
+      .html("<table class='accessionsTable'></table>");
+
+      this.dTable = $(".accessionsTable").DataTable({
+        "bJQueryUI": true,
+        "sPaginationType": "full_numbers",
+        "aoColumns": [
+          {"sTitle": "Accession"},
+          {"sTitle": "marked"}
+        ]
+      });
+
+      var rows = _.map(allAccessions, function(accession) {
+        var highlightedString = "";
+        var isMarked = _.include(markedAccessions, accession);
+        if (isMarked) {
+          highlightedString = "<span class=highlighted-row>";
+          highlightedString += isMarked;
+          highlightedString += "</span>";
+        } else {
+          highlightedString = "<span class=unHighlighted-row>";
+          highlightedString += isMarked;
+          highlightedString += "</span>";}
+          var row = [
+            accession,
+            highlightedString
+          ];
+          return(row);
+      }, this);
+
+      this.dTable.rows.add(rows);
+      this.dTable.$('tr').click( function() {
+        $(this).toggleClass('rselect');
+      });
+      this.dTable.draw();
+    }
+  });
+
+
+  MenuView = Backbone.View.extend({
+    initialize: function () {
+      _.bindAll(this, "render", "setLocation",
+               "openGoToFeatureDialog", "go", "findFeature", "openFilterDialog",
+               "openHighlightSNPsDialog", "openMarkAccessionsDialog",
+               "onAddBookmark", "onSaveBookmark", "loadBookmarks", "onGenomeChange",
+               "onChromChange", "setChromInfo", "updateGenomeOptions",
+               "updateChromosomeOptions", "onStartChange", "onEndChange");
+
+      this.model.on("change:pos", this.setLocation);
+      this.render();
+    },
+
+    render: function () {
+      // create dialogs
+      this.optionsDialog = new OptionsDialog({
+        el: $('#optionsDialog'),
+        model: this.model
+      });
+
+      this.filterDialog = new FilterDialog({
+        el: $("#filterDialog"),
+        model: this.model
+      });
+
+      this.highlightSNPsDialog = new HighlightSNPsDialog({
+        el: $("#highlightSNPsDialog"),
+        model: this.model
+      });
+
+      this.markAccessionsDialog = new MarkAccessionsDialog({
+        el: $("#markAccessionsDialog"),
+        model: this.model
+      });
+      // change chromosome list on genome change
+      $(document).on('change', '#loc-genome', this.onGenomeChange);
+      // change chromosome sizes on genome or chromosome change
+      $(document).on('change', '#loc-chrom', this.onChromChange);
+      $(document).on('change', '#loc-genome', this.onChromChange);
+      $(document).on('change', '#loc-start', this.onStartChange);
+      $(document).on('change', '#loc-end', this.onEndChange);
+      // bind action to save bookmark button
+      $(document).on("click", "#saveBookmark", this.onSaveBookmark);
+      // bind action to Search button in goToFeature popover
+      $(document).on("click", "#findFeature", this.findFeature);
+
+      // activate dropdowns
+      $(".dropdown-toggle").dropdown();
+
+      // $(window).scroll(function () {
+      //   $('#mobile-menu-plus').css({'position': 'fixed', 'z-index': 2,
+      //     'top': 0, 'left': 0, 'right': 0});
+      // });
+
+
+      this.loadBookmarks();
+      $(document).on("click", ".delbookmark", function(evnt) {
+        var name = $(this).closest('li').text();
+        localStorage.removeItem("bookmark." + name);
+        evnt.preventDefault();
+        $(this).closest('li').remove();
+      });
+
+      // get chrominfo from model when it changes
+      this.model.on('change:chromInfo', this.setChromInfo);
+    },
+
+    events: {
+      "click #go": "go",
+      "click #goToFeature": "openGoToFeatureDialog",
+      "click #options": "openOptionsDialog",
+      "click #filter": "openFilterDialog",
+      "click #highlightSNPs": "openHighlightSNPsDialog",
+      "click #markAccessions": "openMarkAccessionsDialog",
+      "click #addBookmark": "onAddBookmark"
+    },
+
+    updateGenomeOptions: function() {
+      // get list of genomes in chromInfo
+      var genomeList = _.keys(this.chromInfo);
+      // clear genome list
+      $('#loc-genome option').remove();
+      // get access to options
+      var genomeOptions = $("#loc-genome").prop('options');
+      // update them
+      _.each(genomeList, function(genomeName) {
+        genomeOptions[genomeOptions.length] = new Option(genomeName, genomeName);
+      });
+    },
+
+    updateChromosomeOptions: function() {
+      // get selected genome
+      var selectedGenome = _.find($('#loc-genome option'), function(option){
+          return option.selected;
+      }).text;
+
+      // get list of chromosomes for this genome
+      var chromList = _.keys(this.chromInfo[selectedGenome]).sort();
+
+      // remove existing chromosome options
+      $('#loc-chrom option').remove();
+
+      // set chroms as options for #loc-chrom select
+      var chromOptions = $('#loc-chrom').prop('options');
+      _.each(chromList, function(chromName) {
+        chromOptions[chromOptions.length] = new Option(chromName, chromName);
+      });
+    },
+
+    setChromInfo: function() {
+      var pos = this.model.get('pos');
+      this.chromInfo = this.model.get('chromInfo');
+      // fill in genome options with data from chromIfo
+      this.updateGenomeOptions();
+      // set the genome
+      $('#loc-genome').val(pos.genome);
+      // fill in chromosme options with data from chromIfo
+      this.updateChromosomeOptions();
+      // set the chromosome
+      $('#loc-chrom').val(pos.chrom);
+      // set starts and ends
+      $('#loc-start').val(pos.starts);
+      $('#loc-end').val(pos.ends);
+    },
+
+    loadBookmarks: function() {
+      var nStored = localStorage.length;
+      var i;
+      for (i=0; i<nStored; i++) {
+        var key = localStorage.key(i);
+        if (key.indexOf('bookmark.') >= 0) {
+          var name = key.split('bookmark.')[1];
+          var href = localStorage.getItem(key);
+          var bookmark = "<li><a class='bookmark' href='" + href + "'>";
+          bookmark += name + "<i class='icon-trash delbookmark pull-right'>";
+          bookmark += "</i></a></li>";
+          $("#bookmarkList").append(bookmark);
+        }
+      }
+    },
+
+    onGenomeChange: function(evt) {
+      this.updateChromosomeOptions();
+      // select first chromosome on the list
+      $('#loc-chrom').prop('selectedIndex', 0);
+      // triger start and end to change accordingly
+    },
+
+    onChromChange: function() {
+      // get chosen genome and chromosome
+      var genome = $('#loc-genome').val();
+      var chrom = $('#loc-chrom').val();
+      // get size of chromosome in this genome
+      var chroms = this.chromInfo[genome];
+      var size = chroms[chrom];
+      // set limits on start and end input
+      $('#loc-start').prop('max', size);
+      $('#loc-end').prop('max', size);
+    },
+
+    onStartChange: function(){
+     // when start changes set minimal end value as start value
+     var start = $('#loc-start').val();
+     $('#loc-end').prop('min', start);
+    },
+
+    onEndChange: function(){
+     // this is not implemented yet, have to think about it
+    },
+
+
+    setLocation: function() {
+      var pos = this.model.get('pos');
+      $('#loc-chromosome').val(pos.chrom);
+      $('#loc-start').val(pos.starts);
+      $('#loc-end').val(pos.ends);
+    },
+
+    findFeature: function() {
+      var genome = $("#feature-genome").val();
+      var name = $("#feature-name").val();
+      var flanks = parseInt($("#feature-flanks").val(), 10);
+      this.model.goToFeature(genome, name, flanks);
+    },
+
+    openOptionsDialog: function() {
+      this.optionsDialog.open();
+    },
+
+    openGoToFeatureDialog: function() {
+      $("#goToFeatureDialog").dialog({
+          title: "Find feature of interest.",
+          zIndex: 90000
+        });
+    },
+
+    openMarkAccessionsDialog: function() {
+      this.markAccessionsDialog.open();
+    },
+
+    go: function() {
+      var pos = {};
+      pos.genome = $("#loc-genome").val();
+      pos.chrom =  $("#loc-chrom").val();
+      pos.starts =  parseInt($("#loc-start").val(), 10);
+      pos.ends = parseInt($("#loc-end").val(), 10);
+      this.model.set({"pos": pos});
+    },
+
+    openFilterDialog: function () {
+      this.filterDialog.open();
+    },
+
+    openHighlightSNPsDialog: function() {
+      this.highlightSNPsDialog.open();
+    },
+
+    onAddBookmark: function() {
+      this.bookmarkDialog = $("#bookmarkDialog").dialog({
+        title: "Save position",
+        zIndex: 90000
+      });
+    },
+
+    onSaveBookmark: function() {
+      var name = $("#bookmarkName").val();
+      var href = window.location.href;
+      var bookmark = "";
+      bookmark = "<li><a class='bookmark' href=" + href + ">";
+      bookmark += name + "<i class='icon-trash delbookmark pull-right'>";
+      bookmark += "</i></a></li>";
+      $("#bookmarkList").append(bookmark);
+      this.bookmarkDialog.dialog("close");
+      localStorage.setItem('bookmark.' + name, href);
+    }
+
+  });
+
+  NavigateView = Backbone.View.extend({
+
+    initialize: function() {
+      _.bindAll(this, "render",
+      "goLeft", "zoomOut", "zoomIn", "goRight");
+      this.step = 5;
+      this.render();
+    },
+
+    render: function() {
     },
 
     events: {
@@ -144,11 +925,11 @@
     },
 
     goLeft: function() {
-      var pos = this.model.get("pos");
-      var step = Math.floor((pos.ends - pos.starts) / this.step);
-      var starts = pos.starts - step;
-      starts = starts > 0 ? starts : 0;
-      var ends = pos.ends - step;
+      var pos = this.model.get("pos"),
+        step = Math.floor((pos.ends - pos.starts) / this.step),
+        s = pos.starts - step,
+        ends = pos.ends - step,
+      starts = s > 0 ? s : 1;
       var update = {
         pos: {
           "genome": pos.genome,
@@ -161,11 +942,11 @@
     },
 
     zoomOut: function() {
-      var pos = this.model.get("pos");
-      var step = Math.floor((pos.ends - pos.starts) / 2);
-      var starts = pos.starts - step;
-      starts = starts > 0 ? starts : 0;
-      var ends = pos.ends + step;
+      var pos = this.model.get("pos"),
+        step = Math.floor((pos.ends - pos.starts) / 2),
+        s = pos.starts - step,
+        ends = pos.ends + step,
+      starts = s > 0 ? s : 1;
       var update = {
         pos: {
           "genome": pos.genome,
@@ -178,199 +959,35 @@
     },
 
     zoomIn: function() {
-      var pos = this.model.get("pos");
-      var step = Math.floor((pos.ends - pos.starts) / 4);
-      var starts = pos.starts + step;
-      var ends = pos.ends - step;
-      var update = {
-        pos: {
-          "genome": pos.genome,
-          "starts": starts,
-          "ends": ends,
-          "chrom": pos.chrom
-        }
-      };
+      var pos = this.model.get("pos"),
+          step = Math.floor((pos.ends - pos.starts) / 4),
+          starts = pos.starts + step,
+          ends = pos.ends - step,
+          update = {
+            pos: {
+              "genome": pos.genome,
+              "starts": starts,
+              "ends": ends,
+              "chrom": pos.chrom
+            }
+          };
       this.model.set(update);
-
     },
 
     goRight: function() {
-      var pos = this.model.get("pos");
-      var step = Math.floor((pos.ends - pos.starts) / this.step);
-      var starts = pos.starts + step;
-      var ends = pos.ends + step;
-      var update = {
-        pos: {
-          "genome": pos.genome,
-          "starts": starts,
-          "ends": ends,
-          "chrom": pos.chrom
-        }
-      };
+      var pos = this.model.get("pos"),
+          step = Math.floor((pos.ends - pos.starts) / this.step),
+          starts = pos.starts + step,
+          ends = pos.ends + step,
+          update = {
+            pos: {
+              "genome": pos.genome,
+              "starts": starts,
+              "ends": ends,
+              "chrom": pos.chrom
+            }
+          };
       this.model.set(update);
-    },
-
-    updateString: function() {
-      var pos = this.model.get("pos");
-      var positionStr = pos.chrom + ":" +
-        pos.starts + ".." + pos.ends;
-      var strech = pos.ends - pos.starts;
-      positionStr += " fragment: " + strech + "bp";
-      $("#positionText").html(positionStr);
-    }
-  });
-
-  var ControlsView = Backbone.View.extend({
-
-    initialize: function() {
-      _.bindAll(this, "render", "openFilterDialog",
-        "renderStrainList", "renderSNPList", "updateLists",
-      "applyFilters", "removeSelected", "addSelected");
-
-      this.render();
-    },
-
-    render: function() {
-      $("#filterDialog").hide();
-      $("#filterButton").button();
-
-      // filter dialog stuff
-      this.filterDialog = $("#filterDialog").dialog({
-        autoOpen: false,
-        title: "Exclude/Include SNPs/strains",
-        width: 450
-      });
-
-      $("#filterRadio").buttonset();
-      $("#applyFilters button").button()
-      .click(this.applyFilters);
-
-      // hide the lists
-      $("#exclStrains").hide();
-      $("#inclStrains").hide();
-      $("#exclSNPs").hide();
-      $("#inclSNPs").hide();
-
-      // connect list rendering to toggle buttons
-      $("#radioStrains").click(this.renderStrainList);
-      $("#radioSNPs").click(this.renderSNPList);
-
-      $("#addButton").button()
-      .click(this.addSelected);
-      $("#removeButton").button()
-      .click(this.removeSelected);
-
-      $("#included ul").selectable({
-        stop: function() {
-          $("#addButton").removeClass("ui-state-active");
-          $("#removeButton").addClass("ui-state-active");
-        }
-      });
-      $("#excluded ul").selectable({
-        stop: function() {
-          $("#removeButton").removeClass("ui-state-active");
-          $("#addButton").addClass("ui-state-active");
-        }
-      });
-    },
-
-    events: {
-      "click #filterButton": "openFilterDialog"
-    },
-
-    openFilterDialog: function() {
-      $("#filterDialog").dialog('open');
-
-      // fill lists in
-      this.updateLists();
-      this.renderStrainList();
-    },
-
-    updateLists: function() {
-      var filters = this.model.get("displayData").filters;
-      var SNPsIncl = filters.SNPs.incl;
-      var SNPsExcl = filters.SNPs.excl;
-      var strainsIncl = filters.strains.incl;
-      var strainsExcl = filters.strains.excl;
-
-      // append lists
-      var inclSNPsAnchor = $("#inclSNPs ul");
-      inclSNPsAnchor.empty();
-      _.each(SNPsIncl, function(snpID, i) {
-        inclSNPsAnchor.append("<li>" + snpID + "</li>");
-      });
-      var inclStrainsAnchor = $("#inclStrains ul");
-      inclStrainsAnchor.empty();
-      _.each(strainsIncl, function(strain, i) {
-        inclStrainsAnchor.append("<li>" + strain + "</li>");
-      });
-      var exclSNPsAnchor = $("#exclSNPs ul");
-      exclSNPsAnchor.empty();
-      _.each(SNPsExcl, function(snpID, i) {
-        exclSNPsAnchor.append("<li>" + snpID + "</li>");
-      });
-      var exclStrainsAnchor = $("#exclStrains ul");
-      exclStrainsAnchor.empty();
-      _.each(strainsExcl, function(strain, i) {
-        exclStrainsAnchor.append("<li>" + strain + "</li>");
-      });
-    },
-
-    // strains list rendering
-    renderStrainList: function() {
-      $("#exclStrains").show();
-      $("#inclStrains").show();
-      $("#exclSNPs").hide();
-      $("#inclSNPs").hide();
-    },
-
-    // SNPs list rendering
-    renderSNPList: function() {
-      // hide strain lists and show snp lists
-      $("#exclStrains").hide();
-      $("#inclStrains").hide();
-      $("#exclSNPs").show();
-      $("#inclSNPs").show();
-    },
-
-    addSelected: function() {
-      // add SNPs or strains depending on which toggle is on
-      var active = $("#filterRadio .ui-state-active").attr("for");
-      if (active === "radioSNPs") {
-        $("#exclSNPs ul .ui-selected").appendTo($("#inclSNPs ul"));
-      }
-      else {
-        $("#exclStrains ul .ui-selected").appendTo($("#inclStrains ul"));
-      }
-    },
-
-    removeSelected: function() {
-      // remove SNPs or strains depending on which toggle is on
-      var active = $("#filterRadio .ui-state-active").attr("for");
-      if (active === "radioSNPs") {
-        $("#inclSNPs ul .ui-selected").appendTo($("#exclSNPs ul"));
-      }
-      else {
-        $("#inclStrains ul .ui-selected").appendTo($("#exclStrains ul"));
-      }
-    },
-
-    applyFilters: function() {
-      // get excluded lists from the dialog
-      var exclStrainsLi = $("#exclStrains ul li");
-      var newExclStrains = _.map(exclStrainsLi, function(li, idx) {
-        return $(li).text();
-      });
-      var exclSNPsLi = $("#exclSNPs ul li");
-      var newExclSNPs = _.map(exclSNPsLi, function(li, idx) {
-        return $(li).text();
-      });
-      // feed them back to the model
-      var displayData = this.model.get("displayData");
-      displayData.filters.strains.excl = newExclStrains;
-      displayData.filters.SNPs.excl = newExclSNPs;
-      this.model.set({"displayData": displayData});
-      this.model.updateDisplayData();
     }
   });
 
@@ -382,12 +999,14 @@
       "rangeExceeded": false,
       "bufferX": 5,
       "pos": {
-        "genome": "TAIR10",
-        "chrom": "Chr1",
-        "starts": 3500,
-        "ends": 9000
+        "genome": "",
+        "chrom": "",
+        "starts": 0,
+        "ends": 0
       },
       "strains": [],
+      "filterAttrs": [],
+      "treeOn": true,
       "bufferData": {
         genome: "",
         starts: 0,
@@ -404,16 +1023,7 @@
         features: [],
         haplotypes: [],
         refseq: "",
-        filters: {
-          SNPs: {
-            incl: [],
-            excl: []
-          },
-          strains: {
-            incl: [],
-            excl: []
-          }
-        }
+        markedAccessions: []
       }
     },
 
@@ -422,23 +1032,115 @@
         "waitForData", "updateBufferData", "importData",
         "isLocusInRegion", "isFeatureInRegion", "calcHaplotypes",
       "goToFeature", "goToFeatureRegion",  "cluster", "importStrains",
-      "getStrains", 'reloadData');
+      "getStrains", 'reloadData', 'savePosition', "loadLocation",
+      "getDisplaySNPs", "setDisplaySNPs", "getChromInfo", "onChromInfo",
+      "positionIsAvailable", "setStartingPosition");
 
       var appAddress = 'http://' + $('#hostip').val();
       this.set({socket: io.connect(appAddress)});
 
-      this.updateBufferData();
-      this.getStrains();
-
-      // update the model when position chnages
-      this.on("change:pos", function() {
-        this.updatePosition();
-      });
       // when data come back
       this.get("socket").on("data", this.importData);
       this.get("socket").on("featureRegion", this.goToFeatureRegion);
       this.get("socket").on("geneModels", this.importData);
       this.get("socket").on("strains", this.importStrains);
+      this.get("socket").on("chromInfo", this.onChromInfo);
+
+      // ask db for information about chromosomes
+      this.getChromInfo();
+
+      // update the model when position chnages
+      this.on("change:pos", function() {
+        this.updatePosition();
+        this.savePosition();
+      });
+    },
+
+    getChromInfo: function() {
+      var socket = this.get("socket");
+      socket.emit("getChromInfo");
+    },
+
+    onChromInfo: function(chromInfoObject) {
+      // get chromInfo
+      // and reshape it into more userefriedly structure
+      var chromInfo= _.reduce(chromInfoObject, function(memo, gen) {
+        memo[gen.genome] = gen.chromosomes;
+        return memo;
+      }, {});
+      // check if there is already set position
+      // (this might be the case if it's been set by routing)
+      var pos = this.get("pos");
+      if (!this.positionIsAvailable(pos, chromInfo)) {
+        // if this is not a valid position
+        // try to get it from local storage
+        pos = this.loadLocation();
+      }
+      if (pos && this.positionIsAvailable(pos, chromInfo)) {
+        // set this loaded postion
+        this.set({"pos": pos});
+      }
+      else {
+        this.setStartingPosition(chromInfo);
+      }
+      this.set('chromInfo', chromInfo);
+      // load old location from local storage
+      this.loadLocation();
+      this.updateBufferData();
+      this.getStrains();
+    },
+
+    getDisplaySNPs: function(){
+      return this.get("displayData").SNPs;
+    },
+
+    setDisplaySNPs: function(snps) {
+      var displayData = this.get("displayData");
+      displayData.SNPs = snps;
+      this.set("displayData", displayData);
+    },
+
+    loadLocation: function() {
+      // load loacation from local storage
+      var pos = {};
+      pos.genome = localStorage.getItem("genome");
+      if (! pos.genome) {
+        return null;
+      }
+      pos.chrom = localStorage.getItem("chrom");
+      pos.starts = parseInt(localStorage.getItem("starts"), 10);
+      pos.ends = parseInt(localStorage.getItem("ends"), 10);
+      return(pos);
+    },
+
+    positionIsAvailable: function(pos, chromInfo) {
+      var posAvailable = true;
+      var genomes = _.keys(chromInfo);
+      if ($.inArray(pos.genome, genomes) === -1) {
+        posAvailable = false;
+      }
+      else {
+        var chromosomes = _.keys(chromInfo[pos.genome]);
+        if ($.inArray(pos.chrom, chromosomes) === -1){
+          posAvailable = false;
+        }
+        else {
+          var size = chromosomes[pos.chrom];
+          if ((pos.starts > size) || (pos.ends > size)){
+            posAvailable = false;
+          }
+        }
+      }
+      return(posAvailable);
+    },
+
+    setStartingPosition: function(chromInfo) {
+      var pos = {};
+      pos.genome = _.keys(chromInfo)[0];
+      pos.chrom = _.keys(chromInfo[pos.genome]).sort()[0];
+      pos.ends = 5000;
+      pos.starts = 1;
+      this.set({"pos": pos});
     },
 
     importData: function(data) {
@@ -465,11 +1167,10 @@
       this.set({"strains": data});
     },
 
-    goToFeature: function(name, flank) {
-      var pos = this.get("pos");
+    goToFeature: function(genome, name, flanks) {
       this.waitForData(true);
       this.get("socket").emit("getFeatureRegion",
-        {"genome": pos.genome, "name": name, "flank": flank});
+        {"genome": genome, "name": name, "flank": flanks});
     },
 
     goToFeatureRegion: function(region) {
@@ -490,7 +1191,7 @@
 
     getStrains: function() {
       var genome = this.get('pos').genome;
-      this.get("socket").emit("getStrains", genome);  
+      this.get("socket").emit("getStrains", genome);
     },
 
     updatePosition: function(){
@@ -520,8 +1221,8 @@
       }
 
       // check if new position is in buffer
-      var startInBuffer = pos.starts >= bufferData.starts;
-      var endInBuffer = pos.ends <= bufferData.ends;
+      var startInBuffer = pos.starts >= bufferData.starts,
+          endInBuffer = pos.ends <= bufferData.ends;
       // if it is import otherwise say waiting
       if (startInBuffer && endInBuffer && !otherChromosome) {
         this.updateDisplayData();
@@ -529,11 +1230,20 @@
       else {this.waitForData(true);}
     },
 
-    updateBufferData: function() {
+    savePosition: function() {
       var pos = this.get("pos");
-      var span = pos.ends - pos.starts;
-      var flank = (this.get("bufferX") - 1) * span/2;
-      var start = pos.starts - flank;
+      localStorage.setItem("genome", pos.genome);
+      localStorage.setItem("chrom", pos.chrom);
+      localStorage.setItem("starts", pos.starts);
+      localStorage.setItem("ends", pos.ends);
+    },
+
+    updateBufferData: function() {
+      var pos, span, flank, start, newBufferStart, newBufferEnd;
+      pos = this.get("pos");
+      span = pos.ends - pos.starts;
+      flank = (this.get("bufferX") - 1) * span/2;
+      start = pos.starts - flank;
       newBufferStart = start >= 0 ? start : 1;
       newBufferEnd = pos.ends + flank;
       var region = {
@@ -548,12 +1258,11 @@
     },
 
     updateDisplayData: function() {
-      var bufferData = this.get("bufferData");
-      // first fetch the fragment from the buffer
-      var displayData = this.get("displayData");
-
-      // get features
-      var features = bufferData.features;
+      var bufferData = this.get("bufferData"),
+          // fetch the fragment from the buffer
+          displayData = this.get("displayData"),
+          // get features
+          features = bufferData.features;
       displayData.features = _.select(features, this.isFeatureInRegion);
 
       // if range exceeded save just features and return
@@ -564,53 +1273,28 @@
         return;
       }
 
-      // get SNPs
+      // get SNPs in region
       var SNPs = bufferData.SNPs;
       var pos = this.get("pos");
       displayData.SNPs = _.select(SNPs, function(snp) {
         return ((snp.start >= pos.starts) && (snp.start <= pos.ends));
       });
 
-      // for filtring get list of strains and snsp
-      var snpAttr = _.pluck(displayData.SNPs, "attributes");
-      var strainList = _.pluck(snpAttr, "Strain").sort();
-      strainList = _.uniq(strainList, true);
-      var newStrainIncl = _.difference(strainList,
-      displayData.filters.strains.excl);
-      displayData.filters.strains.incl = newStrainIncl;
-      // and SNPs
-      var snpIDList = _.pluck(snpAttr, "ID");
-      var newSNPIncl = _.difference(snpIDList,
-      displayData.filters.SNPs.excl);
+      // get refseq fragment
+      var refseq = bufferData.refseq;
+      var sliceStart = pos.starts - bufferData.starts;
+      var sliceEnd = pos.ends - bufferData.starts + 1;
+      refseq = refseq.slice(sliceStart, sliceEnd);
 
+      displayData.refseq = refseq;
 
-      // set them in the model
-      displayData.filters.strains.incl = newStrainIncl;
-      displayData.filters.SNPs.incl = newSNPIncl.sort(
-        function(a, b) {return a - b;});
+      // set obtained data to the model
+      this.set({"displayData": displayData});
 
-        // select SNPs again according to strain and SNP ID restictions
-        displayData.SNPs = _.select(SNPs, function(snp) {
-          return (_.include(newStrainIncl, snp.attributes.Strain) &&
-          _.include(newSNPIncl, snp.attributes.ID));
-        });
-
-        // get refseq fragment
-        var refseq = bufferData.refseq;
-        var sliceStart = pos.starts - bufferData.starts;
-        var sliceEnd = pos.ends - bufferData.starts + 1;
-        refseq = refseq.slice(sliceStart, sliceEnd);
-
-        displayData.refseq = refseq;
-
-        // set obtained data to the model
-        this.set({"displayData": displayData});
-
-        // calculate haplotypes from SNPs in the region
-        this.calcHaplotypes();
-
-        // cluster haplotypes
-        this.cluster();
+      // calculate haplotypes from SNPs in the region
+      this.calcHaplotypes();
+      // cluster haplotypes
+      this.cluster();
     },
 
     reloadData: function() {
@@ -625,20 +1309,31 @@
       var pos = this.get("pos");
       if(locus.gene.start <= pos.ends && locus.gene.end >= pos.starts) {
         return true;
-      } else {return false;}
+      }
+      return false;
     },
 
     isFeatureInRegion: function(feature) {
       var pos = this.get("pos");
       if(feature.start <= pos.ends && feature.end >= pos.starts) {
         return true;
-      } else {return false;}
+      }
+      return false;
     },
 
     calcHaplotypes: function() {
 
       var displayData = this.get("displayData");
-      var SNPs = displayData.SNPs;
+      var SNPs = _.select(displayData.SNPs, function(snp) {
+        return (snp.attributes.included || snp.attributes.included === undefined);
+      });
+
+      // if there are no snps do nothing
+      if (SNPs.length < 1) {
+        displayData.haplotypes = {};
+        this.set({"displayData": displayData});
+        return;
+      }
 
       // create strains object
       var strains = _.reduce(SNPs, function(memo, snp) {
@@ -646,8 +1341,8 @@
         var idx = snp.start;
         var variant = snp.attributes.Change.split(":")[1];
         var refBase = snp.attributes.Change.split(":")[0];
-        var variantArr = (memo[strain] || []);
-        var refArr = (memo.refStrain || []);
+        var variantArr = (memo[strain] || {});
+        var refArr = (memo.refStrain || {});
         variantArr[idx] = variant;
         refArr[idx] = refBase;
         memo[strain] = variantArr;
@@ -665,7 +1360,7 @@
       // group strains by snps
       var haplotypes = {};
       _.each(strains, function(strainSNPs, strainName, strains) {
-        var haplID = _.zip(_.keys(strainSNPs), _.compact(strainSNPs)).join();
+        var haplID = _.pairs(strainSNPs).join();
         var haplotype = (haplotypes[haplID] || []);
         haplotype.push({name: strainName, snps: strainSNPs});
         haplotypes[haplID] = haplotype;
@@ -686,7 +1381,8 @@
         var dist = _.reduce(snpDiff, function(memo, idx) {
           if (snps1[idx] === snps2[idx]) {
             return memo;
-          } else {return (memo += score*score);}
+          }
+          return (memo += score*score);
         }, 0);
         dist = Math.sqrt(dist);
         return dist;
@@ -718,29 +1414,35 @@
     }
 
   });
-
   var VisView = Backbone.View.extend({
 
     initialize: function() {
-      _.bindAll(this, "render", "draw", "drawTraits", "drawGeneModels", "drawHaplotpes",
-        "drawScaleBars", "drawTree", "turnOffHaplotypes", "isLeaf",
-        "leaf2haplotype", "turnOnHaplotypes",
-        "onSNPmouseOver", "onSNPmouseOut", "onSNPClick", "onHaplCLick",
-      "showCodingSNPs", "showNonCodingSNPs", "showAllSNPs", "drawLegend");
+      _.bindAll(this, "render", "draw", "drawTraits", "drawGeneModels",
+                "drawHaplotpes", "drawScaleBars", "drawTree",
+                "turnOffHaplotypes", "isLeaf", "leaf2haplotype",
+                "turnOnHaplotypes", "onSNPmouseOver", "onSNPmouseOut",
+                "onSNPClick", "onHaplCLick", "drawLegend", "unHighlightSNPs",
+                "markHaplotypes", "toggleTree");
 
       this.trackH = 20;
       this.glyphH = 12;
       this.glyphT = 4;
       this.height = 10000;
-      this.padding = 5; 
+      this.padding = 5;
       this.left = 45;
       this.right = 20;
       this.width = $(window).width()/2 - this.left - this.right - this.padding;
       this.top = 20;
       this.bottom = 4;
       this.model.on('change:displayData:clusters', this.draw);
+      this.model.on('change:treeOn', this.toggleTree);
       // this.model.bind('change:rangeExceeded', this.draw);
-
+      var that = this;
+      $(window).resize(function(ev) {
+        if(ev.target === window) {
+          location.reload();
+        }
+      });
       this.render();
     },
 
@@ -748,9 +1450,11 @@
 
       // allign properly elements
       var winWidth = $(window).width();
-      this.width = winWidth/2 - this.left - this.right - this.padding;  
+      this.width = winWidth/2 - this.left - this.right - this.padding;
+      // check if treeOn or not
+      var treeOn = this.model.get("treeOn");
       $("#tree").css("width", winWidth/2 - this.padding);
-      $("#chart").css("width", winWidth/2 - this.padding);
+      $("#chart").css("width", this.width/2 - this.padding);
 
       // browser div
       this.svg = d3.select("#chart").append("svg:svg")
@@ -767,57 +1471,92 @@
       .attr("height", this.top + this.height + this.bottom)
       .append("svg:g")
       .attr("transform", "translate(" + this.left + "," + this.top + ")");
-
-      $("#codingRadio").buttonset();
-      $("#radioCoding").click(this.showCodingSNPs);
-      $("#radioNonCoding").click(this.showNonCodingSNPs);
-      $("#radioAllSNPs").click(this.showAllSNPs);
-      $("#radioAllSNPs").click();
       // this.draw();
+
+
+      if (!this.model.get("treeOn")) {
+        this.toggleTree();
+      }
       return this;
     },
 
-    showCodingSNPs: function() {
-      //fetch all coding snp
+    toggleTree: function() {
+      var winWidth = $(window).width();
+      var newWidth = winWidth - this.padding;
+      $("#tree").toggle();
+      if ($("#tree").is(":visible")) {
+        this.width = winWidth/2 - this.left - this.right - this.padding;
+        $("#chart").css("width", this.width/2 - this.padding);
+      } else {
+        this.width = winWidth;
+        $("#chart").css("width", this.width);
+        d3.select(".chart").attr("width", newWidth);
+      }
+
+      this.model.updatePosition();
+    },
+
+    unHighlightSNPs: function() {
       var snps = this.model.get('displayData').SNPs;
-      var codingSNPs = _.filter(snps, function(snp) {
-        return snp.attributes.coding;
+
+      var highlighted = _.filter(snps, function(snp) {
+        return snp.attributes.highlighted;
       });
-      var codingPos = _.pluck(codingSNPs, "start");
-      var SNPCircles = this.svg.selectAll('.SNP')
+      var unhighlighted = _.filter(snps, function(snp){
+        return snp.attributes.highlighted === false;
+      });
+
+      highlighted = _.reduce(highlighted, function(memo, snp) {
+        var posStrains = memo[snp.start] || [];
+        posStrains.push(snp.attributes.Strain);
+        memo[snp.start] = posStrains;
+        return memo;
+      }, {});
+
+      unhighlighted = _.reduce(unhighlighted, function(memo, snp) {
+        var posStrains = memo[snp.start] || [];
+        posStrains.push(snp.attributes.Strain);
+        memo[snp.start] = posStrains;
+        return memo;
+      }, {});
+
+      var SNPCir = this.svg.selectAll('.SNP')
       .transition().duration(200)
       .style("opacity", function(d) {
-        if (_.include(codingPos, d.x)) {return 0.6;}
-        else {return 0.1;}
+        var highlightedPositions = _.keys(highlighted);
+        var isInHighlightedPosition = _.include(highlightedPositions,
+                                                String(d.x));
+        if (isInHighlightedPosition) {
+          var highlightedStrains = highlighted[String(d.x)];
+          if ( (_.intersection(d.strains, highlightedStrains).length > 0) ||
+            _.include(d.strains, "refStrain") ){
+              return 1;
+            }
+        }
+        var unhighlightedPositions = _.keys(unhighlighted);
+        var isInUnhighlightedPosition = _.include(unhighlightedPositions,
+                                                  String(d.x));
+        if (isInUnhighlightedPosition) {
+          var unhighlightedStrains = unhighlighted[String(d.x)];
+          if (_.intersection(d.strains, unhighlightedStrains).length > 0) {
+              return 0.1;
+            }
+        }
+        return 0.8;
       });
     },
 
-    showNonCodingSNPs: function() {
-      //fetch all coding snp
-      var snps = this.model.get('displayData').SNPs;
-      var codingSNPs = _.filter(snps, function(snp) {
-        return snp.attributes.coding;
-      });
-      var codingPos = _.pluck(codingSNPs, "start");
-      var SNPCircles = this.svg.selectAll('.SNP')
-      .transition().duration(200)
-      .style("opacity", function(d) {
-        if (_.include(codingPos, d.x)) {return 0.1;}
-        else {return 0.6;}
-      });
-    },
-    showAllSNPs: function() {
-      //fetch all coding snp
-      var snps = this.model.get('displayData').SNPs;
-      var codingSNPs = _.filter(snps, function(snp) {
-        return snp.attributes.coding;
-      });
-      var codingPos = _.pluck(codingSNPs, "start");
-      var SNPCircles = this.svg.selectAll('.SNP')
-      .transition().duration(200)
-      .style("opacity", function(d) {
-        return 0.6;
-      });
+    markHaplotypes: function() {
+      var markedAccessions = this.model.get("displayData").markedAccessions;
+      var haplotypes = this.svg.selectAll('.hap')
+        .transition().duration(200)
+        .style("opacity", function(d){
+          var haplStrains = d.strains;
+          if (_.intersection(markedAccessions, haplStrains).length > 0) {
+            return 0.4;
+          }
+          return(0.2);
+        });
     },
 
     draw: function() {
@@ -830,26 +1569,29 @@
       .range([0, width]);
 
       var displayData = this.model.get("displayData");
-      this.svg.selectAll('.message').remove();
+      // this.svg.selectAll('.message').remove();
 
       this.drawTraits(displayData);
       this.drawGeneModels(displayData);
-      if (!rangeExceeded) {
-        this.turnOnHaplotypes();
-        this.drawTree();
-        this.drawHaplotpes();
+
+      // if there is no snps don't try to cluster and plot haplotypes
+      var snps = this.model.get("displayData").SNPs;
+      if (snps.length < 1) {
+        $("#alerts").show();
       } else {
-        this.turnOffHaplotypes();
+        $("#alerts").hide();
       }
+      this.drawTree();
+      this.drawHaplotpes();
       this.drawScaleBars();
       this.drawLegend();
     },
-    
+
     drawTraits: function(displayData) {
       var traits = _.filter(displayData.features, function(feature) {
-        return feature.type === "trait";    
+        return feature.type === "trait";
       });
-      
+
       var x = this.x;
       var freePos = this.glyphT;
       var glyphH = this.glyphH;
@@ -998,7 +1740,8 @@
       .attr("fill", "steelblue");
       CDSRect.exit().remove();
 
-      // calculate new freePos by calculating the max number of gene models per locus
+      // calculate new freePos by calculating the max number
+      // of gene models per locus
       var allFeatures = UTR5s.concat(CDSs).concat(UTR3s);
       var maxModels = _.reduce(allFeatures, function(memo, f) {
         var nModel = f.attributes.Parent.split(",")[0].split(".")[1];
@@ -1044,20 +1787,25 @@
         this.svg.selectAll('.hap').remove();
         return;
       }
-      
+
       // draw haplotypes
-      var haplotypeBars = this.svg.selectAll('.hap, .refHap').data(this.leaves);
-      haplotypeBars.attr('y', function(d) { return d.x + freePos - trackH/2;})
+      var haplotypeBars = this.svg.selectAll('.hap, .refHap')
+      .attr('width', width)
+      .data(this.leaves);
+      haplotypeBars
+      .attr('y', function(d) { return d.x + freePos - trackH/2;})
         .attr('class', function(d) {
           if (d.strains[0] === "refStrain" ) {
             return 'refHap';
-          } else {return 'hap';}
+          }
+          return 'hap';
         });
       haplotypeBars.enter().append('svg:rect')
       .attr('class', function(d) {
           if (d.strains[0] === "refStrain" ) {
             return 'refHap';
-          } else {return 'hap';}
+          }
+          return 'hap';
         })
       .attr('height', glyphH)
       .attr('width', width)
@@ -1068,10 +1816,10 @@
       haplotypeBars.exit().remove();
 
       // draw number of strains representing haplotype
-      fracString = function(d) {
-        nAllStains = _.size(allStrains);
-        nHaplStrain = _.size(d.strains);
-        percentStrains = nHaplStrain*100/nAllStains;
+      var fracString = function(d) {
+        var nAllStains = _.size(allStrains);
+        var nHaplStrain = _.size(d.strains);
+        var percentStrains = nHaplStrain*100/nAllStains;
         return nHaplStrain + " (" + Math.floor(percentStrains)+ "%)";
       };
 
@@ -1080,7 +1828,7 @@
         .attr('x', x(pos.starts) - this.left)
         .attr('y', function(d) { return d.x + freePos;})
         .text(fracString);
-      
+
       strainFracs.enter().append("text")
         .attr("class", "strainFrac")
         .attr('x', x(pos.starts) - this.left)
@@ -1089,32 +1837,30 @@
         .attr('fill', 'steelblue');
 
       strainFracs.exit().remove();
+
       // draw SNPs
       var SNPCircles = this.svg.selectAll('.SNP').data(this.hapSNPs);
+
       SNPCircles.attr('cx', function(d) { return x(d.x); })
       .attr('cy', function(d) {
         return d.y + freePos - glyphT;
       })
-      .attr('fill', this.baseColor)
-      .attr('opacity', 0.6);
+      .attr('class', this.baseClass);
+
       SNPCircles.enter().append('svg:circle')
-      .attr('class', 'SNP')
+      .attr('class', this.baseClass)
       .attr('r', glyphH/4)
       .attr('cx', function(d) { return x(d.x); })
       .attr('cy', function(d) {
         return d.y + freePos - glyphT;
       })
-      .attr('fill', this.baseColor)
       .on("mouseover", this.onSNPmouseOver)
       .on("mouseout", this.onSNPmouseOut)
       .on('click', this.onSNPClick);
       SNPCircles.exit().remove();
 
-      // fade in/out snps according to whats chosen on toggles
-      var activeToggle = $("#codingRadio .ui-state-active").attr("for");
-      if (activeToggle === "radioNonCoding") {this.showNonCodingSNPs();}
-      else if (activeToggle === "radioCoding") {this.showCodingSNPs();}
-      else {this.showAllSNPs();}
+      this.unHighlightSNPs();
+      this.markHaplotypes();
 
       //update free position
       var haplotypes = this.model.get("displayData").haplotypes;
@@ -1200,16 +1946,17 @@
       cluster.separation(function(a, b) { return 1; });
       cluster.children(function(d) {
         if (d) {
-          return (d.children = _.compact([d.left , d.right]));
+          var children = d.children = _.compact([d.left , d.right]);
+          return (children);
         }
       });
-      
+
 
       var diagonal = d3.svg.diagonal()
       .projection(function(d) {return [d.y, d.x]; });
 
       var nodes = cluster.nodes(clusters);
-      
+
       var link = this.svgTree.selectAll("path.link")
       .data(cluster.links(nodes));
 
@@ -1238,16 +1985,16 @@
       var leaves = _.select(nodes, this.isLeaf);
       if (_.size(leaves) > 1) {
         this.leaves = _.map(leaves, this.leaf2haplotype);
-      }
+      } else {this.leaves = [];}
     },
 
     drawLegend: function(){
       var glyphH = this.glyphH;
       var circleData = [
-        [glyphH/2, "red", "A"],
-        [glyphH*5.5, "green", "C"],
-        [glyphH*10.5, "blue", "G"],
-        [glyphH*15.5, "orange", "T"]];
+        [glyphH/2, "#ABD9E9", "A"],
+        [glyphH*5.5, "#FDAE61", "C"],
+        [glyphH*10.5, "#D7191C", "G"],
+        [glyphH*15.5, "#2C7BB6", "T"]];
 
       var rectData = [
         [0, "chartreuse", "gene"],
@@ -1258,11 +2005,10 @@
       var legendCircs = this.svgTree.selectAll('.legendCircs')
         .data(circleData);
       legendCircs.enter().append("svg:circle")
-        .attr('class', 'legendCircs')
+        .attr('class', function(d) {return 'legendCircs ' + d[2];})
         .attr('r', glyphH/4)
         .attr('cx', function(d) {return d[0];})
-        .attr('cy', 0)
-        .attr('fill', function(d) {return d[1];});
+        .attr('cy', 0);
 
       var legendRects = this.svgTree.selectAll('.legendRects')
         .data(rectData);
@@ -1302,7 +2048,7 @@
       .transition()
       .duration(400)
       .attr("r", this.glyphH/2);
-        
+
       // fade out the haplotypes that do not have this SNP
       var posWithSNP =   _.reduce(this.hapSNPs, function(memo, snp) {
         if (snp.x === d.x) {memo.push(snp.y);}
@@ -1313,8 +2059,8 @@
       .transition()
       .duration(400)
       .style("opacity", function(d) {
-        if (_.include(posWithSNP, d.x)) {return 0.2;}
-        else {return 0.1;}
+        if (_.include(posWithSNP, d.x)) {return 0.4;}
+        return 0;
       });
 
       d3.selectAll(".nodeCircle")
@@ -1324,7 +2070,7 @@
         if ((_.size(d.children) === 0) && _.include(posWithSNP, d.x)) {
           return "steelblue";
         }
-        else {return "#fff";}
+        return "#fff";
       });
     },
 
@@ -1340,7 +2086,7 @@
       d3.selectAll(".hap")
       .transition()
       .duration(400)
-      .style("opacity", 0.2);
+      .style("opacity", 0.4);
       d3.selectAll(".nodeCircle")
       .transition()
       .duration(400)
@@ -1348,37 +2094,77 @@
     },
 
     onSNPClick: function(d, i) {
-      // find all SNPs at this position in this haplotype
-      var SNPlist = _.filter(this.allSNPs, function(snp) {
-        return _.include(d.strains, snp.attributes.Strain) && d.x === snp.start;
-      });
-      var tableHead = "<table class='SNPtable'><thead><tr><th>ID</th><th>Change</th><th>Chrom</th><th>Pos</th><th>Score</th><th>Accession</th></tr></thead><tbody>";
-      var SNPString = _.reduce(SNPlist, function(memo, snp) {
-          var a = snp.attributes;
-          memo += "<tr>";
-          memo += "<td>" + a.ID + "</td>";
-          memo += "<td>" + a.Change + "</td>";
-          memo += "<td>" + snp.seqid + "</td>";
-          memo += "<td>" + snp.start + "</td>";
-          memo += "<td>" + snp.score + "</td>";
-          memo += "<td>" + a.Strain + "</td>";
-          memo += "</tr>";
-          return memo;
-        }, tableHead);
-      SNPString += "</tbody></table>";
       // open a dialog for dipalying info about the SNP
       var SNPDialog = $('#SNPDialog').clone().dialog({
          title: "Single Nucleotide Polymorphism",
          minWidth: 540,
+         zIndex: 90000,
          close: function(ev, ui) {
-          $(this).remove(); 
+          $(this).remove();
          }
       });
-      $(SNPDialog).find("p:first").append("</br> " + SNPString);
-      $('.SNPtable tr').click( function() {
-          $(this).toggleClass('rselect');
+      // find all SNPs at this position in this haplotype
+      var SNPs = _.filter(this.allSNPs, function(snp) {
+        var x = parseInt(d.x, 10);
+        return _.contains(d.strains, snp.attributes.Strain) && x === snp.start;
+      });
+      // fetch columns chosen in settings
+      var attrs = this.model.get("filterAttrs");
+      var colNames = ["ID", "Chrom", "Pos", "Score"];
+      _.each(attrs, function(attr) {
+         colNames.push(attr);
+      });
+      var columns = [];
+      _.each(colNames, function(name) {
+        columns.push({"sTitle": name});
+      });
+      $(SNPDialog).find("p:first")
+      .html("<table class='SNPTable'></table>");
+
+      this.dTable = $('.SNPTable').dataTable({
+        "bJQueryUI": true,
+        "sPaginationType": "full_numbers",
+        "oLanguage": {"sSearch": "Search all columns:"},
+        "aoColumns": columns});
+
+      var data = [];
+      _.each(SNPs, function(snp) {
+        var highlightedString = "";
+        if (snp.attributes.highlighted) {
+          highlightedString = "<span class=highlighted-row>";
+          highlightedString += snp.attributes.highlighted;
+          highlightedString += "</span>";
+        } else {
+          highlightedString = "<span class=unHighlighted-row>";
+          highlightedString += snp.attributes.highlighted;
+          highlightedString += "</span>";
+        }
+
+        var location;
+        if (snp.attributes.variant_location === undefined) {
+          location = "unknown";
+        }
+        else {
+          location = snp.attributes.variant_location || "unknown";
+        }
+
+          var row = [
+          snp.attributes.ID,
+          snp.seqid,
+          snp.start,
+          snp.score
+        ];
+        _.each(attrs, function(attr) {
+          row.push(snp.attributes[attr]);
         });
-      $('.SNPtable').dataTable();
+        data.push(row);
+      }, this);
+
+      this.dTable.fnClearTable();
+      this.dTable.rows.add(data);
+      this.dTable.$('tr').click( function() {
+        $(this).toggleClass('rselect');
+      });
     },
 
     onHaplCLick: function(d, i) {
@@ -1395,6 +2181,8 @@
 
       var haplDialog = $("#haplDialog").clone().dialog({
         title: 'Haplotype for ' + posStr,
+        minWidth: 600,
+        zIndex: 90000,
         close: function(ev, ui) {
           $(this).remove();
         }
@@ -1420,11 +2208,12 @@
         var fname = $(haplDialog).find("#fastaFileName").val() + ".fas";
         saveAs(bb.getBlob("text/plain;charset=utf-8"), fname);
       });
-    },
+     },
+
 
     isLeaf: function(node) {
       if (_.size(node.children) === 0) {return true;}
-      else {return false;}
+      return false;
     },
 
     leaf2haplotype: function(leaf) {
@@ -1434,18 +2223,15 @@
       return leaf;
     },
 
-    baseColor: function(d) {
-      var baseColors = {
-        'A': 'red',
-        'C': 'green',
-        'G': 'blue',
-        'T': 'orange'
-      };
-      return baseColors[d.base];
+    baseClass: function(d) {
+      var baseList = ["A", "T", "G", "C"];
+      if ( _.contains(baseList, d.base) ) {
+        return "SNP " + d.base;}
+      else {
+        return "SNP IUPAC";}
     }
 
   });
-
 
   $(document).ready(function(){
 
@@ -1453,13 +2239,14 @@
     var dataModel = new DataModel();
 
     // initialize views
-    var goRegionView = new choiceView({
-      el: $("#locationChoice"),
+
+    var menuView = new MenuView({
+      el: $("#menu"),
       model: dataModel
     });
 
     var navigateView = new NavigateView({
-      el: $("#navigate"),
+      el: $("#navi"),
       model: dataModel
     });
 
@@ -1469,14 +2256,11 @@
 
     var visView = new VisView({
       el: $("#chart"),
-      model: dataModel
-    });
-
-    var controlsView = new ControlsView({
-      el: $("#controls"),
-      model: dataModel
+      model: dataModel,
+      menuView: menuView
     });
 
   });
 
-}(jQuery));
+}(jQuery, Backbone, window, _, io, clusterfck, BlobBuilder, location, d3,
+  saveAs, document, localStorage, Option));

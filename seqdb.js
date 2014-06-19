@@ -12,6 +12,7 @@ var dbConnection = models.dbConnection;
 var Feature = dbConnection.model("Feature");
 var RefSeq = dbConnection.model("RefSeq");
 var GenomeStrains = dbConnection.model("genomestrains");
+var ChromInfo = dbConnection.model("chromInfo");
 
 function getRefRegion(region, callback) {
     async.waterfall([
@@ -42,7 +43,7 @@ function getRefRegion(region, callback) {
         },
         function(data, wfCbk) {
             if (!data.fragments.length) {
-              return callback(null, "");  
+              return callback(null, "");
             }
             var fragStart = data.fragments[0].starts;
             var sliceStart = region.start - fragStart;
@@ -75,6 +76,7 @@ function getFeatureRegion(genome, name, flank, callback) {
 }
 
 function getFeatures(region, callback) {
+    console.log(region);
     var regionQuery = {
       'attributes.genome': region.genome,
       type: {$in: [/^SNP/, 'gene', 'five_prime_UTR', 'three_prime_UTR', 'CDS', 'trait']},
@@ -87,7 +89,10 @@ function getFeatures(region, callback) {
 function getRegion(region, callback) {
     async.parallel({
         features: function(paraCbk) {
-            getFeatures(region, paraCbk);
+            getFeatures(region, function(err, data) {
+              if (err) {throw err;}
+              paraCbk(null, data);
+          });
         },
         refseq: function(paraCbk) {
             getRefRegion(region, function(err, data) {
@@ -103,18 +108,28 @@ function getRegion(region, callback) {
     });
 }
 
+// fetch list of all strains in this genome
 function getAllStrains(genome, callback) {
   GenomeStrains.findOne({'genome': genome}, function(err, data) {
     if (err) {throw err;}
     callback(data.strains);
-    })
-  // callback(null, data)  
+    });
+  // callback(null, data)
 }
 
+// fetch list of genomes
 function getRefList(callback) {
   GenomeStrains.find().distinct('genome', function(err, data) {
     if (err) {throw err;}
     callback(data);
+  });
+}
+
+// fetch chromInfo for queried genome
+function getChromInfo(callback) {
+  ChromInfo.find({}, function(err, data) {
+      if (err) {throw err;}
+      callback(data);
   });
 }
 
@@ -125,3 +140,4 @@ exports.getFeatures = getFeatures;
 exports.getFeatureRegion = getFeatureRegion;
 exports.getAllStrains = getAllStrains;
 exports.getRefList = getRefList;
+exports.getChromInfo = getChromInfo;

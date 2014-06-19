@@ -1895,7 +1895,7 @@
       .attr('y', -10)
       .attr('dy', '.71em')
       .attr('text-anchor', 'middle')
-      .text(x.tickFormat(10));
+      .text(d3.format('d'));
       rules.exit().remove();
     },
 

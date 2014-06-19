@@ -758,9 +758,13 @@
     },
 
     updateChromosomeOptions: function() {
-      // get position
-      var pos = this.model.get('pos');
-      var chromList = _.keys(this.chromInfo[pos.genome]).sort();
+      // get selected genome
+      var selectedGenome = _.find($('#loc-genome option'), function(option){
+          return option.selected;
+      }).text;
+
+      // get list of chromosomes for this genome
+      var chromList = _.keys(this.chromInfo[selectedGenome]).sort();
 
       // remove existing chromosome options
       $('#loc-chrom option').remove();
@@ -785,7 +789,7 @@
       $('#loc-chrom').val(pos.chrom);
       // set starts and ends
       $('#loc-start').val(pos.starts);
-      $('#loc-endA').val(pos.ends);
+      $('#loc-end').val(pos.ends);
     },
 
     loadBookmarks: function() {

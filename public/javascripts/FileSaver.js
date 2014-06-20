@@ -1,40 +1,48 @@
 /* FileSaver.js
- * A saveAs() FileSaver implementation.
- * 2011-08-02
- * 
- * By Eli Grey, http://eligrey.com
- * License: X11/MIT
- *   See LICENSE.md
+ *  A saveAs() FileSaver implementation.
+ *  2014-05-27
+ *
+ *  By Eli Grey, http://eligrey.com
+ *  License: X11/MIT
+ *    See https://github.com/eligrey/FileSaver.js/blob/master/LICENSE.md
  */
 
 /*global self */
-/*jslint bitwise: true, regexp: true, confusion: true, es5: true, vars: true, white: true,
-  plusplus: true */
+/*jslint bitwise: true, indent: 4, laxbreak: true, laxcomma: true, smarttabs: true, plusplus: true */
 
 /*! @source http://purl.eligrey.com/github/FileSaver.js/blob/master/FileSaver.js */
 
-var saveAs = saveAs || (function(view) {
+var saveAs = saveAs
+  // IE 10+ (native saveAs)
+  || (typeof navigator !== "undefined" &&
+      navigator.msSaveOrOpenBlob && navigator.msSaveOrOpenBlob.bind(navigator))
+  // Everyone else
+  || (function(view) {
 	"use strict";
+	// IE <10 is explicitly unsupported
+	if (typeof navigator !== "undefined" &&
+	    /MSIE [1-9]\./.test(navigator.userAgent)) {
+		return;
+	}
 	var
 		  doc = view.document
-		  // only get URL when necessary in case BlobBuilder.js hasn't overridden it yet
+		  // only get URL when necessary in case Blob.js hasn't overridden it yet
 		, get_URL = function() {
 			return view.URL || view.webkitURL || view;
 		}
-		, URL = view.URL || view.webkitURL || view
 		, save_link = doc.createElementNS("http://www.w3.org/1999/xhtml", "a")
-		, can_use_save_link = "download" in save_link
+		, can_use_save_link = !view.externalHost && "download" in save_link
 		, click = function(node) {
 			var event = doc.createEvent("MouseEvents");
 			event.initMouseEvent(
 				"click", true, false, view, 0, 0, 0, 0, 0
 				, false, false, false, false, 0, null
 			);
-			return node.dispatchEvent(event); // false if event was cancelled
+			node.dispatchEvent(event);
 		}
 		, webkit_req_fs = view.webkitRequestFileSystem
 		, req_fs = view.requestFileSystem || webkit_req_fs || view.mozRequestFileSystem
-		, throw_outside = function (ex) {
+		, throw_outside = function(ex) {
 			(view.setImmediate || view.setTimeout)(function() {
 				throw ex;
 			}, 0);
@@ -47,7 +55,7 @@ var saveAs = saveAs || (function(view) {
 			while (i--) {
 				var file = deletion_queue[i];
 				if (typeof file === "string") { // file is an object URL
-					URL.revokeObjectURL(file);
+					get_URL().revokeObjectURL(file);
 				} else { // file is a File
 					file.remove();
 				}
@@ -90,7 +98,11 @@ var saveAs = saveAs || (function(view) {
 					if (blob_changed || !object_url) {
 						object_url = get_object_url(blob);
 					}
-					target_view.location.href = object_url;
+					if (target_view) {
+						target_view.location.href = object_url;
+					} else {
+						window.open(object_url, "_blank");
+					}
 					filesaver.readyState = filesaver.DONE;
 					dispatch_all();
 				}
@@ -112,11 +124,10 @@ var saveAs = saveAs || (function(view) {
 				object_url = get_object_url(blob);
 				save_link.href = object_url;
 				save_link.download = name;
-				if (click(save_link)) {
-					filesaver.readyState = filesaver.DONE;
-					dispatch_all();
-					return;
-				}
+				click(save_link);
+				filesaver.readyState = filesaver.DONE;
+				dispatch_all();
+				return;
 			}
 			// Object and web filesystem URLs have a problem saving in Google Chrome when
 			// viewed in a tab, so I force save with application/octet-stream
@@ -134,8 +145,6 @@ var saveAs = saveAs || (function(view) {
 			}
 			if (type === force_saveable_type || webkit_req_fs) {
 				target_view = view;
-			} else {
-				target_view = view.open();
 			}
 			if (!req_fs) {
 				fs_error();
@@ -198,7 +207,7 @@ var saveAs = saveAs || (function(view) {
 	FS_proto.readyState = FS_proto.INIT = 0;
 	FS_proto.WRITING = 1;
 	FS_proto.DONE = 2;
-	
+
 	FS_proto.error =
 	FS_proto.onwritestart =
 	FS_proto.onprogress =
@@ -207,7 +216,26 @@ var saveAs = saveAs || (function(view) {
 	FS_proto.onerror =
 	FS_proto.onwriteend =
 		null;
-	
+
 	view.addEventListener("unload", process_deletion_queue, false);
+	saveAs.unload = function() {
+		process_deletion_queue();
+		view.removeEventListener("unload", process_deletion_queue, false);
+	};
 	return saveAs;
-}(self));
+}(
+	   typeof self !== "undefined" && self
+	|| typeof window !== "undefined" && window
+	|| this.content
+));
+// `self` is undefined in Firefox for Android content script context
+// while `this` is nsIContentFrameMessageManager
+// with an attribute `content` that corresponds to the window
+
+if (typeof module !== "undefined" && module !== null) {
+  module.exports = saveAs;
+} else if ((typeof define !== "undefined" && define !== null) && (define.amd != null)) {
+  define([], function() {
+    return saveAs;
+  });
+}

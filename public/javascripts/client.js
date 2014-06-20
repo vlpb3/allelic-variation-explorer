@@ -925,11 +925,17 @@
     },
 
     goLeft: function() {
-      var pos = this.model.get("pos"),
-        step = Math.floor((pos.ends - pos.starts) / this.step),
-        s = pos.starts - step,
-        ends = pos.ends - step,
-      starts = s > 0 ? s : 1;
+      var pos = this.model.get("pos");
+      var step = Math.floor((pos.ends - pos.starts) / this.step);
+      var s = pos.starts - step;
+      var starts, ends;
+      if (s <= 0) {
+        starts = 1;
+        ends = pos.ends - pos.starts + 1;
+      } else {
+        ends = pos.ends - step;
+        starts = s;
+      }
       var update = {
         pos: {
           "genome": pos.genome,
@@ -942,11 +948,27 @@
     },
 
     zoomOut: function() {
-      var pos = this.model.get("pos"),
-        step = Math.floor((pos.ends - pos.starts) / 2),
-        s = pos.starts - step,
-        ends = pos.ends + step,
-      starts = s > 0 ? s : 1;
+      var pos = this.model.get("pos");
+      var chromInfo = this.model.get('chromInfo');
+      var chromSize = chromInfo[pos.genome][pos.chrom];
+      var posWidth = pos.ends - pos.starts;
+      var step = Math.floor((posWidth) / 2);
+      var targetStart = pos.starts - step;
+      var targetEnd = pos.ends + step;
+      var starts, ends;
+      if ((targetStart < 1) && (targetEnd > chromSize)) {
+        starts = 1;
+        ends = chromSize;
+      } else if (targetStart < 1){
+        starts = 1;
+        ends = posWidth + 2*step;
+      } else if (targetEnd > chromSize) {
+        starts = chromSize - posWidth - 2*step;
+        ends = chromSize;
+      } else {
+        starts = targetStart;
+        ends = targetEnd;
+      }
       var update = {
         pos: {
           "genome": pos.genome,
@@ -975,18 +997,28 @@
     },
 
     goRight: function() {
-      var pos = this.model.get("pos"),
-          step = Math.floor((pos.ends - pos.starts) / this.step),
-          starts = pos.starts + step,
-          ends = pos.ends + step,
-          update = {
-            pos: {
-              "genome": pos.genome,
-              "starts": starts,
-              "ends": ends,
-              "chrom": pos.chrom
-            }
-          };
+      var pos = this.model.get("pos");
+      var posWidth = pos.ends - pos.starts;
+      var step = Math.floor(posWidth / this.step);
+      var chromInfo = this.model.get('chromInfo');
+      var chromSize = chromInfo[pos.genome][pos.chrom];
+      var starts, ends;
+
+      if ((pos.ends + step) > chromSize) {
+        ends = chromSize;
+        start = chromSize - posWidth - 1;
+      } else {
+        starts = pos.starts + step;
+        ends = pos.ends + step;
+      }
+      var update = {
+        pos: {
+          "genome": pos.genome,
+          "starts": starts,
+          "ends": ends,
+          "chrom": pos.chrom
+        }
+      };
       this.model.set(update);
     }
   });

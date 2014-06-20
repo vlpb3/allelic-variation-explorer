@@ -1,4 +1,4 @@
-(function ($, Backbone, window, _, io, clusterfck, BlobBuilder, location, d3,
+(function ($, Backbone, window, _, io, clusterfck, location, d3,
           saveAs, document, localStorage, Option) {
   'use strict';
   // all vars
@@ -2235,10 +2235,9 @@
 
       $(haplDialog).find("textarea").val(fastaStr);
       $(haplDialog).find("#saveFasta").click(function() {
-        var bb = new BlobBuilder();
-        bb.append(fastaStr);
+        var fastaBlob = new Blob([fastaStr], {type: 'text/html'});
         var fname = $(haplDialog).find("#fastaFileName").val() + ".fas";
-        saveAs(bb.getBlob("text/plain;charset=utf-8"), fname);
+        saveAs(fastaBlob, fname);
       });
      },
 
@@ -2294,5 +2293,5 @@
 
   });
 
-}(jQuery, Backbone, window, _, io, clusterfck, BlobBuilder, location, d3,
+}(jQuery, Backbone, window, _, io, clusterfck, location, d3,
   saveAs, document, localStorage, Option));

@@ -790,6 +790,12 @@
       // set starts and ends
       $('#loc-start').val(pos.starts);
       $('#loc-end').val(pos.ends);
+      // set min and max for chromosome
+      var chroms = this.chromInfo[pos.genome];
+      var size = chroms[pos.chrom];
+      // set limits on start and end input
+      $('#loc-start').prop('max', size);
+      $('#loc-end').prop('max', size);
     },
 
     loadBookmarks: function() {
@@ -813,6 +819,13 @@
       // select first chromosome on the list
       $('#loc-chrom').prop('selectedIndex', 0);
       // triger start and end to change accordingly
+      var chrom = $('#loc-chrom').val();
+      // get size of chromosome in this genome
+      var chroms = this.chromInfo[genome];
+      var size = chroms[chrom];
+      // set limits on start and end input
+      $('#loc-start').prop('max', size);
+      $('#loc-end').prop('max', size);
     },
 
     onChromChange: function() {

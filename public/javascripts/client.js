@@ -1006,7 +1006,7 @@
 
       if ((pos.ends + step) > chromSize) {
         ends = chromSize;
-        start = chromSize - posWidth - 1;
+        starts = chromSize - posWidth;
       } else {
         starts = pos.starts + step;
         ends = pos.ends + step;

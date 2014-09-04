@@ -25,27 +25,10 @@ app.configure(function(){
 
 });
 
-app.configure('development', function(){
-    app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
-    server.listen(3838);
-});
+app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+server.listen(3838);
 
-app.configure('production', function(){
-    app.use(express.errorHandler());
-    server.listen(3000);
-});
-
-// fetch server ip adress
-var platform = os.platform();
-var interfaces = os.networkInterfaces();
-var hostip = "localhost";
-for (var i in interfaces) {
-  var iface = interfaces[i][0];
-  if (iface.family=='IPv4' && iface.internal==false){
-    hostip = iface.address;
-  }
-}
-console.log(hostip);
+var hostip = process.argv[2];
 
 // Routes
 
